@@ -1,5 +1,4 @@
 # EusaQuiz
-EusaQuiz consiste en una plataforma web tipo quiz o cuestionario interactivo.
 En este proyecto presentamos EusaQuiz, una aplicación web responsive inspirada en la metodología de Kahoot, pero diseñada específicamente para el entorno educativo de EUSA y el Campus Cámara Comercio de Sevilla. Nuestro objetivo es crear una herramienta moderna, intuitiva y adaptada a diferentes dispositivos, que permita digitalizar los exámenes, fomentar la participación del alumnado y facilitar la gestión y evaluación del profesorado. 
 El sistema permite a los profesores importar sus exámenes y convertirlos automáticamente en preguntas y respuestas, mientras que los alumnos puedan acceder con su correo institucional de EUSA o de Campus Cámara Comercio de Sevilla. Con la finalidad de que tengan acceso a visualizar su progreso, realizar pruebas y consultar sus resultados. 
 La idea principal es unir aprendizaje, tecnología y motivación, apostando por una herramienta propia del centro que combine formación y gamificación. 
