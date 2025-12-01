@@ -1,36 +1,45 @@
-const express = require('express');
-const mongoose = require('mongoose');
-
 require('dotenv').config();
+const express = require('express');
+const http = require('http'); 
+const { Server } = require('socket.io');
+const connectDB = require('./src/config/db'); 
+const socketStore = require('./src/sockets/socketStore');
 
+// --- IMPORTAR MIDDLEWARES ---
+const corsMiddleware = require('./src/middlewares/corsConfig'); // <--- NUEVO IMPORT
+
+// Inicialización
 const app = express();
-const PORT = process.env.PORT || 3000;
+const server = http.createServer(app); 
 
+// --- USAR MIDDLEWARES ---
+app.use(corsMiddleware); // <--- MUCHO MÁS LIMPIO
 app.use(express.json());
 
-const MONGO_URI = process.env.MONGO_URI;
+// --- Conexión a Base de Datos ---
+connectDB();
 
-if (!MONGO_URI) {
-  console.error("❌ Error: La variable MONGO_URI no está definida en el archivo .env.");
-  process.exit(1);
-}
+// --- Configuración de Socket.io ---
+// Nota: Socket.io necesita su propia config de CORS aparte de Express
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:4200", 
+    methods: ["GET", "POST"]
+  }
+});
 
-console.log("📡 Intentando conectar a MongoDB Atlas...");
+socketStore.setIoInstance(io);
+require('./src/sockets/socketManager')(io);
+app.set('socketio', io); 
 
-mongoose.connect(MONGO_URI)
-  .then(() => {
-    console.log('✅ Conectado a MongoDB Atlas con éxito');
-    
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('❌ Error conectando a Mongo:', err.message);
-    console.log('💡 Consejo: Revisa que la URI en tu archivo .env sea correcta (usuario, contraseña y nombre de la base de datos).');
-  });
+// --- Rutas API REST ---
+app.use('/api/cuestionarios', require('./src/routes/cuestionarioRoutes'));
+app.use('/api/preguntas', require('./src/routes/preguntaRoutes'));
+app.use('/api/partidas', require('./src/routes/partidaRoutes'));
+app.use('/api/usuarios', require('./src/routes/usuarioRoutes')); 
 
-// Ruta de prueba simple (opcional)
-app.get('/', (req, res) => {
-  res.send('Servidor Express funcionando y conectado a MongoDB.');
+// --- Arrancar Servidor ---
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
