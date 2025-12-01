@@ -1,22 +1,27 @@
 const express = require('express');
 const mongoose = require('mongoose');
-require('dotenv').config(); // Para leer el .env
+const path = require('path');
+
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const usuariosRoutes = require('./routes/usuariosRoutes');
 
-// Middleware para JSON [cite: 5]
+const usuarioRoutes = require('./routes/usuario.routes');
+
 app.use(express.json());
 
-// Conexión a MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Conectado a MongoDB con Mongoose'))
-  .catch((err) => console.error('❌ Error de conexión a MongoDB:', err));
+console.log("📡 Intentando conectar a:", process.env.MONGO_URI ? "URL encontrada" : "URL NO ENCONTRADA (Undefined)");
 
-// Rutas
-app.use('/api/usuarios', usuariosRoutes);
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ Conectado a MongoDB Atlas'))
+  .catch((err) => {
+    console.error('❌ Error conectando a Mongo:', err);
+    console.log('💡 Consejo: Revisa que tu usuario y contraseña en el .env sean correctos.');
+  });
+
+app.use('/api/usuarios', usuarioRoutes);
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });

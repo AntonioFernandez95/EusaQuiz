@@ -1,9 +1,8 @@
-// src/controllers/usuarios.controller.js
-const usuariosService = require('../services/usuarios.service');
+const usuarioService = require('../services/usuarioService');
 
 exports.obtenerTodos = async (req, res) => {
   try {
-    const usuarios = await usuariosService.listarUsuarios();
+    const usuarios = await usuarioService.listarUsuarios();
     res.json(usuarios);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -12,7 +11,7 @@ exports.obtenerTodos = async (req, res) => {
 
 exports.crear = async (req, res) => {
   try {
-    const nuevoUsuario = await usuariosService.crearUsuario(req.body);
+    const nuevoUsuario = await usuarioService.crearUsuario(req.body);
     res.status(201).json(nuevoUsuario);
   } catch (error) {
     res.status(400).json({ error: error.message });
