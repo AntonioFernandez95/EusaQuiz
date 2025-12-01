@@ -1,27 +1,36 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const path = require('path');
 
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const usuarioRoutes = require('./routes/usuario.routes');
-
 app.use(express.json());
 
-console.log("📡 Intentando conectar a:", process.env.MONGO_URI ? "URL encontrada" : "URL NO ENCONTRADA (Undefined)");
+const MONGO_URI = process.env.MONGO_URI;
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Conectado a MongoDB Atlas'))
+if (!MONGO_URI) {
+  console.error("❌ Error: La variable MONGO_URI no está definida en el archivo .env.");
+  process.exit(1);
+}
+
+console.log("📡 Intentando conectar a MongoDB Atlas...");
+
+mongoose.connect(MONGO_URI)
+  .then(() => {
+    console.log('✅ Conectado a MongoDB Atlas con éxito');
+    
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    });
+  })
   .catch((err) => {
-    console.error('❌ Error conectando a Mongo:', err);
-    console.log('💡 Consejo: Revisa que tu usuario y contraseña en el .env sean correctos.');
+    console.error('❌ Error conectando a Mongo:', err.message);
+    console.log('💡 Consejo: Revisa que la URI en tu archivo .env sea correcta (usuario, contraseña y nombre de la base de datos).');
   });
 
-app.use('/api/usuarios', usuarioRoutes);
-
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+// Ruta de prueba simple (opcional)
+app.get('/', (req, res) => {
+  res.send('Servidor Express funcionando y conectado a MongoDB.');
 });
