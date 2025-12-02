@@ -240,8 +240,15 @@ exports.unirseAPartida = async (req, res) => {
             const nuevaParticipacion = new Participacion({ idPartida: partida._id, idAlumno, tipoPartida: partida.tipoPartida });
             await nuevaParticipacion.save();
 
+            // EMITIR EVENTO (AQUÍ ESTÁ EL CAMBIO PARA EL FRONTEND)
             const io = req.app.get('socketio');
-            if (io) io.to(pin).emit('nuevo_jugador', { nombre: nombreAlumno, total: partida.numParticipantes });
+            if (io) {
+                io.to(pin).emit('nuevo_jugador', { 
+                    nombre: nombreAlumno, 
+                    idAlumno: idAlumno, // <--- ENVIAMOS EL ID
+                    total: partida.numParticipantes 
+                });
+            }
         }
         res.json({
             ok: true, mensaje: 'Unido',
@@ -269,7 +276,7 @@ exports.iniciarPartida = async (req, res) => {
     } catch (error) { res.status(500).json({ ok: false, error: error.message }); }
 };
 
-// --- ENVIAR RESPUESTA (FIX: CALCULAR ÍNDICE REAL) ---
+// --- ENVIAR RESPUESTA ---
 exports.enviarRespuesta = async (req, res) => {
     const { idPartida, idAlumno, idPregunta, opcionesMarcadas, tiempoEmpleado } = req.body;
     const io = req.app.get('socketio');
@@ -328,13 +335,8 @@ exports.enviarRespuesta = async (req, res) => {
         if (respuestasCount >= totalParticipantes) {
             console.log("🚀 TRIGGER MANUAL: Todos han respondido.");
             
-            // ------------------------------------------------------------------
-            // CORRECCIÓN FINAL: NO CONFIAMOS EN partida.preguntaActual
-            // Calculamos el índice exacto basándonos en la pregunta respondida.
-            // ------------------------------------------------------------------
+            // INDICE CALCULADO REAL
             const preguntasTodas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
-            
-            // Buscamos qué índice tiene la pregunta que acabamos de cerrar
             const indiceCalculado = preguntasTodas.findIndex(p => p._id.toString() === idPregunta);
 
             if (indiceCalculado !== -1) {
@@ -353,7 +355,7 @@ exports.enviarRespuesta = async (req, res) => {
     }
 };
 
-// CRUD Standard (Igual que antes)
+// CRUD Standard
 exports.obtenerTodasPartidas = async (req, res) => {
     try {
         const { idProfesor, estado } = req.query;
