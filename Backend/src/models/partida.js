@@ -1,3 +1,33 @@
+
+/**En vivo
+ * {
+  "idCuestionario": "ID_DEL_CUESTIONARIO",
+  "idProfesor": "ID_DEL_USUARIO_PROFE", 
+  "tipoPartida": "en_vivo",
+  "modoAcceso": "publica",
+  "configuracionEnvivo": {
+      "tiempoPorPreguntaSeg": 30,
+      "mostrarRanking": true,
+      "modoCalificacion": "velocidad_precision"
+  }
+} 
+Examen
+{
+  "idCuestionario": "ID_DEL_CUESTIONARIO",
+  "idProfesor": "ID_DEL_USUARIO_PROFE",
+  "tipoPartida": "examen", 
+  "modoAcceso": "privada",
+  "fechas": {
+      "fechaInicio": "2023-12-01T09:00:00.000Z",
+      "fechaFin": "2023-12-01T11:00:00.000Z"
+  },
+  "configuracionProgramada": {
+      "tiempoTotalMin": 60,
+      "permitirNavegacion": true,
+      "envioAutomatico": true
+  }
+}  
+*/
 const mongoose = require('mongoose');
 const tipos = require('../utils/constants');
 // --- 0. Sub-esquema para las Respuestas del Alumno (DEBE IR PRIMERO) ---
@@ -16,7 +46,12 @@ const RespuestaAlumnoSchema = new mongoose.Schema({
 
 // --- 1. Sub-esquema para cada Jugador (USA el esquema anterior) ---
 const JugadorSchema = new mongoose.Schema({
-    idAlumno: { type: String, required: true },
+    idAlumno: {
+        type: String,
+        ref: 'usuarios',
+        required: true
+    },
+    
     nombreAlumno: { type: String },
 
     estado: {
@@ -38,8 +73,8 @@ const JugadorSchema = new mongoose.Schema({
     respuestas: [RespuestaAlumnoSchema]
 }, { _id: false });
 
-// --- 2. Sub-esquema para Configuración ---
-const ConfiguracionSchema = new mongoose.Schema({
+// --- 2. Sub-esquema para Configuración (Para tipoCuestionario= "en_vivo") ---
+const ConfiguracionEnVivoSchema = new mongoose.Schema({
     tiempoPorPreguntaSeg: { type: Number, default: 20 },
     mostrarRanking: { type: Boolean, default: true },
     mezclarPreguntas: { type: Boolean, default: true },
@@ -49,8 +84,17 @@ const ConfiguracionSchema = new mongoose.Schema({
         enum: ["velocidad_precision", "solo_acierto", "texto"],//!Algoritmo
         default: 'velocidad_precision'
     },
+
+    tiempoTotalMin: { type: Number },//!Tendra un tiempo total?
+    //envioAutomatico: { type: Boolean, default: true }//!Tendra envio automatico?
+}, { _id: false });
+
+// --- 2. Subdocumento Programacion (para tipoCuestionario = "examen") ---
+const ConfiguracionExamenSchema = new mongoose.Schema({
+    programadaPara: { type: Date },
+    finEn: { type: Date },
     tiempoTotalMin: { type: Number },
-    permitirNavegacion: { type: Boolean, default: false },
+    permitirNavegacion: { type: Boolean, default: true },
     envioAutomatico: { type: Boolean, default: true }
 }, { _id: false });
 
@@ -59,10 +103,17 @@ const StatsSchema = new mongoose.Schema({
     respuestasTotales: { type: Number, default: 0 },
     aciertosGlobales: { type: Number, default: 0 },
     fallosGlobales: { type: Number, default: 0 },
+    numParticipantes: { type: Number, default: 0 },
+    preguntaActual: { type: Number, default: 0 }, //!Solo en_Vivo  
 }, { _id: false });
 
+// --- 4. Sub-esquema para Fechas de Apoyo a MODO EXAMEN U EN VIVO ---
+const FechasSchema = new mongoose.Schema({
+    creadaEn: { type: Date, default: Date.now },
+    finalizadaEn: { type: Date },
+}, { _id: false });
 
-// --- 4. Esquema Principal de la Partida (USA todos los anteriores) ---
+// --- 5. Esquema Principal de la Partida (USA todos los anteriores) ---
 const PartidaSchema = new mongoose.Schema({
     // --- Referencia a Colección Padre (Cuestionario) ---
     idCuestionario: {
@@ -71,15 +122,21 @@ const PartidaSchema = new mongoose.Schema({
         required: true
     },
 
-    idProfesor: { type: String, required: true },
-    pin: { type: String, required: true, unique: true },
-
-    // --- Control General ---
-    modo: {
+    idProfesor: {
         type: String,
-        enum: Object.values(tipos.MODOS_JUEGO),
+        ref: 'usuarios',
         required: true
     },
+
+    pin: { type: String, required: true, unique: true },
+
+    tipoPartida: {
+        type: String,
+        enum: Object.values(tipos.MODOS_JUEGO),
+        default: tipos.MODOS_JUEGO.EN_VIVO,
+        required: true
+    },
+
     estadoPartida: {
         type: String,
         enum: Object.values(tipos.ESTADOS_PARTIDA),
@@ -91,19 +148,18 @@ const PartidaSchema = new mongoose.Schema({
         enum: Object.values(tipos.TIPO_LOBBY),
         default: tipos.TIPO_LOBBY.PUBLICA,
     },
+    fechas: { type: FechasSchema },
+    configuracionEnvivo: {
+        type: ConfiguracionEnVivoSchema,
+        default: () => ({}) // Se inicializa con los valores por defecto del subesquema
+    },
 
-    numParticipantes: { type: Number, default: 0 },
-
-    configuracion: { type: ConfiguracionSchema, required: true },
+    configuracionExamen: { type: ConfiguracionExamenSchema },
 
     stats: { type: StatsSchema, default: {} }, // Inicializado como objeto vacío
 
-    finEn: { type: Date },
-
-    preguntaActual: { type: Number, default: 0 }, //!Solo en_Vivo
     jugadores: [JugadorSchema], // ARRAY DE JUGADORES EMBEBIDOS
 
-    creadaEn: { type: Date, default: Date.now }
 }, {
     collection: 'partida'
 });
