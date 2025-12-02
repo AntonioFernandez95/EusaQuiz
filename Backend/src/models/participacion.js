@@ -1,38 +1,38 @@
 const mongoose = require('mongoose');
 const tipos = require('../utils/constants');
 // --- Sub-esquema para las Respuestas (Embebido) ---
-// El PDF indica embeber respuestas porque solo tienen sentido dentro de esta participación [cite: 328]
+// El PDF indica embeber respuestas porque solo tienen sentido dentro de esta participación 
 const RespuestaSchema = new mongoose.Schema({
     idPregunta: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Pregunta',
+        ref: 'preguntas',
         required: true
-    }, // [cite: 345]
+    },
 
     opcionesMarcadas: {
         type: [Number],
         default: []
-    }, // Array de índices. Vacío si no contesta [cite: 346, 349]
+    }, // Array de índices. Vacío si no contesta 
 
     esCorrecta: {
         type: Boolean,
         required: true
-    }, // [cite: 350]
+    },
 
     tiempoRespuestaSeg: {
         type: Number,
         default: 0
-    }, // Clave en modo 'en_vivo', opcional en 'programada' [cite: 351, 352]
+    }, // Clave en modo 'en_vivo', opcional en 'programada' 
 
     puntosObtenidos: {
         type: Number,
         default: 0
-    }, // Puntos específicos de esta pregunta [cite: 353]
+    }, // Puntos específicos de esta pregunta 
 
     respondidaEn: {
         type: Date,
         default: Date.now
-    } // Momento exacto [cite: 354]
+    } // Momento exacto en el que se responde
 }, { _id: false });
 
 // --- Esquema Principal de Participación ---
@@ -44,12 +44,11 @@ const ParticipacionSchema = new mongoose.Schema({
         required: true
     }, // Referencia para saber en qué sala está y sacar rankings 
 
-    idAlumno: {
-        type: String, // Usamos String si tu ID de usuario es externo (idPortal), o ObjectId si es interno de Mongo.
-        // El PDF menciona referencia por ObjectId en pág 1 , ajusta según tu Auth.
-        required: true,
-        index: true
-    }, // Necesario para estadísticas por alumno  
+    idAlumno: {//!ATENCION
+        type: String,
+        ref: 'usuarios',
+        required: true
+    },
 
     // --- Estado y Modalidad ---
     estado: {
@@ -58,11 +57,12 @@ const ParticipacionSchema = new mongoose.Schema({
         default: tipos.ESTADOS_PARTIDA.ACTIVA,
     },
 
-    modo: {
+    tipoPartida: {
         type: String,
-        enum: Object.values(tipos.MODOS_JUEGO), //!PROGRAMACION?
+        enum: Object.values(tipos.MODOS_JUEGO),
+        default: tipos.MODOS_JUEGO.EN_VIVO,
         required: true
-    }, // Copia del tipo de partida  
+    },
 
     // --- Métricas Globales (Resumen) ---
     puntuacionTotal: { type: Number, default: 0 }, // Suma final  
@@ -81,7 +81,7 @@ const ParticipacionSchema = new mongoose.Schema({
     respuestas: [RespuestaSchema] // Lista con TODO lo respondido  
 
 }, {
-    timestamps: false // Gestionamos inicioEn y finEn manualmente según PDF
+    timestamps: false 
 });
 
 // Índice compuesto para asegurar que un alumno no tenga duplicados en la misma partida activa

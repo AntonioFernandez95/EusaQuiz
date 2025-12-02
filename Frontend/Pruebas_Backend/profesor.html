@@ -1,246 +1,441 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Panel Profesor - EusaQuiz</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; background: #f4f4f4; text-align: center; }
-        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .hidden { display: none; }
-        
-        input, button { padding: 10px; margin: 5px; font-size: 1rem; }
-        button { cursor: pointer; background: #333; color: white; border: none; border-radius: 5px; }
-        button:hover { opacity: 0.9; }
+      body {
+        font-family: 'Segoe UI', sans-serif;
+        padding: 20px;
+        max-width: 1000px;
+        margin: 0 auto;
+        background: #f4f4f4;
+        text-align: center;
+      }
+      .card {
+        background: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+      .hidden {
+        display: none;
+      }
 
-        /* TIMER Y GRÁFICA EN VIVO */
-        .timer-circle { width: 80px; height: 80px; border-radius: 50%; background: purple; color: white; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; margin: 0 auto 20px auto; border: 5px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
-        .grafica-container { display: flex; justify-content: space-around; align-items: flex-end; height: 350px; margin-top: 50px; border-bottom: 2px solid #ccc; padding-bottom: 5px; }
-        .barra-columna { width: 20%; max-width: 100px; transition: height 1s ease-out; position: relative; border-radius: 5px 5px 0 0; display: flex; align-items: flex-end; justify-content: center; }
-        .barra-label { position: absolute; bottom: -60px; color: #333; font-size: 0.8em; width: 120%; line-height: 1.2; word-wrap: break-word; }
-        .count-badge { position: absolute; top: -35px; width: 100%; text-align: center; font-size: 1.5em; font-weight: bold; color: #333; background: rgba(255,255,255,0.8); border-radius: 5px; padding: 2px 0; }
-        
-        .b-0 { background: #e21b3c; } .b-1 { background: #1368ce; } 
-        .b-2 { background: #d89e00; } .b-3 { background: #26890c; }
-        
-        /* PODIO */
-        .podio-box { background: gold; padding: 15px; margin: 10px; border-radius: 10px; font-weight: bold; font-size: 1.2em; color: #5e4802; }
+      input,
+      button {
+        padding: 10px;
+        margin: 5px;
+        font-size: 1rem;
+      }
+      button {
+        cursor: pointer;
+        background: #333;
+        color: white;
+        border: none;
+        border-radius: 5px;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
 
-        /* ESTILOS REPORTE DETALLADO (NUEVO) */
-        .detalle-pregunta { text-align: left; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #fdfdfd; }
-        .detalle-titulo { font-weight: bold; font-size: 1.1em; margin-bottom: 10px; color: #333; }
-        .opcion-row { display: flex; align-items: center; margin: 5px 0; padding: 5px; border-radius: 5px; }
-        .barra-mini { height: 10px; border-radius: 5px; margin-right: 10px; min-width: 5px; }
-        .votos-badge { font-weight: bold; margin-left: auto; background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.9em; }
-        .es-correcta { border: 2px solid green; background: #eaffea; }
+      /* TIMER Y GRÁFICA EN VIVO */
+      .timer-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: purple;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 30px;
+        font-weight: bold;
+        margin: 0 auto 20px auto;
+        border: 5px solid #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      }
+      .grafica-container {
+        display: flex;
+        justify-content: space-around;
+        align-items: flex-end;
+        height: 350px;
+        margin-top: 50px;
+        border-bottom: 2px solid #ccc;
+        padding-bottom: 5px;
+      }
+      .barra-columna {
+        width: 20%;
+        max-width: 100px;
+        transition: height 1s ease-out;
+        position: relative;
+        border-radius: 5px 5px 0 0;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+      .barra-label {
+        position: absolute;
+        bottom: -60px;
+        color: #333;
+        font-size: 0.8em;
+        width: 120%;
+        line-height: 1.2;
+        word-wrap: break-word;
+      }
+      .count-badge {
+        position: absolute;
+        top: -35px;
+        width: 100%;
+        text-align: center;
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #333;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 5px;
+        padding: 2px 0;
+      }
+
+      .b-0 {
+        background: #e21b3c;
+      }
+      .b-1 {
+        background: #1368ce;
+      }
+      .b-2 {
+        background: #d89e00;
+      }
+      .b-3 {
+        background: #26890c;
+      }
+
+      /* PODIO */
+      .podio-box {
+        background: gold;
+        padding: 15px;
+        margin: 10px;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 1.2em;
+        color: #5e4802;
+      }
+
+      /* ESTILOS REPORTE DETALLADO (NUEVO) */
+      .detalle-pregunta {
+        text-align: left;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: #fdfdfd;
+      }
+      .detalle-titulo {
+        font-weight: bold;
+        font-size: 1.1em;
+        margin-bottom: 10px;
+        color: #333;
+      }
+      .opcion-row {
+        display: flex;
+        align-items: center;
+        margin: 5px 0;
+        padding: 5px;
+        border-radius: 5px;
+      }
+      .barra-mini {
+        height: 10px;
+        border-radius: 5px;
+        margin-right: 10px;
+        min-width: 5px;
+      }
+      .votos-badge {
+        font-weight: bold;
+        margin-left: auto;
+        background: #eee;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.9em;
+      }
+      .es-correcta {
+        border: 2px solid green;
+        background: #eaffea;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>👨‍🏫 Panel del Profesor</h1>
 
     <div id="setupPartida" class="card">
-        <h2>1. Configurar Partida</h2>
-        <input type="text" id="idCuestionario" placeholder="ID Cuestionario" style="width: 300px;">
-        <input type="text" id="idProfesor" value="PROFE_01">
-        <button onclick="crearPartida()">Crear Sala</button>
+      <h2>1. Configurar Partida</h2>
+      <input
+        type="text"
+        id="idCuestionario"
+        placeholder="ID Cuestionario"
+        style="width: 300px"
+      />
+      <input type="text" id="idProfesor" value="PROFE_01" />
+      <button onclick="crearPartida()">Crear Sala</button>
     </div>
 
     <div id="lobbyPartida" class="card hidden">
-        <h2>Sala de Espera</h2>
-        <h1 style="font-size: 4em; margin: 10px;">PIN: <span id="pinDisplay">---</span></h1>
-        <p>Jugadores: <span id="contadorJugadores">0</span></p>
-        <div id="listaJugadores"></div>
-        <br>
-        <button onclick="iniciarPartida()" style="background: green; font-size: 1.2em; padding: 15px 30px;">▶ INICIAR JUEGO</button>
+      <h2>Sala de Espera</h2>
+      <h1 style="font-size: 4em; margin: 10px">
+        PIN: <span id="pinDisplay">---</span>
+      </h1>
+      <p>Jugadores: <span id="contadorJugadores">0</span></p>
+      <div id="listaJugadores"></div>
+      <br />
+      <button
+        onclick="iniciarPartida()"
+        style="background: green; font-size: 1.2em; padding: 15px 30px"
+      >
+        ▶ INICIAR JUEGO
+      </button>
     </div>
 
     <div id="dashboardJuego" class="card hidden">
-        <div class="timer-circle" id="timerVisual">--</div>
-        <h2 style="color: #666;">Pregunta <span id="numPreguntaDisplay">0</span></h2>
-        <h1 id="textoPreguntaProfe" style="font-size: 2em;">...</h1>
+      <div class="timer-circle" id="timerVisual">--</div>
+      <h2 style="color: #666">
+        Pregunta <span id="numPreguntaDisplay">0</span>
+      </h2>
+      <h1 id="textoPreguntaProfe" style="font-size: 2em">...</h1>
 
-        <div id="contenedorGrafica" class="grafica-container hidden">
-            <div class="barra-columna b-0" id="bar-0" style="height: 0%"><span class="count-badge">0</span><span class="barra-label" id="label-0">A</span></div>
-            <div class="barra-columna b-1" id="bar-1" style="height: 0%"><span class="count-badge">0</span><span class="barra-label" id="label-1">B</span></div>
-            <div class="barra-columna b-2" id="bar-2" style="height: 0%"><span class="count-badge">0</span><span class="barra-label" id="label-2">C</span></div>
-            <div class="barra-columna b-3" id="bar-3" style="height: 0%"><span class="count-badge">0</span><span class="barra-label" id="label-3">D</span></div>
+      <div id="contenedorGrafica" class="grafica-container hidden">
+        <div class="barra-columna b-0" id="bar-0" style="height: 0%">
+          <span class="count-badge">0</span
+          ><span class="barra-label" id="label-0">A</span>
         </div>
+        <div class="barra-columna b-1" id="bar-1" style="height: 0%">
+          <span class="count-badge">0</span
+          ><span class="barra-label" id="label-1">B</span>
+        </div>
+        <div class="barra-columna b-2" id="bar-2" style="height: 0%">
+          <span class="count-badge">0</span
+          ><span class="barra-label" id="label-2">C</span>
+        </div>
+        <div class="barra-columna b-3" id="bar-3" style="height: 0%">
+          <span class="count-badge">0</span
+          ><span class="barra-label" id="label-3">D</span>
+        </div>
+      </div>
     </div>
 
     <div id="pantallaFinal" class="card hidden">
-        <h1>🏆 CLASIFICACIÓN FINAL 🏆</h1>
-        <div id="rankingFinal"></div>
-        <br>
-        <div style="display: flex; justify-content: center; gap: 10px;">
-            <button onclick="verDetalles()" style="background: #007bff;">📊 Ver Detalles</button>
-            <button onclick="location.reload()" style="background: #333;">🔄 Nueva Partida</button>
-        </div>
+      <h1>🏆 CLASIFICACIÓN FINAL 🏆</h1>
+      <div id="rankingFinal"></div>
+      <br />
+      <div style="display: flex; justify-content: center; gap: 10px">
+        <button onclick="verDetalles()" style="background: #007bff">
+          📊 Ver Detalles
+        </button>
+        <button onclick="location.reload()" style="background: #333">
+          🔄 Nueva Partida
+        </button>
+      </div>
     </div>
 
     <div id="pantallaDetalles" class="card hidden">
-        <h2>📊 Informe de la Partida</h2>
-        <div id="contenedorDetalles"></div>
-        <br>
-        <button onclick="volverAlPodio()">⬅ Volver al Podio</button>
+      <h2>📊 Informe de la Partida</h2>
+      <div id="contenedorDetalles"></div>
+      <br />
+      <button onclick="volverAlPodio()">⬅ Volver al Podio</button>
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000/api';
-        let socket = null;
-        let idPartidaActual = null;
-        let timerInterval = null;
-        let opcionesActuales = []; 
-        let reporteGlobal = []; // AQUÍ GUARDAMOS LOS DATOS FINALES
+      const API_URL = 'http://localhost:3000/api'
+      let socket = null
+      let idPartidaActual = null
+      let timerInterval = null
+      let opcionesActuales = []
+      let reporteGlobal = [] // AQUÍ GUARDAMOS LOS DATOS FINALES
 
-        async function crearPartida() {
-            const idCuestionario = document.getElementById('idCuestionario').value;
-            const idProfesor = document.getElementById('idProfesor').value;
-            try {
-                const res = await fetch(`${API_URL}/partidas`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idCuestionario, idProfesor })
-                });
-                const data = await res.json();
-                if (data.ok) {
-                    idPartidaActual = data.data.id;
-                    document.getElementById('setupPartida').classList.add('hidden');
-                    document.getElementById('lobbyPartida').classList.remove('hidden');
-                    document.getElementById('pinDisplay').innerText = data.data.pin;
-                    conectarSocket(data.data.pin);
-                } else { alert(data.mensaje); }
-            } catch(e) { console.error(e); }
+      async function crearPartida() {
+        const idCuestionario = document.getElementById('idCuestionario').value
+        const idProfesor = document.getElementById('idProfesor').value // OJO: Debe ser el _id de Mongo
+
+        // AHORA DEBES ENVIAR LA CONFIGURACIÓN
+        const bodyData = {
+          idCuestionario,
+          idProfesor,
+          tipoPartida: 'en_vivo', // Hardcodeado para esta prueba
+          modoAcceso: 'publica',
+          configuracionEnvivo: {
+            tiempoPorPreguntaSeg: 20, // Puedes poner un input en el HTML para esto
+            mostrarRanking: true,
+            modoCalificacion: 'velocidad_precision'
+          }
         }
 
-        function conectarSocket(pin) {
-            socket = io('http://localhost:3000');
-            socket.on('connect', () => socket.emit('join_room', pin));
-
-            socket.on('nuevo_jugador', (data) => {
-                document.getElementById('contadorJugadores').innerText = data.total;
-                const span = document.createElement('span');
-                span.innerText = ` ${data.nombre} |`;
-                document.getElementById('listaJugadores').appendChild(span);
-            });
-
-            socket.on('nueva_pregunta', (data) => {
-                document.getElementById('lobbyPartida').classList.add('hidden');
-                document.getElementById('dashboardJuego').classList.remove('hidden');
-                document.getElementById('contenedorGrafica').classList.add('hidden'); 
-                
-                opcionesActuales = data.opciones; 
-
-                for(let i=0; i<4; i++) {
-                    const b = document.getElementById(`bar-${i}`);
-                    b.style.height = '0%'; b.style.opacity = '1'; b.style.border = "none";
-                    b.querySelector('.count-badge').textContent = '0';
-                    document.getElementById(`label-${i}`).textContent = ""; 
-                }
-
-                document.getElementById('numPreguntaDisplay').innerText = data.numeroPregunta + "/" + data.totalPreguntas;
-                document.getElementById('textoPreguntaProfe').innerText = data.textoPregunta;
-                iniciarTimer(data.tiempoLimite);
-            });
-
-            socket.on('tiempo_agotado', (data) => {
-                clearInterval(timerInterval);
-                document.getElementById('timerVisual').innerText = "0";
-                document.getElementById('contenedorGrafica').classList.remove('hidden');
-
-                if (data.stats) {
-                    const maxVal = Math.max(...data.stats) || 1; 
-                    data.stats.forEach((valor, index) => {
-                        const barra = document.getElementById(`bar-${index}`);
-                        const altura = (valor / maxVal) * 100;
-                        barra.style.height = `${altura}%`;
-                        barra.querySelector('.count-badge').textContent = valor;
-                        const label = document.getElementById(`label-${index}`);
-                        if (opcionesActuales[index]) label.innerText = opcionesActuales[index].textoOpcion;
-
-                        if (index === data.correcta) {
-                            barra.style.opacity = '1'; barra.style.border = "3px solid black";
-                            label.style.color = "green"; label.style.fontWeight = "bold";
-                        } else {
-                            barra.style.opacity = '0.3'; label.style.color = "#666";
-                        }
-                    });
-                }
-            });
-
-            // FIN PARTIDA - RECIBIMOS EL REPORTE
-            socket.on('fin_partida', (data) => {
-                clearInterval(timerInterval);
-                document.getElementById('dashboardJuego').classList.add('hidden');
-                document.getElementById('pantallaFinal').classList.remove('hidden');
-                
-                // 1. Mostrar Podio
-                let html = '';
-                data.ranking.forEach((jugador, i) => {
-                    html += `<div class="podio-box">#${i+1} ${jugador.nombre} - ${jugador.puntos} pts</div>`;
-                });
-                document.getElementById('rankingFinal').innerHTML = html;
-
-                // 2. Guardar Reporte para el botón "Detalles"
-                reporteGlobal = data.reporte || [];
-            });
+        try {
+          const res = await fetch(`${API_URL}/partidas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyData) // Enviamos el objeto completo
+          })
+          const data = await res.json()
+          if (data.ok) {
+            idPartidaActual = data.data.id
+            document.getElementById('setupPartida').classList.add('hidden')
+            document.getElementById('lobbyPartida').classList.remove('hidden')
+            document.getElementById('pinDisplay').innerText = data.data.pin
+            conectarSocket(data.data.pin)
+          } else {
+            alert(data.mensaje)
+          }
+        } catch (e) {
+          console.error(e)
         }
+      }
 
-        async function iniciarPartida() {
-            if(!idPartidaActual) return;
-            await fetch(`${API_URL}/partidas/iniciar/${idPartidaActual}`, { method: 'PUT' });
-        }
+      function conectarSocket(pin) {
+        socket = io('http://localhost:3000')
+        socket.on('connect', () => socket.emit('join_room', pin))
 
-        function iniciarTimer(segundos) {
-            clearInterval(timerInterval);
-            let restante = segundos;
-            document.getElementById('timerVisual').innerText = restante;
-            timerInterval = setInterval(() => {
-                restante--;
-                document.getElementById('timerVisual').innerText = restante;
-                if(restante <= 0) clearInterval(timerInterval);
-            }, 1000);
-        }
+        socket.on('nuevo_jugador', data => {
+          document.getElementById('contadorJugadores').innerText = data.total
+          const span = document.createElement('span')
+          span.innerText = ` ${data.nombre} |`
+          document.getElementById('listaJugadores').appendChild(span)
+        })
 
-        // --- FUNCIONES PARA VER DETALLES ---
-        function verDetalles() {
-            document.getElementById('pantallaFinal').classList.add('hidden');
-            document.getElementById('pantallaDetalles').classList.remove('hidden');
-            
-            const contenedor = document.getElementById('contenedorDetalles');
-            contenedor.innerHTML = '';
+        socket.on('nueva_pregunta', data => {
+          document.getElementById('lobbyPartida').classList.add('hidden')
+          document.getElementById('dashboardJuego').classList.remove('hidden')
+          document.getElementById('contenedorGrafica').classList.add('hidden')
 
-            reporteGlobal.forEach((pregunta, index) => {
-                const totalVotos = pregunta.stats.reduce((a,b) => a+b, 0) || 1; // Evitar div 0
-                
-                let htmlPregunta = `
+          opcionesActuales = data.opciones
+
+          for (let i = 0; i < 4; i++) {
+            const b = document.getElementById(`bar-${i}`)
+            b.style.height = '0%'
+            b.style.opacity = '1'
+            b.style.border = 'none'
+            b.querySelector('.count-badge').textContent = '0'
+            document.getElementById(`label-${i}`).textContent = ''
+          }
+
+          document.getElementById('numPreguntaDisplay').innerText =
+            data.numeroPregunta + '/' + data.totalPreguntas
+          document.getElementById('textoPreguntaProfe').innerText =
+            data.textoPregunta
+          iniciarTimer(data.tiempoLimite)
+        })
+
+        socket.on('tiempo_agotado', data => {
+          clearInterval(timerInterval)
+          document.getElementById('timerVisual').innerText = '0'
+          document
+            .getElementById('contenedorGrafica')
+            .classList.remove('hidden')
+
+          if (data.stats) {
+            const maxVal = Math.max(...data.stats) || 1
+            data.stats.forEach((valor, index) => {
+              const barra = document.getElementById(`bar-${index}`)
+              const altura = (valor / maxVal) * 100
+              barra.style.height = `${altura}%`
+              barra.querySelector('.count-badge').textContent = valor
+              const label = document.getElementById(`label-${index}`)
+              if (opcionesActuales[index])
+                label.innerText = opcionesActuales[index].textoOpcion
+
+              if (index === data.correcta) {
+                barra.style.opacity = '1'
+                barra.style.border = '3px solid black'
+                label.style.color = 'green'
+                label.style.fontWeight = 'bold'
+              } else {
+                barra.style.opacity = '0.3'
+                label.style.color = '#666'
+              }
+            })
+          }
+        })
+
+        // FIN PARTIDA - RECIBIMOS EL REPORTE
+        socket.on('fin_partida', data => {
+          clearInterval(timerInterval)
+          document.getElementById('dashboardJuego').classList.add('hidden')
+          document.getElementById('pantallaFinal').classList.remove('hidden')
+
+          // 1. Mostrar Podio
+          let html = ''
+          data.ranking.forEach((jugador, i) => {
+            html += `<div class="podio-box">#${i + 1} ${jugador.nombre} - ${
+              jugador.puntos
+            } pts</div>`
+          })
+          document.getElementById('rankingFinal').innerHTML = html
+
+          // 2. Guardar Reporte para el botón "Detalles"
+          reporteGlobal = data.reporte || []
+        })
+      }
+
+      async function iniciarPartida() {
+        if (!idPartidaActual) return
+        await fetch(`${API_URL}/partidas/iniciar/${idPartidaActual}`, {
+          method: 'PUT'
+        })
+      }
+
+      function iniciarTimer(segundos) {
+        clearInterval(timerInterval)
+        let restante = segundos
+        document.getElementById('timerVisual').innerText = restante
+        timerInterval = setInterval(() => {
+          restante--
+          document.getElementById('timerVisual').innerText = restante
+          if (restante <= 0) clearInterval(timerInterval)
+        }, 1000)
+      }
+
+      // --- FUNCIONES PARA VER DETALLES ---
+      function verDetalles() {
+        document.getElementById('pantallaFinal').classList.add('hidden')
+        document.getElementById('pantallaDetalles').classList.remove('hidden')
+
+        const contenedor = document.getElementById('contenedorDetalles')
+        contenedor.innerHTML = ''
+
+        reporteGlobal.forEach((pregunta, index) => {
+          const totalVotos = pregunta.stats.reduce((a, b) => a + b, 0) || 1 // Evitar div 0
+
+          let htmlPregunta = `
                     <div class="detalle-pregunta">
-                        <div class="detalle-titulo">P${index+1}: ${pregunta.textoPregunta}</div>
-                `;
+                        <div class="detalle-titulo">P${index + 1}: ${
+            pregunta.textoPregunta
+          }</div>
+                `
 
-                pregunta.opciones.forEach((opcion, i) => {
-                    const votos = pregunta.stats[i] || 0;
-                    const porcentaje = (votos / totalVotos) * 100;
-                    const esCorrectaClass = (i === pregunta.correcta) ? 'es-correcta' : '';
-                    const colorBarra = ['#e21b3c', '#1368ce', '#d89e00', '#26890c'][i % 4];
+          pregunta.opciones.forEach((opcion, i) => {
+            const votos = pregunta.stats[i] || 0
+            const porcentaje = (votos / totalVotos) * 100
+            const esCorrectaClass = i === pregunta.correcta ? 'es-correcta' : ''
+            const colorBarra = ['#e21b3c', '#1368ce', '#d89e00', '#26890c'][
+              i % 4
+            ]
 
-                    htmlPregunta += `
+            htmlPregunta += `
                         <div class="opcion-row ${esCorrectaClass}">
                             <div class="barra-mini" style="width: ${porcentaje}%; background: ${colorBarra}; min-width: 5px;"></div>
                             <span>${opcion.textoOpcion}</span>
                             <span class="votos-badge">${votos} votos</span>
                         </div>
-                    `;
-                });
+                    `
+          })
 
-                htmlPregunta += `</div>`;
-                contenedor.innerHTML += htmlPregunta;
-            });
-        }
+          htmlPregunta += `</div>`
+          contenedor.innerHTML += htmlPregunta
+        })
+      }
 
-        function volverAlPodio() {
-            document.getElementById('pantallaDetalles').classList.add('hidden');
-            document.getElementById('pantallaFinal').classList.remove('hidden');
-        }
+      function volverAlPodio() {
+        document.getElementById('pantallaDetalles').classList.add('hidden')
+        document.getElementById('pantallaFinal').classList.remove('hidden')
+      }
     </script>
-</body>
+  </body>
 </html>

@@ -36,7 +36,7 @@ module.exports = {
         CAMPUS_CAMARA: 'Campus Camara',
         EUSA: 'EUSA',
     },
-    CURSOS: {
+    CURSOS: {//!METER MAS CURSOS (TODOS XD)
         DAM1: '1 DAM',
         DAM2: '2 DAM',
         NULL: null,

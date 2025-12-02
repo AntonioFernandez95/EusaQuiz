@@ -1,3 +1,13 @@
+/*
+{
+  "idPortal": "PROFE_01",
+  "nombre": "Profesor Oak",
+  "email": "oak@pokedex.com",
+  "rol": "profesor",
+  "curso": "1 DAM",  
+  "centro": "EUSA"
+}
+  */
 const mongoose = require('mongoose');
 const tipos = require('../utils/constants');
 const UsuarioSchema = new mongoose.Schema({
@@ -29,7 +39,7 @@ const UsuarioSchema = new mongoose.Schema({
     },
     curso: {
         type: String,
-        enum: Object.values(tipos.CURSOS),//!METER MAS CURSOS (TODOS XD)
+        enum: Object.values(tipos.CURSOS),
         default: null,
         required: true
     },
