@@ -445,7 +445,13 @@ exports.eliminarPartida = async (req, res) => {
 
 // Auxiliar Ranking
 function obtenerRanking(jugadores) {
-    return jugadores.sort((a, b) => b.puntuacionTotal - a.puntuacionTotal).slice(0, 5);
+    return jugadores
+        .sort((a, b) => b.puntuacionTotal - a.puntuacionTotal) // Ordenar por puntuación
+        .slice(0, 5) // Coger el Top 5
+        .map(j => ({
+            nombre: j.nombreAlumno,
+            puntos: j.puntuacionTotal || 0 // <--- AQUÍ ESTÁ EL ARREGLO (Mapeo + valor por defecto)
+        }));
 }
 // Función auxiliar para centralizar el cierre de partida
 async function cerrarPartidaLogic(partida, io) {
@@ -454,27 +460,51 @@ async function cerrarPartidaLogic(partida, io) {
     partida.finEn = Date.now();
     await partida.save();
 
-    // 2. Cerrar todas las participaciones asociadas (Pasar estado a 'finalizada')
-    // Esto es importante para que en el historial salgan como exámenes terminados
+    // 2. Cerrar participaciones
     try {
         await Participacion.updateMany(
             { idPartida: partida._id },
-            {
-                $set: {
-                    estado: 'finalizada',
-                    finEn: Date.now()
-                }
-            }
+            { $set: { estado: 'finalizada', finEn: Date.now() } }
         );
-    } catch (error) {
-        console.error("Error cerrando participaciones:", error);
-    }
+    } catch (error) { console.error("Error cerrando participaciones:", error); }
 
-    // 3. Emitir evento final
+    // --- 3. GENERAR REPORTE DETALLADO (NUEVO) ---
+    let reporteGlobal = [];
+    try {
+        // A. Traemos todas las preguntas para tener los textos
+        const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
+        
+        // B. Traemos todas las participaciones (respuestas de los alumnos)
+        const participaciones = await Participacion.find({ idPartida: partida._id });
+
+        // C. Construimos el reporte pregunta a pregunta
+        reporteGlobal = preguntas.map(pregunta => {
+            const stats = [0, 0, 0, 0]; // Contadores [A, B, C, D]
+
+            participaciones.forEach(p => {
+                const r = p.respuestas.find(resp => resp.idPregunta.toString() === pregunta._id.toString());
+                if (r && r.opcionesMarcadas.length > 0) {
+                    const idx = r.opcionesMarcadas[0];
+                    if (stats[idx] !== undefined) stats[idx]++;
+                }
+            });
+
+            return {
+                textoPregunta: pregunta.textoPregunta,
+                opciones: pregunta.opciones, // Para pintar los textos de las respuestas
+                stats: stats, // Ej: [5, 0, 2, 0]
+                correcta: pregunta.opciones.findIndex(op => op.esCorrecta)
+            };
+        });
+
+    } catch (error) { console.error("Error generando reporte:", error); }
+
+    // 4. Emitir evento final CON EL REPORTE
     if (io) {
         io.to(partida.pin).emit('fin_partida', {
             mensaje: 'Juego terminado',
-            ranking: obtenerRanking(partida.jugadores)
+            ranking: obtenerRanking(partida.jugadores),
+            reporte: reporteGlobal // <--- ENVIAMOS LOS DATOS AQUÍ
         });
     }
 }
@@ -483,22 +513,17 @@ function generarPinUnico() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// --- Función auxiliar del ciclo automático ---
+// --- FUNCIÓN DEL CICLO AUTOMÁTICO (EN VIVO) ---
 async function gestionarCicloPregunta(partidaDoc, indicePregunta, io) {
     const preguntas = await Pregunta.find({ idCuestionario: partidaDoc.idCuestionario }).sort({ ordenPregunta: 1 });
 
     // FIN DEL JUEGO
-    // FIN DEL JUEGO
     if (indicePregunta >= preguntas.length) {
-
-        // Delegamos TODA la responsabilidad a la función auxiliar
-        // Ella se encarga de cambiar estado, guardar fecha, actualizar alumnos y avisar por Socket.
         await cerrarPartidaLogic(partidaDoc, io);
-
         return;
     }
 
-    // LANZAR PREGUNTA
+    // DATOS DE LA PREGUNTA ACTUAL
     const preguntaActual = preguntas[indicePregunta];
     const tiempo = preguntaActual.tiempoLimiteSeg || 20;
 
@@ -510,6 +535,7 @@ async function gestionarCicloPregunta(partidaDoc, indicePregunta, io) {
         puntos: preguntaActual.puntuacionMax,
         numeroPregunta: indicePregunta + 1,
         totalPreguntas: preguntas.length,
+        // Enviamos las opciones para que el profe pueda mostrar el texto luego
         opciones: preguntaActual.opciones.map(op => ({
             idOpcion: op._id,
             textoOpcion: op.textoOpcion
@@ -518,15 +544,44 @@ async function gestionarCicloPregunta(partidaDoc, indicePregunta, io) {
 
     io.to(partidaDoc.pin).emit('nueva_pregunta', datosPregunta);
 
-    // PROGRAMAR EL FIN DE LA PREGUNTA
+    // TEMPORIZADOR
     const timeoutId = setTimeout(async () => {
-        io.to(partidaDoc.pin).emit('tiempo_agotado', { mensaje: 'Tiempo agotado. Resultados...' });
 
-        // Pausa de 5s antes de la siguiente
+        // 1. IMPORTANTE: Consultar la colección PARTICIPACION, no Partida
+        // Buscamos todas las participaciones de esta partida
+        const participaciones = await Participacion.find({ idPartida: partidaDoc._id });
+
+        // 2. Calcular Estadísticas
+        const statsPregunta = [0, 0, 0, 0];
+
+        participaciones.forEach(p => {
+            // Buscamos si este alumno respondió a ESTA pregunta específica
+            const respuesta = p.respuestas.find(r => r.idPregunta.toString() === preguntaActual._id.toString());
+
+            if (respuesta && respuesta.opcionesMarcadas.length > 0) {
+                const indiceMarcado = respuesta.opcionesMarcadas[0];
+                if (statsPregunta[indiceMarcado] !== undefined) {
+                    statsPregunta[indiceMarcado]++;
+                }
+            }
+        });
+
+        // 3. Identificar correcta
+        const indiceCorrecto = preguntaActual.opciones.findIndex(op => op.esCorrecta);
+
+        // Recargamos partida solo para el ranking (puntuaciones totales)
+        const partidaParaRanking = await Partida.findById(partidaDoc._id);
+
+        io.to(partidaDoc.pin).emit('tiempo_agotado', {
+            mensaje: 'Tiempo agotado',
+            stats: statsPregunta,
+            correcta: indiceCorrecto,
+            rankingParcial: obtenerRanking(partidaParaRanking.jugadores)
+        });
+
         setTimeout(async () => {
-            const partidaActualizada = await Partida.findById(partidaDoc._id);
-            gestionarCicloPregunta(partidaActualizada, indicePregunta + 1, io);
-        }, 5000);
+            gestionarCicloPregunta(partidaParaRanking, indicePregunta + 1, io);
+        }, 8000);
 
     }, tiempo * 1000);
 

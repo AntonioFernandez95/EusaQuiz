@@ -85,11 +85,8 @@ exports.actualizarContadoresCuestionario = async (req, res) => {
     try {
         const cuestionarioActualizado = await Cuestionario.findByIdAndUpdate(
             id,
-            {
-                $inc: updates, // Usa $inc para incrementar/decrementar
-                actualizadoEn: Date.now() // Marcar la hora de modificación
-            },
-            { new: true } // Devolver el documento DESPUÉS de la actualización
+            { ...datosActualizar, actualizadoEn: Date.now() },
+            { new: true }
         );
 
         if (!cuestionarioActualizado) {
@@ -112,7 +109,7 @@ exports.obtenerTodos = async (req, res) => {
     try {
         // Podemos filtrar por query params. Ej: ?asignatura=Matematicas&titulo=Examen
         const { asignatura, busqueda } = req.query;
-        
+
         let filtro = {};
 
         // Si viene asignatura, filtramos por ella
@@ -129,7 +126,7 @@ exports.obtenerTodos = async (req, res) => {
         // filtro.estado = 'activo'; 
 
         const cuestionarios = await Cuestionario.find(filtro)
-                                                .sort({ creadoEn: -1 }); // Más recientes primero
+            .sort({ creadoEn: -1 }); // Más recientes primero
 
         res.json({
             ok: true,
@@ -151,8 +148,8 @@ exports.actualizarCuestionario = async (req, res) => {
     try {
         // Buscamos y actualizamos. { new: true } devuelve el objeto ya cambiado
         const cuestionarioActualizado = await Cuestionario.findByIdAndUpdate(
-            id, 
-            { ...datosActualizar, actualizadoEn: Date.now() }, 
+            id,
+            { ...datosActualizar, actualizadoEn: Date.now() },
             { new: true }
         );
 
