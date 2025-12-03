@@ -5,6 +5,8 @@ const { Server } = require('socket.io');
 const connectDB = require('./src/config/db');
 const socketStore = require('./src/sockets/socketStore');
 const authFromParent = require('./src/middlewares/authFromParent');
+const path = require('path');
+
 // --- IMPORTAR MIDDLEWARES ---
 const corsMiddleware = require('./src/middlewares/corsConfig'); // <--- NUEVO IMPORT
 
@@ -43,6 +45,8 @@ app.use('/api/preguntas', require('./src/routes/preguntaRoutes'));
 app.use('/api/partidas', require('./src/routes/partidaRoutes'));
 app.use('/api/usuarios', require('./src/routes/usuarioRoutes'));
 app.use(authFromParent);
+//Importar FRONT 
+app.use(express.static(path.join(__dirname, '/Frontend/Pruebas_Backend/')));
 // --- Arrancar Servidor ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
