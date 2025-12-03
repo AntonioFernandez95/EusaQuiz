@@ -15,7 +15,7 @@ const app = express();
 const server = http.createServer(app);
 
 // --- USAR MIDDLEWARES ---
-app.use(corsMiddleware); // <--- MUCHO MÁS LIMPIO
+app.use(corsMiddleware); 
 app.use(express.json());
 
 // --- Conexión a Base de Datos ---
@@ -46,7 +46,7 @@ app.use('/api/partidas', require('./src/routes/partidaRoutes'));
 app.use('/api/usuarios', require('./src/routes/usuarioRoutes'));
 app.use(authFromParent);
 //Importar FRONT 
-app.use(express.static(path.join(__dirname, '/Frontend/Pruebas_Backend/')));
+app.use(express.static(path.join(__dirname, '../Frontend/Pruebas_Backend/')));
 // --- Arrancar Servidor ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
