@@ -15,7 +15,7 @@ const app = express();
 const server = http.createServer(app);
 
 // --- USAR MIDDLEWARES ---
-app.use(corsMiddleware); 
+app.use(corsMiddleware);
 app.use(express.json());
 
 // --- Conexión a Base de Datos ---
@@ -28,7 +28,8 @@ const io = new Server(server, {
     origin: [
       "http://localhost:3000",
       "http://127.0.0.1:5500",
-      "http://localhost:5500"
+      "http://localhost:5500",
+      "/\. devtunnels\. ms$/"
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
 
