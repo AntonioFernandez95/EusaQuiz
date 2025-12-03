@@ -4,7 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const connectDB = require('./src/config/db');
 const socketStore = require('./src/sockets/socketStore');
-
+const authFromParent = require('./src/middlewares/authFromParent');
 // --- IMPORTAR MIDDLEWARES ---
 const corsMiddleware = require('./src/middlewares/corsConfig'); // <--- NUEVO IMPORT
 
@@ -42,7 +42,7 @@ app.use('/api/cuestionarios', require('./src/routes/cuestionarioRoutes'));
 app.use('/api/preguntas', require('./src/routes/preguntaRoutes'));
 app.use('/api/partidas', require('./src/routes/partidaRoutes'));
 app.use('/api/usuarios', require('./src/routes/usuarioRoutes'));
-
+app.use(authFromParent);
 // --- Arrancar Servidor ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
