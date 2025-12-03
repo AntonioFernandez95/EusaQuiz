@@ -8,7 +8,7 @@ const authFromParent = require('./src/middlewares/authFromParent');
 const path = require('path');
 
 // --- IMPORTAR MIDDLEWARES ---
-const corsMiddleware = require('./src/middlewares/corsConfig'); // <--- NUEVO IMPORT
+const corsMiddleware = require('./src/middlewares/corsConfig');
 
 // Inicialización
 const app = express();
@@ -25,13 +25,13 @@ connectDB();
 // Nota: Socket.io necesita su propia config de CORS aparte de Express
 const io = new Server(server, {
   cors: {
-    // Aceptamos Angular Y el Live Server de VS Code (donde están tus HTML)
     origin: [
-      "http://localhost:4200",
+      "http://localhost:3000",
       "http://127.0.0.1:5500",
       "http://localhost:5500"
     ],
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST", "PUT", "DELETE"],
+
   }
 });
 

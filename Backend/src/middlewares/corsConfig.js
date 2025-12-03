@@ -10,8 +10,6 @@ const corsOptions = {
         "http://localhost:5500"
     ], 
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true, 
-    allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 module.exports = cors(corsOptions);
