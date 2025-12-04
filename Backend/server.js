@@ -6,7 +6,7 @@ const connectDB = require('./src/config/db');
 const socketStore = require('./src/sockets/socketStore');
 const authFromParent = require('./src/middlewares/authFromParent');
 const path = require('path');
-
+const setupSwagger = require('./src/config/swagger');
 // --- IMPORTAR MIDDLEWARES ---
 const corsMiddleware = require('./src/middlewares/corsConfig');
 
@@ -39,6 +39,9 @@ const io = new Server(server, {
 socketStore.setIoInstance(io);
 require('./src/sockets/socketManager')(io);
 app.set('socketio', io);
+
+//SWAGGER
+setupSwagger(app);
 
 // --- Rutas API REST ---
 app.use('/api/cuestionarios', require('./src/routes/cuestionarioRoutes'));
