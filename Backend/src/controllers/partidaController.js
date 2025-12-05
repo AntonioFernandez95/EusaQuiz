@@ -1,5 +1,5 @@
 // Controller refactorizado: ahora delega a src/services/partidaService.js
-const partidaService = require('../services/partidaService');
+const partidaService = require('../services/participacionService');
 
 exports.crearPartida = async (req, res) => {
   try {
