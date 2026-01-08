@@ -4,6 +4,58 @@ const Participacion = require('../models/participacion');
 const Pregunta = require('../models/pregunta');
 const Cuestionario = require('../models/cuestionario');
 const tipos = require('../utils/constants');
+// Importamos enviarRespuesta desde participacionService (donde está la lógica de respuestas)
+const { enviarRespuesta: _enviarRespuestaInternal } = require('./participacionService');
+const mongoose = require('mongoose');
+
+// Wrapper para inyectar lógica de control de ciclo tras responder
+async function enviarRespuesta(payload, io) {
+  // 1. Delegar el guardado de la respuesta
+  const resultado = await _enviarRespuestaInternal(payload, io);
+
+  // 2. Comprobar si debemos avanzar de turno (Solo en vivo)
+  // Si ya estaba respondida o hubo error, _enviarRespuestaInternal ya manejó eso (o lanzó excepcion)
+  if (resultado.yaRespondida) return resultado;
+
+  try {
+    const { idPartida, idPregunta } = payload;
+    const partida = await Partida.findById(idPartida);
+
+    if (partida && partida.tipoPartida === tipos.MODOS_JUEGO.EN_VIVO) {
+      // Contar jugadores activos (o totales registrados)
+      // Usamos partida.jugadores.length que es más seguro para consistencia
+      // FIX: Solo contar los que están marcados como ACTIVO. Los ABANDONADO no responderán.
+      const jugadoresActivos = partida.jugadores.filter(j => j.estado === tipos.ESTADO_USER.ACTIVO);
+      const totalEsperados = jugadoresActivos.length;
+
+      // Contar cuántos han respondido a ESTA pregunta
+      const respuestasCount = await Participacion.countDocuments({
+        idPartida: partida._id,
+        "respuestas.idPregunta": new mongoose.Types.ObjectId(idPregunta)
+      });
+
+      console.log(`[Auto-Avance] ${respuestasCount}/${totalEsperados} respondieron.`);
+
+      if (respuestasCount >= totalEsperados) {
+        console.log('[Auto-Avance] Todos han respondido. Avanzando pregunta...');
+        // Forzamos la conclusión de la pregunta actual
+        // Debemos asegurarnos de que idPregunta es la actual para no liar los timers
+        // indicePregunta la sacamos de partida.stats.preguntaActual
+        const indicePreguntaActual = partida.stats?.preguntaActual;
+        if (indicePreguntaActual === undefined) {
+          console.error('[Auto-Avance] ERROR: partida.stats.preguntaActual es undefined, no se puede avanzar');
+          return resultado;
+        }
+        console.log(`[Auto-Avance] Llamando a concluirPregunta con índice ${indicePreguntaActual}`);
+        await concluirPregunta(partida._id, indicePreguntaActual, io);
+      }
+    }
+  } catch (e) {
+    console.error('Error en lógica auto-avance:', e);
+  }
+
+  return resultado;
+}
 
 /**
  * temporizadoresPartidas: semáforo y timers por partida (clave: partidaId)
@@ -35,56 +87,123 @@ function obtenerRanking(jugadores) {
  * @param {Number} indicePregunta
  * @param {Server} io - instancia de socket.io
  */
+const partidasProcesando = new Set();
+
+/**
+ * concluirPregunta: cierra una pregunta, calcula stats y emite por socket
+ * @param {String|ObjectId} partidaId
+ * @param {Number} indicePregunta
+ * @param {Server} io - instancia de socket.io
+ */
 async function concluirPregunta(partidaId, indicePregunta, io) {
   const pId = String(partidaId);
+  console.log(`[concluirPregunta] 🔵 INICIO para partida ${pId}, pregunta ${indicePregunta}`);
 
-  // Semáforo: si ya se está cerrando, ignorar
-  if (!temporizadoresPartidas[pId]) {
-    // Ya se estaba cerrando → evitar doble ejecución
+  // 1. Evitar doble procesamiento concurrente
+  if (partidasProcesando.has(pId)) {
+    console.log(`[concluirPregunta] ⛔ BLOQUEADO - Partida ${pId} ya está siendo procesada`);
     return;
   }
 
-  clearTimeout(temporizadoresPartidas[pId]);
-  delete temporizadoresPartidas[pId];
+  // 2. Limpiar timer si existe
+  if (temporizadoresPartidas[pId]) {
+    clearTimeout(temporizadoresPartidas[pId]);
+    delete temporizadoresPartidas[pId];
+  } else {
+    // Si no hay timer, asumimos recuperación tras reinicio o llamada forzada.
+    console.log(`[Info] Concluyendo pregunta ${indicePregunta} de partida ${pId} (sin timer activo).`);
+  }
+
+  partidasProcesando.add(pId);
 
   try {
     const partida = await Partida.findById(partidaId);
-    if (!partida) return;
+    if (!partida) {
+      return;
+    }
+
+    // Verificar que seguimos en la misma pregunta (evitar condiciones de carrera antiguas)
+    const preguntaActualPartida = partida.stats?.preguntaActual;
+    if (preguntaActualPartida !== indicePregunta) {
+      console.warn(`[Warning] Intento de concluir pregunta ${indicePregunta} pero partida va por ${preguntaActualPartida}`);
+      return;
+    }
 
     const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
-    if (!preguntas[indicePregunta]) return;
+    if (!preguntas[indicePregunta]) {
+      return;
+    }
 
     const preguntaActual = preguntas[indicePregunta];
     const participaciones = await Participacion.find({ idPartida: partidaId });
 
+    // ---------------------------------------------------------
+    // NUEVO: Detectar jugadores que NO respondieron y actualizar su contador
+    // ---------------------------------------------------------
+    const respondieronIds = new Set();
     const statsPregunta = [0, 0, 0, 0];
+
     participaciones.forEach(p => {
       const r = p.respuestas.find(res => res.idPregunta.toString() === preguntaActual._id.toString());
-      if (r && r.opcionesMarcadas.length > 0) {
-        const idx = r.opcionesMarcadas[0];
-        if (statsPregunta[idx] !== undefined) statsPregunta[idx]++;
+      if (r) {
+        respondieronIds.add(p.idAlumno); // Marcamos que este alumno respondió
+
+        // Calcular stats solo de los que respondieron con opciones
+        if (r.opcionesMarcadas.length > 0) {
+          const idx = r.opcionesMarcadas[0];
+          if (statsPregunta[idx] !== undefined) statsPregunta[idx]++;
+        }
       }
     });
 
+    // Actualizar 'sinResponder' en partida.jugadores
+    let huboCambiosJugadores = false;
+    partida.jugadores.forEach(j => {
+      // Si está activo y no respondiò...
+      if (j.estado === tipos.ESTADO_USER.ACTIVO && !respondieronIds.has(j.idAlumno)) {
+        j.sinResponder = (j.sinResponder || 0) + 1;
+        // Opcional: considerar si esto afecta puntuación total (normalmente no suma puntos)
+        huboCambiosJugadores = true;
+        console.log(`[Stats] Jugador ${j.idAlumno} NO respondió pregunta ${indicePregunta}. Incrementando sinResponder a ${j.sinResponder}`);
+      }
+    });
+
+    if (huboCambiosJugadores) {
+      partida.markModified('jugadores');
+      await partida.save();
+    }
+    // ---------------------------------------------------------
+
     const indiceCorrecto = preguntaActual.opciones.findIndex(op => op.esCorrecta);
 
+    console.log(`[concluirPregunta] 📊 Stats calculadas para pregunta ${indicePregunta}: ${JSON.stringify(statsPregunta)}`);
+
     if (io) {
+      console.log(`[concluirPregunta] 📡 Emitiendo 'tiempo_agotado' a sala ${partida.pin}`);
       io.to(partida.pin).emit('tiempo_agotado', {
         mensaje: 'Resultados',
         stats: statsPregunta,
         correcta: indiceCorrecto,
         rankingParcial: obtenerRanking(partida.jugadores)
       });
+      console.log(`[concluirPregunta] ✅ 'tiempo_agotado' emitido exitosamente`);
     }
 
     // Pausa y siguiente pregunta
+    console.log(`[Timer] Programando siguiente pregunta en 3s para partida ${pId}`);
     setTimeout(() => {
-      // Recogemos la partida fresca antes de pasarla
-      gestionarCicloPregunta(partida, indicePregunta + 1, io).catch(err => console.error(err));
-    }, 8000);
+      console.log(`[Timer] Ejecutando timeout para siguiente pregunta partida ${pId}`);
+      gestionarCicloPregunta(partida, indicePregunta + 1, io)
+        .then(() => console.log(`[Ciclo] gestionarCicloPregunta completado para ${pId}`))
+        .catch(err => console.error('[Error] Fallo en ciclo pregunta:', err));
+    }, 3000);
 
   } catch (error) {
     console.error('Error en concluirPregunta:', error);
+  } finally {
+    // Liberar el semáforo SIEMPRE, incluso si hay error o return temprano
+    console.log(`[Lock] Liberando lock para ${pId}`);
+    partidasProcesando.delete(pId);
   }
 }
 
@@ -96,6 +215,7 @@ async function concluirPregunta(partidaId, indicePregunta, io) {
  */
 async function gestionarCicloPregunta(partidaDoc, indicePregunta, io) {
   const pId = String(partidaDoc._id);
+  console.log(`[Ciclo] Iniciando gestión pregunta index ${indicePregunta} para partida ${pId}`);
 
   // limpieza defensiva del timer anterior
   if (temporizadoresPartidas[pId]) {
@@ -107,12 +227,16 @@ async function gestionarCicloPregunta(partidaDoc, indicePregunta, io) {
 
   // fin del juego
   if (indicePregunta >= preguntas.length) {
+    console.log(`[Ciclo] Fin de partida detectado (index ${indicePregunta} >= ${preguntas.length})`);
     await cerrarPartidaLogic(partidaDoc, io);
     return;
   }
 
-  await Partida.findByIdAndUpdate(partidaDoc._id, { preguntaActual: indicePregunta });
-  partidaDoc.preguntaActual = indicePregunta;
+  console.log(`[Ciclo] Actualizando BD: stats.preguntaActual = ${indicePregunta}`);
+  await Partida.findByIdAndUpdate(partidaDoc._id, { 'stats.preguntaActual': indicePregunta });
+  console.log(`[Ciclo] ✅ BD actualizada exitosamente`);
+  partidaDoc.stats = partidaDoc.stats || {};
+  partidaDoc.stats.preguntaActual = indicePregunta;
 
   const preguntaActual = preguntas[indicePregunta];
   const tiempo = partidaDoc.configuracionEnvivo?.tiempoPorPreguntaSeg || preguntaActual.tiempoLimiteSeg || 20;
@@ -136,11 +260,14 @@ async function gestionarCicloPregunta(partidaDoc, indicePregunta, io) {
   }
 
   // programar cierre por tiempo
+  console.log(`[Timer] ⏰ Programando timer para partida ${pId}, pregunta ${indicePregunta}, en ${tiempo} segundos`);
   const timeoutId = setTimeout(() => {
-    concluirPregunta(partidaDoc._id, indicePregunta, io).catch(e => console.error(e));
+    console.log(`[Timer] ⏰⏰ TIMEOUT EJECUTADO para partida ${pId}, pregunta ${indicePregunta}`);
+    concluirPregunta(partidaDoc._id, indicePregunta, io).catch(e => console.error('[Timer] Error en concluirPregunta:', e));
   }, tiempo * 1000);
 
   temporizadoresPartidas[pId] = timeoutId;
+  console.log(`[Timer] Timer ID ${timeoutId} guardado para partida ${pId}`);
 }
 
 /**

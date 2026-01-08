@@ -1,5 +1,6 @@
 // Controller refactorizado: ahora delega a src/services/partidaService.js
-const partidaService = require('../services/participacionService');
+const partidaService = require('../services/partidaService');
+const reporteService = require('../services/reporteService');
 
 exports.crearPartida = async (req, res) => {
   try {
@@ -113,6 +114,28 @@ exports.finalizarPartida = async (req, res) => {
     const io = req.app.get('socketio');
     await partidaService.finalizarPartida(req.params.id, io);
     res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+};
+
+/**
+ * Generar reporte de partida en formato XML o HTML (transformado con XSLT)
+ * GET /api/partidas/:id/reporte?formato=xml|html
+ */
+exports.generarReporte = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const formato = req.query.formato || 'html';
+
+    if (!['xml', 'html'].includes(formato)) {
+      return res.status(400).json({ ok: false, error: 'Formato debe ser "xml" o "html"' });
+    }
+
+    const { contenido, contentType } = await reporteService.generarReporteCompleto(id, formato);
+
+    res.setHeader('Content-Type', contentType + '; charset=utf-8');
+    res.send(contenido);
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
