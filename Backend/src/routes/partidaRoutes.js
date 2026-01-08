@@ -282,4 +282,45 @@ router.get('/pin/:pin', controller.obtenerPartidaPorPin);
 // GET /api/partidas/examen/:idPartida/preguntas -> Descargar examen completo
 router.get('/examen/:idPartida/preguntas', controller.obtenerPreguntasExamen);
 
+/**
+ * @swagger
+ * /api/partidas/{id}/reporte:
+ *   get:
+ *     summary: Generar reporte de partida
+ *     description: Genera un reporte de la partida finalizada en formato XML o HTML (transformado con XSLT). Incluye ranking de jugadores y estadísticas por pregunta.
+ *     tags: [Partidas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de la partida
+ *       - in: query
+ *         name: formato
+ *         schema:
+ *           type: string
+ *           enum: [xml, html]
+ *           default: html
+ *         description: Formato del reporte (xml o html)
+ *     responses:
+ *       200:
+ *         description: Reporte generado
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ *           application/xml:
+ *             schema:
+ *               type: string
+ *       400:
+ *         description: Formato inválido
+ *       404:
+ *         description: Partida no encontrada
+ *       500:
+ *         description: Error del servidor
+ */
+// GET /api/partidas/:id/reporte -> Generar reporte XSLT
+router.get('/:id/reporte', controller.generarReporte);
+
 module.exports = router;

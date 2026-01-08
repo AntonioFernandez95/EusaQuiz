@@ -53,5 +53,6 @@ module.exports = {
     ESTADO_USER: {
         ACTIVO: 'activo',
         INACTIVO: 'inactivo',
+        ABANDONADO: 'abandonado'
     }
 };

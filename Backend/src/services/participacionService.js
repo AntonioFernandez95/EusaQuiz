@@ -135,6 +135,32 @@ async function enviarRespuesta(payload, io) {
     }
   );
 
+  // TAMBIÉN actualizar el subdocumento jugadores en Partida para que el reporte muestre stats correctas
+  try {
+    const partida = await Partida.findById(idPartida);
+    if (partida) {
+      const jugadorIndex = partida.jugadores.findIndex(j => j.idAlumno === idAlumno);
+      if (jugadorIndex !== -1) {
+        // Actualizar contadores del jugador
+        if (esCorrecta) {
+          partida.jugadores[jugadorIndex].aciertos = (partida.jugadores[jugadorIndex].aciertos || 0) + 1;
+        } else {
+          partida.jugadores[jugadorIndex].fallos = (partida.jugadores[jugadorIndex].fallos || 0) + 1;
+        }
+        partida.jugadores[jugadorIndex].puntuacionTotal = (partida.jugadores[jugadorIndex].puntuacionTotal || 0) + puntosGanados;
+
+        // Marcar el subdocumento como modificado para que MongoDB lo guarde
+        partida.markModified('jugadores');
+        await partida.save();
+
+        console.log(`[Stats] Actualizado jugador ${idAlumno}: aciertos=${partida.jugadores[jugadorIndex].aciertos}, fallos=${partida.jugadores[jugadorIndex].fallos}, puntos=${partida.jugadores[jugadorIndex].puntuacionTotal}`);
+      }
+    }
+  } catch (statsErr) {
+    console.error('Error actualizando estadísticas de jugador en Partida:', statsErr);
+    // No lanzamos error para no bloquear la respuesta
+  }
+
   // Actualizar el objeto participacion local (opcional, para emitir info)
   // Recuperamos la partida para obtener PIN si hay que emitir sockets
   if (modo === 'en_vivo' && io) {

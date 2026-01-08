@@ -51,7 +51,7 @@ const JugadorSchema = new mongoose.Schema({
         ref: 'usuarios',
         required: true
     },
-    
+
     nombreAlumno: { type: String },
 
     estado: {
@@ -118,7 +118,7 @@ const PartidaSchema = new mongoose.Schema({
     // --- Referencia a Colección Padre (Cuestionario) ---
     idCuestionario: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'cuestionarios',
+        ref: 'Cuestionario',
         required: true
     },
 
