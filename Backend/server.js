@@ -7,7 +7,6 @@ const socketStore = require('./src/sockets/socketStore');
 const authFromParent = require('./src/middlewares/authFromParent');
 const path = require('path');
 const setupSwagger = require('./src/config/swagger');
-app.use(express.json());
 // --- IMPORTAR MIDDLEWARES ---
 const corsMiddleware = require('./src/middlewares/corsConfig');
 
