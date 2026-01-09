@@ -332,7 +332,7 @@ async function cerrarPartidaLogic(partida, io) {
  * data: { idCuestionario, idProfesor, modoAcceso, tipoPartida, configuracionEnvivo, configuracionProgramada, fechas }
  */
 async function crearPartida(data) {
-  const { idCuestionario, idProfesor, modoAcceso, tipoPartida, configuracionEnvivo, configuracionProgramada, fechas } = data;
+  const { idCuestionario, idProfesor, modoAcceso, tipoPartida, configuracionEnvivo, configuracionExamen, fechas } = data;
   const cuestionarioPadre = await Cuestionario.findById(idCuestionario);
   if (!cuestionarioPadre) throw new Error('Cuestionario no encontrado');
 
@@ -343,7 +343,7 @@ async function crearPartida(data) {
     tipoPartida: tipoPartida || tipos.MODOS_JUEGO.EN_VIVO,
     modoAcceso: modoAcceso || tipos.TIPO_LOBBY.PUBLICA,
     configuracionEnvivo: configuracionEnvivo || {},
-    configuracionProgramada: configuracionProgramada || {},
+    configuracionExamen: configuracionExamen || {},
     fechas: fechas || {},
     estadoPartida: tipos.ESTADOS_PARTIDA.ESPERA
   });
@@ -399,8 +399,15 @@ async function iniciarPartida(id, io) {
     // lanzar ciclo
     gestionarCicloPregunta(partida, 0, io).catch(e => console.error(e));
     return { mensaje: 'Iniciada' };
+  } else {
+    // MODO EXAMEN: Notificar inicio
+    io.to(partida.pin).emit('inicio_examen', {
+      mensaje: 'Examen iniciado',
+      horaInicio: partida.inicioEn,
+      duracionMin: partida.configuracionExamen?.tiempoTotalMin || 20
+    });
+    return { mensaje: 'Examen iniciado' };
   }
-  return { mensaje: 'Examen iniciado' };
 }
 
 /* --------------------- CRUD Y CONSULTAS --------------------- */
@@ -416,9 +423,9 @@ async function obtenerDetallePartida(id) {
 
 async function actualizarPartida(id, payload) {
   return await Partida.findByIdAndUpdate(id, payload, { new: true });
-  
+
   const partida = await Partida.findById(id);
-  
+
   if (!partida) {
     throw new Error('Partida no encontrada');
   }
@@ -429,15 +436,15 @@ async function actualizarPartida(id, payload) {
   }
 
   // 3. ACTUALIZACIÓN SEGURA DE CAMPOS
-  
+
   // A) Datos generales
   if (payload.modoAcceso) partida.modoAcceso = payload.modoAcceso;
-  
+
   // B) Configuración EN VIVO 
   if (payload.configuracionEnvivo) {//Solo entramos aquí si el usuario envió cambios para esta sección. Si no envió nada, no tocamos lo que ya existe.
     // Convertimos a objeto plano si es necesario para evitar conflictos de Mongoose
     const currentConfig = partida.configuracionEnvivo ? JSON.parse(JSON.stringify(partida.configuracionEnvivo)) : {};//Los objetos que vienen de la base de datos (Mongoose) a veces tienen "basura" oculta (métodos internos, getters, setters). Para poder evitar la "basura"
-    
+
     partida.configuracionEnvivo = {
       ...currentConfig, // 1. COPIA todo lo que ya tenías guardado
       ...payload.configuracionEnvivo// 2. SOBRESCRIBE solo lo que viene nuevo
@@ -447,7 +454,7 @@ async function actualizarPartida(id, payload) {
   // C) Configuración PROGRAMADA 
   if (payload.configuracionProgramada) {
     const currentConfig = partida.configuracionProgramada ? JSON.parse(JSON.stringify(partida.configuracionProgramada)) : {};
-    
+
     partida.configuracionProgramada = {
       ...currentConfig,
       ...payload.configuracionProgramada
@@ -483,6 +490,46 @@ async function obtenerPreguntasExamen(idPartida) {
   return await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
 }
 
+async function finalizarExamenAlumno(idPartida, idAlumno) {
+  const partida = await Partida.findById(idPartida);
+  if (!partida) throw new Error('Partida no encontrada');
+
+  // Recuperamos la participacion
+  const participacion = await Participacion.findOne({ idPartida, idAlumno });
+  if (!participacion) throw new Error('Participación no encontrada');
+
+  // Calcular score base 10
+  // Necesitamos el total de preguntas del cuestionario
+  const totalPreguntas = await Pregunta.countDocuments({ idCuestionario: partida.idCuestionario });
+
+  let aciertos = 0;
+  if (participacion.respuestas) {
+    participacion.respuestas.forEach(r => {
+      // Buscamos la pregunta para saber si es correcta (si no lo guardamos en r.esCorrecta)
+      // Asumimos que r.esCorrecta ya se calculó en enviarRespuesta
+      if (r.esCorrecta) aciertos++;
+    });
+  }
+
+  const nota = totalPreguntas > 0 ? (aciertos / totalPreguntas) * 10 : 0;
+  const notaRedondeada = Math.round(nota * 10) / 10;
+
+  // Actualizar Participacion
+  participacion.puntuacionTotal = notaRedondeada;
+  participacion.estado = 'finalizada';
+  participacion.finEn = Date.now();
+  await participacion.save();
+
+  // Actualizar Partida.jugadores
+  const jugador = partida.jugadores.find(j => j.idAlumno === idAlumno);
+  if (jugador) {
+    jugador.puntuacionTotal = notaRedondeada;
+    await partida.save();
+  }
+
+  return { nota: notaRedondeada, aciertos, total: totalPreguntas };
+}
+
 async function finalizarPartida(id, io) {
   const partida = await Partida.findById(id);
   if (!partida) throw new Error('Partida no encontrada');
@@ -492,9 +539,9 @@ async function finalizarPartida(id, io) {
 
 async function obtenerOpcionesConfiguracion() {
   return {
-    modosJuego: Object.values(tipos.MODOS_JUEGO),     
-    tiposAcceso: Object.values(tipos.TIPO_LOBBY),     
-    modosCalificacion: tipos.OPCIONES_CALIFICACION, // Devolverá solo ['velocidad_precision']
+    modosJuego: Object.values(tipos.MODOS_JUEGO),
+    tiposAcceso: Object.values(tipos.TIPO_LOBBY),
+    modosCalificacion: tipos.OPCIONES_CALIFICACION,
     defaults: {
       enVivo: tipos.DEFAULTS.EN_VIVO,
       programada: tipos.DEFAULTS.PROGRAMADA
@@ -515,5 +562,6 @@ module.exports = {
   eliminarPartida,
   obtenerPartidaPorPin,
   obtenerPreguntasExamen,
-  finalizarPartida
+  finalizarPartida,
+  finalizarExamenAlumno
 };
