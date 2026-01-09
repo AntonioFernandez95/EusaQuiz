@@ -88,7 +88,7 @@ async function generarXMLPartida(idPartida) {
     xml += `      <posicion>${idx + 1}</posicion>\n`;
     xml += `      <idAlumno>${escapeXml(jugador.idAlumno)}</idAlumno>\n`;
     xml += `      <nombre>${escapeXml(jugador.nombreAlumno || 'Anónimo')}</nombre>\n`;
-    xml += `      <puntuacion>${jugador.puntuacionTotal || 0}</puntuacion>\n`;
+    xml += `      <puntuacion>${Number(jugador.puntuacionTotal) || 0}</puntuacion>\n`;
     xml += `      <aciertos>${jugador.aciertos || 0}</aciertos>\n`;
     xml += `      <fallos>${jugador.fallos || 0}</fallos>\n`;
     xml += `      <sinResponder>${jugador.sinResponder || 0}</sinResponder>\n`;
