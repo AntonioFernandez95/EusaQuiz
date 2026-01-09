@@ -1,46 +1,193 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Panel Profesor - EusaQuiz</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; background: #f4f4f4; text-align: center; }
-        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .hidden { display: none; }
-        
-        input, button { padding: 10px; margin: 5px; font-size: 1rem; }
-        button { cursor: pointer; background: #333; color: white; border: none; border-radius: 5px; }
-        button:hover { opacity: 0.9; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #f4f4f4;
+            text-align: center;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            cursor: pointer;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
 
         /* TIMER Y GRÁFICA EN VIVO */
-        .timer-circle { width: 80px; height: 80px; border-radius: 50%; background: purple; color: white; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; margin: 0 auto 20px auto; border: 5px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
-        .grafica-container { display: flex; justify-content: space-around; align-items: flex-end; height: 350px; margin-top: 50px; border-bottom: 2px solid #ccc; padding-bottom: 5px; }
-        .barra-columna { width: 20%; max-width: 100px; transition: height 1s ease-out; position: relative; border-radius: 5px 5px 0 0; display: flex; align-items: flex-end; justify-content: center; }
-        .barra-label { position: absolute; bottom: -60px; color: #333; font-size: 0.8em; width: 120%; line-height: 1.2; word-wrap: break-word; }
-        .count-badge { position: absolute; top: -35px; width: 100%; text-align: center; font-size: 1.5em; font-weight: bold; color: #333; background: rgba(255,255,255,0.8); border-radius: 5px; padding: 2px 0; }
-        
-        .b-0 { background: #e21b3c; } .b-1 { background: #1368ce; } 
-        .b-2 { background: #d89e00; } .b-3 { background: #26890c; }
-        
+        .timer-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: purple;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: bold;
+            margin: 0 auto 20px auto;
+            border: 5px solid #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .grafica-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 350px;
+            margin-top: 50px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5px;
+        }
+
+        .barra-columna {
+            width: 20%;
+            max-width: 100px;
+            transition: height 1s ease-out;
+            position: relative;
+            border-radius: 5px 5px 0 0;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .barra-label {
+            position: absolute;
+            bottom: -60px;
+            color: #333;
+            font-size: 0.8em;
+            width: 120%;
+            line-height: 1.2;
+            word-wrap: break-word;
+        }
+
+        .count-badge {
+            position: absolute;
+            top: -35px;
+            width: 100%;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            padding: 2px 0;
+        }
+
+        .b-0 {
+            background: #e21b3c;
+        }
+
+        .b-1 {
+            background: #1368ce;
+        }
+
+        .b-2 {
+            background: #d89e00;
+        }
+
+        .b-3 {
+            background: #26890c;
+        }
+
         /* PODIO */
-        .podio-box { background: gold; padding: 15px; margin: 10px; border-radius: 10px; font-weight: bold; font-size: 1.2em; color: #5e4802; }
+        .podio-box {
+            background: gold;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #5e4802;
+        }
 
         /* ESTILOS REPORTE DETALLADO (NUEVO) */
-        .detalle-pregunta { text-align: left; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #fdfdfd; }
-        .detalle-titulo { font-weight: bold; font-size: 1.1em; margin-bottom: 10px; color: #333; }
-        .opcion-row { display: flex; align-items: center; margin: 5px 0; padding: 5px; border-radius: 5px; }
-        .barra-mini { height: 10px; border-radius: 5px; margin-right: 10px; min-width: 5px; }
-        .votos-badge { font-weight: bold; margin-left: auto; background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.9em; }
-        .es-correcta { border: 2px solid green; background: #eaffea; }
+        .detalle-pregunta {
+            text-align: left;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fdfdfd;
+        }
+
+        .detalle-titulo {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .opcion-row {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .barra-mini {
+            height: 10px;
+            border-radius: 5px;
+            margin-right: 10px;
+            min-width: 5px;
+        }
+
+        .votos-badge {
+            font-weight: bold;
+            margin-left: auto;
+            background: #eee;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        .es-correcta {
+            border: 2px solid green;
+            background: #eaffea;
+        }
     </style>
 </head>
+
 <body>
     <h1>👨‍🏫 Panel del Profesor</h1>
 
     <div id="setupPartida" class="card">
         <h2>1. Configurar Partida</h2>
-         <a href="index.html"><button id="profesor-btn">Volver</button></a>
+        <a href="index.html"><button id="profesor-btn">Volver</button></a>
         <input type="text" id="idCuestionario" placeholder="ID Cuestionario" style="width: 300px;">
         <input type="text" id="idProfesor" value="PROFE_01">
         <button onclick="crearPartida()">Crear Sala</button>
@@ -52,7 +199,8 @@
         <p>Jugadores: <span id="contadorJugadores">0</span></p>
         <div id="listaJugadores"></div>
         <br>
-        <button onclick="iniciarPartida()" style="background: green; font-size: 1.2em; padding: 15px 30px;">▶ INICIAR JUEGO</button>
+        <button onclick="iniciarPartida()" style="background: green; font-size: 1.2em; padding: 15px 30px;">▶ INICIAR
+            JUEGO</button>
     </div>
 
     <div id="dashboardJuego" class="card hidden">
@@ -61,10 +209,14 @@
         <h1 id="textoPreguntaProfe" style="font-size: 2em;">...</h1>
 
         <div id="contenedorGrafica" class="grafica-container hidden">
-            <div class="barra-columna b-0" id="bar-0" style="height: 0%"><span class="count-badge">0</span><span class="barra-label" id="label-0">A</span></div>
-            <div class="barra-columna b-1" id="bar-1" style="height: 0%"><span class="count-badge">0</span><span class="barra-label" id="label-1">B</span></div>
-            <div class="barra-columna b-2" id="bar-2" style="height: 0%"><span class="count-badge">0</span><span class="barra-label" id="label-2">C</span></div>
-            <div class="barra-columna b-3" id="bar-3" style="height: 0%"><span class="count-badge">0</span><span class="barra-label" id="label-3">D</span></div>
+            <div class="barra-columna b-0" id="bar-0" style="height: 0%"><span class="count-badge">0</span><span
+                    class="barra-label" id="label-0">A</span></div>
+            <div class="barra-columna b-1" id="bar-1" style="height: 0%"><span class="count-badge">0</span><span
+                    class="barra-label" id="label-1">B</span></div>
+            <div class="barra-columna b-2" id="bar-2" style="height: 0%"><span class="count-badge">0</span><span
+                    class="barra-label" id="label-2">C</span></div>
+            <div class="barra-columna b-3" id="bar-3" style="height: 0%"><span class="count-badge">0</span><span
+                    class="barra-label" id="label-3">D</span></div>
         </div>
     </div>
 
@@ -74,6 +226,7 @@
         <br>
         <div style="display: flex; justify-content: center; gap: 10px;">
             <button onclick="verDetalles()" style="background: #007bff;">📊 Ver Detalles</button>
+            <button onclick="descargarReporte()" style="background: #28a745;">📥 Descargar Reporte</button>
             <button onclick="location.reload()" style="background: #333;">🔄 Nueva Partida</button>
         </div>
     </div>
@@ -86,12 +239,12 @@
     </div>
 
     <script>
-        const API_URL =`${window.location. origin}/api`;
+        const API_URL = `${window.location.origin}/api`;
         let socket = null;
         let idPartidaActual = null;
         let timerInterval = null;
-        let opcionesActuales = []; 
-        let reporteGlobal = []; 
+        let opcionesActuales = [];
+        let reporteGlobal = [];
 
         async function crearPartida() {
             const idCuestionario = document.getElementById('idCuestionario').value;
@@ -104,7 +257,7 @@
                 tipoPartida: 'en_vivo',
                 modoAcceso: 'publica',
                 configuracionEnvivo: {
-                    tiempoPorPreguntaSeg: 20, 
+                    tiempoPorPreguntaSeg: 20,
                     mostrarRanking: true,
                     modoCalificacion: 'velocidad_precision'
                 }
@@ -114,7 +267,7 @@
                 const res = await fetch(`${API_URL}/partidas`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bodyData) 
+                    body: JSON.stringify(bodyData)
                 });
                 const data = await res.json();
                 if (data.ok) {
@@ -124,7 +277,7 @@
                     document.getElementById('pinDisplay').innerText = data.data.pin;
                     conectarSocket(data.data.pin);
                 } else { alert(data.mensaje); }
-            } catch(e) { console.error(e); }
+            } catch (e) { console.error(e); }
         }
 
         function conectarSocket(pin) {
@@ -141,13 +294,13 @@
             // 1. NUEVO JUGADOR (CON ID PARA PODER BORRARLO)
             socket.on('nuevo_jugador', (data) => {
                 document.getElementById('contadorJugadores').innerText = data.total;
-                
+
                 // ID ÚNICO PARA EL ELEMENTO HTML
                 const badgeId = `player-${data.idAlumno}`;
-                
+
                 if (!document.getElementById(badgeId)) {
                     const span = document.createElement('span');
-                    span.id = badgeId; 
+                    span.id = badgeId;
                     span.style.padding = "5px 10px";
                     span.style.margin = "5px";
                     span.style.background = "#ddd";
@@ -173,18 +326,18 @@
             socket.on('nueva_pregunta', (data) => {
                 document.getElementById('lobbyPartida').classList.add('hidden');
                 document.getElementById('dashboardJuego').classList.remove('hidden');
-                document.getElementById('contenedorGrafica').classList.add('hidden'); 
-                
-                opcionesActuales = data.opciones; 
+                document.getElementById('contenedorGrafica').classList.add('hidden');
 
-                for(let i=0; i<4; i++) {
+                opcionesActuales = data.opciones;
+
+                for (let i = 0; i < 4; i++) {
                     const b = document.getElementById(`bar-${i}`);
-                    if(b) {
+                    if (b) {
                         b.style.height = '0%'; b.style.opacity = '1'; b.style.border = "none";
                         const badge = b.querySelector('.count-badge');
-                        if(badge) badge.textContent = '0';
+                        if (badge) badge.textContent = '0';
                         const label = document.getElementById(`label-${i}`);
-                        if(label) label.textContent = ""; 
+                        if (label) label.textContent = "";
                     }
                 }
 
@@ -199,7 +352,7 @@
                 document.getElementById('contenedorGrafica').classList.remove('hidden');
 
                 if (data.stats) {
-                    const maxVal = Math.max(...data.stats) || 1; 
+                    const maxVal = Math.max(...data.stats) || 1;
                     data.stats.forEach((valor, index) => {
                         const barra = document.getElementById(`bar-${index}`);
                         const altura = (valor / maxVal) * 100;
@@ -222,10 +375,10 @@
                 clearInterval(timerInterval);
                 document.getElementById('dashboardJuego').classList.add('hidden');
                 document.getElementById('pantallaFinal').classList.remove('hidden');
-                
+
                 let html = '';
                 data.ranking.forEach((jugador, i) => {
-                    html += `<div class="podio-box">#${i+1} ${jugador.nombre} - ${jugador.puntos} pts</div>`;
+                    html += `<div class="podio-box">#${i + 1} ${jugador.nombre} - ${jugador.puntos} pts</div>`;
                 });
                 document.getElementById('rankingFinal').innerHTML = html;
 
@@ -234,7 +387,7 @@
         }
 
         async function iniciarPartida() {
-            if(!idPartidaActual) return;
+            if (!idPartidaActual) return;
             await fetch(`${API_URL}/partidas/iniciar/${idPartidaActual}`, { method: 'PUT' });
         }
 
@@ -245,7 +398,7 @@
             timerInterval = setInterval(() => {
                 restante--;
                 document.getElementById('timerVisual').innerText = restante;
-                if(restante <= 0) clearInterval(timerInterval);
+                if (restante <= 0) clearInterval(timerInterval);
             }, 1000);
         }
 
@@ -253,16 +406,16 @@
         function verDetalles() {
             document.getElementById('pantallaFinal').classList.add('hidden');
             document.getElementById('pantallaDetalles').classList.remove('hidden');
-            
+
             const contenedor = document.getElementById('contenedorDetalles');
             contenedor.innerHTML = '';
 
             reporteGlobal.forEach((pregunta, index) => {
-                const totalVotos = pregunta.stats.reduce((a,b) => a+b, 0) || 1; 
-                
+                const totalVotos = pregunta.stats.reduce((a, b) => a + b, 0) || 1;
+
                 let htmlPregunta = `
                     <div class="detalle-pregunta">
-                        <div class="detalle-titulo">P${index+1}: ${pregunta.textoPregunta}</div>
+                        <div class="detalle-titulo">P${index + 1}: ${pregunta.textoPregunta}</div>
                 `;
 
                 pregunta.opciones.forEach((opcion, i) => {
@@ -291,4 +444,5 @@
         }
     </script>
 </body>
+
 </html>
