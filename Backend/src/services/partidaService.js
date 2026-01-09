@@ -416,6 +416,55 @@ async function obtenerDetallePartida(id) {
 
 async function actualizarPartida(id, payload) {
   return await Partida.findByIdAndUpdate(id, payload, { new: true });
+  
+  const partida = await Partida.findById(id);
+  
+  if (!partida) {
+    throw new Error('Partida no encontrada');
+  }
+
+  // 2. VALIDACIÓN: Bloquear edición si la partida NO está en espera
+  if (partida.estadoPartida !== tipos.ESTADOS_PARTIDA.ESPERA) {
+    throw new Error('No se puede editar la configuración: La partida ya ha comenzado o finalizado.');
+  }
+
+  // 3. ACTUALIZACIÓN SEGURA DE CAMPOS
+  
+  // A) Datos generales
+  if (payload.modoAcceso) partida.modoAcceso = payload.modoAcceso;
+  
+  // B) Configuración EN VIVO 
+  if (payload.configuracionEnvivo) {//Solo entramos aquí si el usuario envió cambios para esta sección. Si no envió nada, no tocamos lo que ya existe.
+    // Convertimos a objeto plano si es necesario para evitar conflictos de Mongoose
+    const currentConfig = partida.configuracionEnvivo ? JSON.parse(JSON.stringify(partida.configuracionEnvivo)) : {};//Los objetos que vienen de la base de datos (Mongoose) a veces tienen "basura" oculta (métodos internos, getters, setters). Para poder evitar la "basura"
+    
+    partida.configuracionEnvivo = {
+      ...currentConfig, // 1. COPIA todo lo que ya tenías guardado
+      ...payload.configuracionEnvivo// 2. SOBRESCRIBE solo lo que viene nuevo
+    };
+  }
+
+  // C) Configuración PROGRAMADA 
+  if (payload.configuracionProgramada) {
+    const currentConfig = partida.configuracionProgramada ? JSON.parse(JSON.stringify(partida.configuracionProgramada)) : {};
+    
+    partida.configuracionProgramada = {
+      ...currentConfig,
+      ...payload.configuracionProgramada
+    };
+  }
+
+  // D) Fechas
+  if (payload.fechas) {
+    partida.fechas = {
+      ...partida.fechas,
+      ...payload.fechas
+    };
+  }
+
+  // 4. Guardar cambios
+  await partida.save();
+  return partida;
 }
 
 async function eliminarPartida(id) {
