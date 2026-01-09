@@ -139,4 +139,13 @@ exports.generarReporte = async (req, res) => {
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
+  
+  exports.obtenerOpcionesConfiguracion = async (req, res) => {
+  try {
+    const opciones = await partidaService.obtenerOpcionesConfiguracion();
+    res.json({ ok: true, data: opciones });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+};
 };

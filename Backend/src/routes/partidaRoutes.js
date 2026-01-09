@@ -67,9 +67,22 @@ router.get('/', controller.obtenerTodasPartidas);
 // GET /api/partidas/:id -> Ver detalles de una partida específica (por ID de BD, no PIN)
 // IMPORTANTE: Esta ruta puede chocar con otras si no tienes cuidado con el orden. 
 // Colócala después de las rutas específicas como /pin/:pin o /examen/...
+
+/**
+ * @swagger
+ * /api/partidas/config/opciones:
+ * get:
+ * summary: Obtener opciones y defaults para crear partida
+ * tags: [Partidas]
+ * responses:
+ * 200:
+ * description: Configuración base
+ */
+router.get('/config/opciones', controller.obtenerOpcionesConfiguracion);
+
 router.get('/:id', controller.obtenerDetallePartida);
 
-// PUT /api/partidas/:id -> Editar configuración (solo si está en 'espera')
+// PUT /api/partidas/:id -> Editar configuración
 router.put('/:id', controller.actualizarPartida);
 
 // DELETE /api/partidas/:id -> Borrar partida y sus datos asociados
