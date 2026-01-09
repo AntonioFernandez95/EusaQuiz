@@ -84,6 +84,9 @@ async function enviarRespuesta(payload, io) {
     }
   }
 
+  console.log(`[Respuesta] Partida: ${idPartida}, Pregunta: ${idPregunta}, Modo: ${modo}`);
+  console.log(`[Respuesta] Indices Correctos: ${indicesCorrectos}, Marcados: ${marcadasSorted} => EsCorrecta: ${esCorrecta}`);
+
   // Cálculo de puntos: distinta lógica para "en_vivo" y "programada"/examen
   let puntosGanados = 0;
   if (esCorrecta) {

@@ -295,6 +295,9 @@ router.get('/pin/:pin', controller.obtenerPartidaPorPin);
 // GET /api/partidas/examen/:idPartida/preguntas -> Descargar examen completo
 router.get('/examen/:idPartida/preguntas', controller.obtenerPreguntasExamen);
 
+// POST /api/partidas/finalizar-examen -> Alumno entrega examen
+router.post('/finalizar-examen', controller.finalizarExamenAlumno);
+
 /**
  * @swagger
  * /api/partidas/{id}/reporte:

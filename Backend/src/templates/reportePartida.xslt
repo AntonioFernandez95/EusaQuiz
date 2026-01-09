@@ -170,7 +170,7 @@
                       </xsl:choose>
                     </td>
                     <td><strong><xsl:value-of select="nombre"/></strong></td>
-                    <td><xsl:value-of select="puntuacion"/> pts</td>
+                    <td><strong><xsl:value-of select="puntuacion"/></strong></td>
                     <td><span class="badge badge-success"><xsl:value-of select="aciertos"/></span></td>
                     <td><span class="badge badge-danger"><xsl:value-of select="fallos"/></span></td>
                     <td><span class="badge badge-warning"><xsl:value-of select="sinResponder"/></span></td>

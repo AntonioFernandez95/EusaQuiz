@@ -29,7 +29,9 @@ exports.iniciarPartida = async (req, res) => {
   const io = req.app.get('socketio');
 
   try {
+    console.log(`[API] Iniciando partida ${id}`);
     const data = await partidaService.iniciarPartida(id, io);
+    console.log(`[API] Partida iniciada:`, data);
     res.json({ ok: true, ...data });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
@@ -104,6 +106,16 @@ exports.obtenerPreguntasExamen = async (req, res) => {
   try {
     const preguntas = await partidaService.obtenerPreguntasExamen(req.params.idPartida);
     res.json({ ok: true, data: preguntas });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+};
+
+exports.finalizarExamenAlumno = async (req, res) => {
+  try {
+    const { idPartida, idAlumno } = req.body;
+    const resultado = await partidaService.finalizarExamenAlumno(idPartida, idAlumno);
+    res.json({ ok: true, data: resultado });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
