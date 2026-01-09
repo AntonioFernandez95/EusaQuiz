@@ -54,5 +54,20 @@ module.exports = {
         ACTIVO: 'activo',
         INACTIVO: 'inactivo',
         ABANDONADO: 'abandonado'
-    }
+    },
+    DEFAULTS: {
+        EN_VIVO: {
+            tiempoPorPreguntaSeg: 20,
+            mostrarRanking: true,
+            mezclarPreguntas: true,
+            mezclarRespuestas: true,
+            modoCalificacion: 'velocidad_precision'
+        },
+        PROGRAMADA: { 
+            tiempoTotalMin: 60,
+            permitirNavegacion: true,
+            envioAutomatico: true
+        }
+    },
+    OPCIONES_CALIFICACION: ['velocidad_precision']
 };

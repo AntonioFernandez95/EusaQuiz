@@ -441,8 +441,21 @@ async function finalizarPartida(id, io) {
   return;
 }
 
+async function obtenerOpcionesConfiguracion() {
+  return {
+    modosJuego: Object.values(tipos.MODOS_JUEGO),     
+    tiposAcceso: Object.values(tipos.TIPO_LOBBY),     
+    modosCalificacion: tipos.OPCIONES_CALIFICACION, // Devolverá solo ['velocidad_precision']
+    defaults: {
+      enVivo: tipos.DEFAULTS.EN_VIVO,
+      programada: tipos.DEFAULTS.PROGRAMADA
+    }
+  };
+}
+
 /* --------------------- EXPORTS --------------------- */
 module.exports = {
+  obtenerOpcionesConfiguracion,
   crearPartida,
   unirseAPartida,
   iniciarPartida,
