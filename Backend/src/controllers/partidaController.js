@@ -140,8 +140,8 @@ exports.generarReporte = async (req, res) => {
     const { id } = req.params;
     const formato = req.query.formato || 'html';
 
-    if (!['xml', 'html'].includes(formato)) {
-      return res.status(400).json({ ok: false, error: 'Formato debe ser "xml" o "html"' });
+    if (!['xml', 'html', 'pdf'].includes(formato)) {
+      return res.status(400).json({ ok: false, error: 'Formato debe ser "xml", "html" o "pdf"' });
     }
 
     const { contenido, contentType } = await reporteService.generarReporteCompleto(id, formato);

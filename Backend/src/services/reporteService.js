@@ -8,6 +8,7 @@ const Cuestionario = require('../models/cuestionario');
 const { Xslt, XmlParser } = require('xslt-processor');
 const fs = require('fs');
 const path = require('path');
+const puppeteer = require('puppeteer');
 
 /**
  * Escapa caracteres especiales para XML
@@ -170,12 +171,45 @@ async function transformarXSLT(xmlString) {
   return htmlResult.toString();
 }
 
+/**
+ * Genera PDF desde HTML usando Puppeteer
+ * @param {String} htmlString - HTML a convertir
+ * @returns {Promise<Buffer>} Buffer del PDF
+ */
+async function generarPDFDesdeHTML(htmlString) {
+  let browser = null;
+  try {
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    const page = await browser.newPage();
+    
+    // Set content and wait for it to load
+    await page.setContent(htmlString, { waitUntil: 'networkidle0' });
+    
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '20px',
+        right: '20px',
+        bottom: '20px',
+        left: '20px'
+      }
+    });
+
+    return pdfBuffer;
+  } finally {
+    if (browser) await browser.close();
+  }
+}
 
 /**
  * Genera reporte completo (entrada principal)
  * @param {String} idPartida - ID de la partida
- * @param {String} formato - 'xml' o 'html' (default: 'html')
- * @returns {Object} { contenido: String, contentType: String }
+ * @param {String} formato - 'xml', 'html' o 'pdf' (default: 'html')
+ * @returns {Object} { contenido: String|Buffer, contentType: String }
  */
 async function generarReporteCompleto(idPartida, formato = 'html') {
   const xml = await generarXMLPartida(idPartida);
@@ -187,8 +221,18 @@ async function generarReporteCompleto(idPartida, formato = 'html') {
     };
   }
 
-  // Por defecto HTML
+  // Generar HTML base
   const html = await transformarXSLT(xml);
+
+  if (formato === 'pdf') {
+    const pdfBuffer = await generarPDFDesdeHTML(html);
+    return {
+      contenido: pdfBuffer,
+      contentType: 'application/pdf'
+    };
+  }
+
+  // Por defecto HTML
   return {
     contenido: html,
     contentType: 'text/html'
