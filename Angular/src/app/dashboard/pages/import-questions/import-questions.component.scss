@@ -1,0 +1,298 @@
+@import '../../../../styles.scss';
+
+.import-container {
+  min-height: 100vh;
+  background-color: white;
+  padding: 2rem;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  
+  .logo-img {
+    height: 60px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .page-title-center {
+    font-weight: 500;
+    color: var(--text-main);
+    font-size: 1.1rem;
+  }
+
+  .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .user-name {
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+
+      span { font-size: 0.75rem; font-weight: 700; color: white; }
+    }
+  }
+}
+
+.import-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.drop-zone {
+  border: 2px dashed #3a86ff;
+  border-radius: 12px;
+  background-color: #f0f7ff;
+  padding: 3rem 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  margin-bottom: 2.5rem;
+
+  &.has-file {
+    padding: 1rem 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .drop-title {
+    color: #003049;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .drop-subtitle {
+    color: var(--neutral-500);
+    margin-bottom: 1.5rem;
+  }
+
+  .btn-select-file {
+    display: inline-block;
+    padding: 0.75rem 2.5rem;
+    background-color: #0077b6;
+    color: white;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background-color: #023e8a;
+    }
+  }
+}
+
+.section {
+  margin-bottom: 1.5rem;
+
+  .section-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--text-main);
+  }
+
+  .section-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+  }
+}
+
+.file-card {
+  background-color: #f8fafc;
+  border: 1px solid var(--neutral-200);
+  border-radius: 10px;
+  padding: 1.25rem;
+  
+  .exam-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+
+      .form-group {
+          label {
+              display: block;
+              font-size: 0.85rem;
+              font-weight: 600;
+              color: var(--neutral-600);
+              margin-bottom: 0.4rem;
+          }
+          input {
+              width: 100%;
+              padding: 0.6rem;
+              border: 1px solid var(--neutral-300);
+              border-radius: 6px;
+              font-size: 0.95rem;
+              &:focus { border-color: var(--primary-500); outline: none; }
+          }
+      }
+  }
+
+  .file-info-mini {
+      font-size: 0.8rem;
+      color: var(--neutral-400);
+      border-top: 1px solid var(--neutral-100);
+      padding-top: 0.6rem;
+  }
+}
+
+.questions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .question-preview-card {
+    border: 1.5px solid #023e8a;
+    border-left: 6px solid #023e8a;
+    border-radius: 8px;
+    padding: 1rem;
+    background: white;
+    transition: box-shadow 0.2s;
+
+    &.editing {
+        background: #fafbff;
+        border-style: solid;
+        box-shadow: 0 4px 12px rgba(2, 62, 138, 0.05);
+    }
+
+    .question-body {
+        .q-header {
+            margin-bottom: 0.75rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+
+            .q-number { font-weight: 800; color: #023e8a; font-size: 1.1rem; }
+            .q-text { font-weight: 700; color: #003049; font-size: 1rem; }
+        }
+
+        .q-answer-row {
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            
+            .label { color: #64748b; font-weight: 600; }
+            .answer-text { font-weight: 700; color: #059669; }
+        }
+
+        .q-options-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            .badge {
+                font-size: 0.75rem;
+                padding: 0.2rem 0.6rem;
+                background: #f1f5f9;
+                color: #475569;
+                border-radius: 999px;
+                border: 1px solid #e2e8f0;
+            }
+        }
+
+        .q-options-edit {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+    }
+  }
+}
+
+// Inputs de edición
+.edit-input {
+    width: 100%;
+    padding: 0.4rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #003049;
+}
+
+.edit-input-sm {
+    flex: 1;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid #10b981;
+    border-radius: 4px;
+    font-weight: 700;
+    color: #059669;
+}
+
+.edit-input-xs {
+    width: 100%;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.btn-text-action {
+    background: none;
+    border: none;
+    color: #0077b6;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: underline;
+    &:hover { color: #023e8a; }
+}
+
+.action-footer {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2.5rem;
+  margin-bottom: 3rem;
+
+  button {
+    min-width: 180px;
+    padding: 0.875rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+  }
+
+  .btn-import { background-color: #2d6a4f; }
+  .btn-edit { background-color: #0077b6; }
+  .btn-cancel { background-color: #c1121f; }
+}
+
+@media (max-width: 768px) {
+    .action-footer {
+        flex-direction: column;
+        gap: 1rem;
+        button { width: 100%; }
+    }
+    
+    .file-card .exam-form { grid-template-columns: 1fr; gap: 0.75rem; }
+    .q-options-edit { grid-template-columns: 1fr !important; }
+}

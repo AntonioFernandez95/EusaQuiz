@@ -41,6 +41,24 @@ module.exports = {
         DAM2: '2 DAM',
         NULL: null,
     },
+    ASIGNATURAS: {
+        DAM1: [
+            'Sistemas Informáticos',
+            'Bases de Datos',
+            'Programación',
+            'Lenguajes de Marcas',
+            'Entornos de Desarrollo',
+            'Formación y Orientación Laboral'
+        ],
+        DAM2: [
+            'Acceso a Datos',
+            'Desarrollo de Interfaces',
+            'Programación Multimedia y Dispositivos Móviles',
+            'Programación de Servicios y Procesos',
+            'Sistemas de Gestión Empresarial',
+            'Empresa e Iniciativa Emprendedora'
+        ]
+    },
     ORIGEN: {
         IMPORTADO: 'importado',
         MANUAL: 'manual',

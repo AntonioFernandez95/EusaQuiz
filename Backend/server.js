@@ -39,16 +39,21 @@ app.set('socketio', io);
 setupSwagger(app);
 
 // --- Rutas API REST ---
+app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/cuestionarios', require('./src/routes/cuestionarioRoutes'));
 app.use('/api/preguntas', require('./src/routes/preguntaRoutes'));
 app.use('/api/partidas', require('./src/routes/partidaRoutes'));
 app.use('/api/usuarios', require('./src/routes/usuarioRoutes'));
 app.use('/api/participaciones', require('./src/routes/participacionRoutes'));
+app.use('/api/import', require('./src/routes/importRoutes'));
 app.use(authFromParent);
+//Servir archivos estáticos (Imágenes de perfil)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 //Importar FRONT 
 app.use(express.static(path.join(__dirname, '../Frontend/Pruebas_Backend/')));
 // --- Arrancar Servidor ---
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
 });

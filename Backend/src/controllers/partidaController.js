@@ -32,7 +32,7 @@ exports.iniciarPartida = async (req, res) => {
     console.log(`[API] Iniciando partida ${id}`);
     const data = await partidaService.iniciarPartida(id, io);
     console.log(`[API] Partida iniciada:`, data);
-    res.json({ ok: true, ...data });
+    res.json({ ok: true, data });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
@@ -113,7 +113,8 @@ exports.obtenerPreguntasExamen = async (req, res) => {
 
 exports.finalizarExamenAlumno = async (req, res) => {
   try {
-    const { idPartida, idAlumno } = req.body;
+    const idPartida = req.params.idPartida || req.body.idPartida;
+    const { idAlumno } = req.body;
     const io = req.app.get('socketio');
     const resultado = await partidaService.finalizarExamenAlumno(idPartida, idAlumno, io);
     res.json({ ok: true, data: resultado });
@@ -179,14 +180,4 @@ exports.obtenerPartidasPendientesAlumno = async (req, res) => {
   }
 };
 
-exports.finalizarExamenAlumno = async (req, res) => {
-  try {
-    const { idAlumno } = req.body;
-    const { idPartida } = req.params;
-    const io = req.app.get('socketio');
-    await partidaService.finalizarExamenAlumno(idPartida, idAlumno, io);
-    res.json({ ok: true });
-  } catch (error) {
-    res.status(500).json({ ok: false, error: error.message });
-  }
-};
+

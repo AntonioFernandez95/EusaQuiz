@@ -1,0 +1,89 @@
+<div class="lobby-container">
+  <!-- Header -->
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo">
+      <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
+    </div>
+
+    <div class="page-title-center">Sala Partida en VIVO</div>
+
+    <div class="user-profile">
+      <div class="user-avatar-wrapper">
+        <div class="user-avatar">
+          <span>{{ userInitials }}</span>
+        </div>
+      </div>
+      <span class="user-name">{{ userName }}</span>
+    </div>
+  </header>
+
+  <main class="lobby-content animate-slide-up" *ngIf="partida; else loading">
+    <!-- Quiz Info Banner -->
+    <div class="quiz-banner">
+      <div class="banner-info">
+        <h2 class="quiz-title">{{ partida.idCuestionario.titulo }}</h2>
+        <span class="quiz-pin">Código: {{ partida.pin }}</span>
+      </div>
+      <div class="banner-timer" *ngIf="partida.tipoPartida === 'examen'">
+        Tiempo total: {{ partida.configuracionExamen.tiempoTotalMin }}:00
+      </div>
+    </div>
+
+    <!-- Stats summary grid -->
+    <div class="stats-summary">
+      <div class="stat-card">
+        <h3 class="stat-label">Alumnos conectados</h3>
+        <div class="stat-value">{{ connectedCount }}/{{ totalExpected }}</div>
+        <div
+          class="stat-percentage"
+          [style.color]="percentage > 80 ? '#2d6a4f' : '#c1121f'"
+        >
+          {{ percentage }}% conectado
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <h3 class="stat-label">Código de Acceso</h3>
+        <button class="btn-copy" (click)="copyUrl()">Copiar URL</button>
+      </div>
+    </div>
+
+    <!-- Player List section -->
+    <section class="players-section">
+      <h3 class="section-subtitle">Lista de Alumnos Conectados</h3>
+
+      <div class="players-box-outer">
+        <div class="players-list">
+          <div class="player-item" *ngFor="let p of players" [class]="p.status">
+            <span class="player-name">{{ p.nombre }}</span>
+            <span class="player-status">
+              {{
+                p.status === "conectado"
+                  ? "Conectado"
+                  : p.status === "conectando"
+                  ? "Conectando..."
+                  : "No conectado"
+              }}
+            </span>
+          </div>
+
+          <div class="empty-list" *ngIf="players.length === 0">
+            Esperando a que los alumnos se unan...
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer buttons -->
+    <div class="action-footer">
+      <button class="btn-primary" (click)="iniciarPartida()">
+        Iniciar Partida
+      </button>
+      <button class="btn-danger" (click)="cancelar()">Cancelar</button>
+    </div>
+  </main>
+
+  <ng-template #loading>
+    <div class="loading-state">Cargando sala...</div>
+  </ng-template>
+</div>

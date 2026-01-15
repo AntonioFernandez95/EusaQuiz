@@ -1,0 +1,44 @@
+<div class="join-container">
+  <!-- Header con logo y perfil -->
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo">
+      <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
+    </div>
+
+    <div class="page-title-center">Sala Partida en VIVO - ALUMNO</div>
+
+    <div class="user-profile">
+      <div class="user-avatar-wrapper">
+        <div class="user-avatar">
+          <span>{{ userInitials }}</span>
+        </div>
+      </div>
+      <span class="user-name">{{ userName }}</span>
+    </div>
+  </header>
+
+  <main class="join-content">
+    <section class="join-card animate-slide-up">
+      <h2 class="join-title">Introduce el Código de la Sala</h2>
+
+      <div class="input-wrapper">
+        <input
+          type="text"
+          [(ngModel)]="gamePin"
+          placeholder="Código (Ej: 4K2X9)"
+          class="pin-input"
+          maxlength="10"
+          (keyup.enter)="joinGame()"
+        />
+      </div>
+
+      <div class="actions">
+        <button class="btn-join" (click)="joinGame()">
+          Unirse a la partida
+        </button>
+
+        <button class="btn-back" (click)="goBack()">Volver al Dashboard</button>
+      </div>
+    </section>
+  </main>
+</div>

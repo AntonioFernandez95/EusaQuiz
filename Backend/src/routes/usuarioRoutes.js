@@ -9,6 +9,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/usuarioController');
+const upload = require('../middlewares/uploadMiddleware');
 const { validarCrearUsuario } = require('../middlewares/validators/usuarioValidators');
 
 // wrapper que soporta handlers async y evita repeats en cada ruta
@@ -16,7 +17,7 @@ function wrapHandler(fn) {
   if (typeof fn !== 'function') {
     return (req, res) => res.status(501).json({ ok: false, mensaje: 'Handler no implementado' });
   }
-  return function(req, res, next) {
+  return function (req, res, next) {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 }
@@ -221,5 +222,33 @@ router.put('/:id', wrapHandler(controller.actualizarUsuario));
  *         description: Error del servidor
  */
 router.delete('/:id', wrapHandler(controller.borrarUsuario));
+
+/**
+ * @swagger
+ * /api/usuarios/{id}/foto:
+ *   post:
+ *     summary: Actualizar foto de perfil
+ *     description: Sube una imagen y la asigna como foto de perfil del usuario.
+ *     tags: [Usuarios]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               foto:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Foto actualizada
+ */
+router.post('/:id/foto', upload.single('foto'), wrapHandler(controller.actualizarFotoPerfil));
 
 module.exports = router;    

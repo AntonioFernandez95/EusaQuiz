@@ -248,17 +248,27 @@ async function obtenerHistorialAlumno(idAlumno) {
     const cuestionario = partida ? partida.idCuestionario : null;
 
     return {
-      idPartida: partida ? partida._id : null,
+      _id: p._id,
+      idPartida: {
+        _id: partida ? partida._id : null,
+        nombrePartida: partida ? partida.nombrePartida : null,
+        idCuestionario: {
+          titulo: cuestionario ? cuestionario.titulo : 'Desconocido',
+          categoria: cuestionario ? cuestionario.asignatura : 'General',
+          asignatura: cuestionario ? cuestionario.asignatura : 'General',
+          curso: cuestionario ? cuestionario.curso : ''
+        },
+        curso: (partida && partida.curso) ? partida.curso : (cuestionario ? cuestionario.curso : ''),
+        asignatura: (partida && partida.asignatura) ? partida.asignatura : (cuestionario ? cuestionario.asignatura : ''),
+        finalizadaEn: p.finEn || p.fechaInicio
+      },
+      puntuacionTotal: p.puntuacionTotal || 0,
+      respuestasCorrectas: p.aciertos || 0,
+      totalPreguntas: (cuestionario && cuestionario.numPreguntas > 0) ? cuestionario.numPreguntas : (p.respuestas?.length || 0),
+      aciertos: p.aciertos || 0,
+      fallos: p.fallos || 0,
       fecha: p.fechaInicio,
-      finalizadoEn: p.finEn,
-      puntuacionTotal: p.puntuacionTotal,
-      aciertos: p.aciertos,
-      fallos: p.fallos,
-      tituloCuestionario: cuestionario ? cuestionario.titulo : 'Desconocido',
-      asignatura: cuestionario ? cuestionario.asignatura : 'General',
-      curso: cuestionario ? cuestionario.curso : '',
       pinPartida: partida ? partida.pin : '---',
-      totalPreguntas: cuestionario ? cuestionario.numPreguntas : 0,
       tipoPartida: partida ? partida.tipoPartida : 'en_vivo'
     };
   });
