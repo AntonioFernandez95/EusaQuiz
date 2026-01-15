@@ -148,6 +148,7 @@ const PartidaSchema = new mongoose.Schema({
         enum: Object.values(tipos.TIPO_LOBBY),
         default: tipos.TIPO_LOBBY.PUBLICA,
     },
+    participantesPermitidos: { type: [String], default: [] },
     fechas: { type: FechasSchema },
     configuracionEnvivo: {
         type: ConfiguracionEnVivoSchema,

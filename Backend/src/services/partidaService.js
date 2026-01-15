@@ -361,7 +361,7 @@ async function cerrarPartidaLogic(partida, io) {
  * Verifica que el profesor exista en la BD mediante su idPortal
  */
 async function crearPartida(data) {
-  const { idCuestionario, idProfesor, modoAcceso, tipoPartida, configuracionEnvivo, configuracionExamen, fechas } = data;
+  const { idCuestionario, idProfesor, modoAcceso, participantesPermitidos, tipoPartida, configuracionEnvivo, configuracionExamen, fechas } = data;
 
   // Verificar que el profesor existe en la BD
   const profesor = await Usuario.findOne({ idPortal: idProfesor });
@@ -377,6 +377,7 @@ async function crearPartida(data) {
     pin: generarPinUnico(),
     tipoPartida: tipoPartida || tipos.MODOS_JUEGO.EN_VIVO,
     modoAcceso: modoAcceso || tipos.TIPO_LOBBY.PUBLICA,
+    participantesPermitidos: participantesPermitidos || [],
     configuracionEnvivo: configuracionEnvivo || {},
     configuracionExamen: configuracionExamen || {},
     fechas: fechas || {},
@@ -402,6 +403,13 @@ async function unirseAPartida(pin, idAlumno, nombreAlumnoParam, io) {
 
   const partida = await Partida.findOne({ pin, estadoPartida: { $ne: tipos.ESTADOS_PARTIDA.FINALIZADA } });
   if (!partida) throw new Error('Partida no encontrada');
+
+  // Validación de Lobby Privado
+  if (partida.modoAcceso === tipos.TIPO_LOBBY.PRIVADA) {
+    if (!partida.participantesPermitidos || !partida.participantesPermitidos.includes(idAlumno)) {
+      throw new Error('No tienes permiso para unirte a esta partida privada');
+    }
+  }
 
   const jugadorExiste = partida.jugadores.some(j => j.idAlumno === idAlumno);
   if (!jugadorExiste) {
@@ -503,6 +511,7 @@ async function actualizarPartida(id, payload) {
 
   // A) Datos generales
   if (payload.modoAcceso) partida.modoAcceso = payload.modoAcceso;
+  if (payload.participantesPermitidos) partida.participantesPermitidos = payload.participantesPermitidos;
 
   // B) Configuración EN VIVO 
   if (payload.configuracionEnvivo) {//Solo entramos aquí si el usuario envió cambios para esta sección. Si no envió nada, no tocamos lo que ya existe.
@@ -667,6 +676,14 @@ async function obtenerPartidasPendientesAlumno(idAlumno) {
     // El usuario quiere "datos que existan para el curso". Si curso está vacío, tal vez es general.
     // Vamos a ser estrictos: debe coincidir el curso, O el cuestionario ser "General"
     const cursoQ = (q.curso || '').trim().toLowerCase();
+
+    // Filtro por Lobby Privado: si es privada, el alumno debe estar en participantesPermitidos
+    if (p.modoAcceso === tipos.TIPO_LOBBY.PRIVADA) {
+      if (!p.participantesPermitidos || !p.participantesPermitidos.includes(idAlumno)) {
+        return false;
+      }
+    }
+
     if (!cursoQ) return true; // Cuestionario sin curso específico -> visible
     return cursoQ === cursoAlumno;
   });
