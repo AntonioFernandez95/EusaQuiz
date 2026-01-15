@@ -16,9 +16,13 @@ const Usuario = (() => {
   }
 })();
 
-async function listarUsuarios({ limit = 100, skip = 0 } = {}) {
+async function listarUsuarios({ limit = 100, skip = 0, rol } = {}) {
   if (!Usuario) throw new Error('Modelo Usuario no encontrado.');
-  const query = Usuario.find().skip(+skip).limit(+limit);
+
+  const filter = {};
+  if (rol) filter.rol = rol;
+
+  const query = Usuario.find(filter).skip(+skip).limit(+limit);
   const items = await query.exec();
   return items;
 }

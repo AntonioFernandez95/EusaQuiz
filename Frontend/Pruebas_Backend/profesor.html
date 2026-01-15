@@ -117,12 +117,14 @@
             max-width: 600px;
             gap: 15px;
         }
+
         .podium-item {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100px;
         }
+
         .podium-bar {
             width: 100%;
             border-radius: 5px 5px 0 0;
@@ -133,20 +135,54 @@
             font-weight: bold;
             font-size: 1.2rem;
             padding-bottom: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
         }
-        .podium-1 { order: 2; }
-        .podium-2 { order: 1; }
-        .podium-3 { order: 3; }
 
-        .podium-1 .podium-bar { height: 180px; background: linear-gradient(to top, #FFD700, #FDB931); z-index: 2; }
-        .podium-2 .podium-bar { height: 140px; background: linear-gradient(to top, #C0C0C0, #E0E0E0); z-index: 1; }
-        .podium-3 .podium-bar { height: 100px; background: linear-gradient(to top, #CD7F32, #D2691E); z-index: 1; }
+        .podium-1 {
+            order: 2;
+        }
 
-        .podium-name { margin-bottom: 5px; font-weight: bold; color: #333; font-size: 0.9em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;}
-        .podium-avatar { 
-            font-size: 2rem; margin-bottom: 5px;
+        .podium-2 {
+            order: 1;
+        }
+
+        .podium-3 {
+            order: 3;
+        }
+
+        .podium-1 .podium-bar {
+            height: 180px;
+            background: linear-gradient(to top, #FFD700, #FDB931);
+            z-index: 2;
+        }
+
+        .podium-2 .podium-bar {
+            height: 140px;
+            background: linear-gradient(to top, #C0C0C0, #E0E0E0);
+            z-index: 1;
+        }
+
+        .podium-3 .podium-bar {
+            height: 100px;
+            background: linear-gradient(to top, #CD7F32, #D2691E);
+            z-index: 1;
+        }
+
+        .podium-name {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100px;
+        }
+
+        .podium-avatar {
+            font-size: 2rem;
+            margin-bottom: 5px;
         }
 
         .opciones-grid {
@@ -155,6 +191,7 @@
             gap: 10px;
             margin-top: 10px;
         }
+
         .b-0 {
             background: #e21b3c;
         }
@@ -239,63 +276,97 @@
     <div id="setupPartida" class="card">
         <h2>1. Configurar Partida</h2>
         <a href="index.html"><button id="profesor-btn">Volver</button></a>
-        
+
         <label>Elige Cuestionario:</label>
         <select id="selectCuestionario" style="width: 300px; padding: 10px;">
             <option value="">Cargando cuestionarios...</option>
         </select>
         <br><br>
 
-        <div style="margin: 20px auto; border: 1px solid #ccc; padding: 15px; border-radius: 8px; text-align: left; max-width: 500px;">
+        <div
+            style="margin: 20px auto; border: 1px solid #ccc; padding: 15px; border-radius: 8px; text-align: left; max-width: 500px;">
             <h3>Tipo de Partida</h3>
             <div style="margin-bottom: 15px;">
                 <label style="margin-right: 20px; font-size: 1.1em; cursor: pointer;">
-                    <input type="radio" name="tipoPartida" value="en_vivo" checked onclick="toggleConfig()"> 
+                    <input type="radio" name="tipoPartida" value="en_vivo" checked onclick="toggleConfig()">
                     🔥 En Vivo (Kahoot)
                 </label>
                 <label style="font-size: 1.1em; cursor: pointer;">
-                    <input type="radio" name="tipoPartida" value="examen" onclick="toggleConfig()"> 
+                    <input type="radio" name="tipoPartida" value="examen" onclick="toggleConfig()">
                     📝 Examen / Tarea
                 </label>
             </div>
-            
+
             <hr style="margin-bottom: 15px;">
+
+            <h3>Tipo de Lobby</h3>
+            <div style="margin-bottom: 15px;">
+                <label style="margin-right: 20px; font-size: 1.1em; cursor: pointer;">
+                    <input type="radio" name="tipoLobby" value="publica" checked onclick="toggleLobbyConfig()">
+                    🌍 Público (Con PIN)
+                </label>
+                <label style="font-size: 1.1em; cursor: pointer;">
+                    <input type="radio" name="tipoLobby" value="privada" onclick="toggleLobbyConfig()">
+                    🔒 Privado (Solo seleccionados)
+                </label>
+            </div>
+
+            <div id="configLobbyPrivado" class="hidden"
+                style="background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 15px;">
+                <label><b>Seleccionar alumnos autorizados:</b></label>
+                <div id="listaAlumnosPrivado"
+                    style="max-height: 150px; overflow-y: auto; margin-top: 10px; text-align: left;">
+                    <p style="color: gray; font-size: 0.9em;">Cargando alumnos...</p>
+                </div>
+                <small style="color: #666;">Solo los alumnos seleccionados verán la partida en su dashboard y podrán
+                    unirse.</small>
+            </div>
 
             <!-- Config En Vivo -->
             <div id="configEnVivo">
-               <label>⏱ Tiempo por pregunta (seg): <input type="number" id="evTiempo" value="20" style="width: 60px;"></label><br>
-               <label><input type="checkbox" id="evMezclarP" checked> 🔀 Mezclar preguntas</label><br>
-               <label><input type="checkbox" id="evMezclarR" checked> 🔀 Mezclar respuestas</label><br>
-               <br>
-               <label>🏆 Modo Puntos: 
-                  <select id="evModoCalif">
-                     <option value="velocidad_precision">Velocidad + Precisión</option>
-                     <option value="solo_acierto">Solo Acierto (Puntos fijos)</option>
-                  </select>
-               </label>
+                <label>⏱ Tiempo por pregunta (seg): <input type="number" id="evTiempo" value="20"
+                        style="width: 60px;"></label><br>
+                <label><input type="checkbox" id="evMezclarP" checked> 🔀 Mezclar preguntas</label><br>
+                <label><input type="checkbox" id="evMezclarR" checked> 🔀 Mezclar respuestas</label><br>
+                <br>
+                <label>🏆 Modo Puntos:
+                    <select id="evModoCalif">
+                        <option value="velocidad_precision">Velocidad + Precisión</option>
+                        <option value="solo_acierto">Solo Acierto (Puntos fijos)</option>
+                    </select>
+                </label>
             </div>
 
             <!-- Config Examen -->
             <div id="configExamen" class="hidden">
-               <label>📅 Fecha de Inicio: <input type="datetime-local" id="exFecha"></label> 
-               <br><small style="color: grey;">(Dejar vacío para iniciar inmediatamente)</small><br><br>
-               <label>⏱ Tiempo Total (min): <input type="number" id="exTiempo" value="60" style="width: 60px;"></label>
+                <label>📅 Fecha de Inicio: <input type="datetime-local" id="exFecha"></label>
+                <br><small style="color: grey;">(Dejar vacío para iniciar inmediatamente)</small><br><br>
+                <label>⏱ Tiempo Total (min): <input type="number" id="exTiempo" value="60" style="width: 60px;"></label>
             </div>
         </div>
-        
-        <input type="text" id="idProfesor" value="PROF_001" style="display:none;"> <!-- Hidden default -->
-        <button onclick="crearPartida()" style="background: #007bff; color: white; padding: 15px 30px; font-size: 1.1em;">Crear Sala</button>
+
+        <div style="margin: 20px 0; border: 1px solid #007bff; padding: 15px; border-radius: 8px; background: #e3f2fd;">
+            <label style="font-weight: bold; color: #007bff;">Identificar como Profesor:</label>
+            <select id="idProfesor" onchange="cargarMisPartidas()"
+                style="width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #007bff; border-radius: 5px;">
+                <option value="PROF_001">Cargando profesores...</option>
+            </select>
+        </div>
+        <button onclick="crearPartida()"
+            style="background: #007bff; color: white; padding: 15px 30px; font-size: 1.1em;">Crear Sala</button>
 
         <hr style="margin: 20px 0;">
-        
+
         <h3>📅 Exámenes Programados (Futuros)</h3>
-        <div id="listaProgramadas" style="text-align: left; max-height: 200px; overflow-y: auto; background: #e3f2fd; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #90caf9;">
+        <div id="listaProgramadas"
+            style="text-align: left; max-height: 200px; overflow-y: auto; background: #e3f2fd; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #90caf9;">
             <p>Cargando...</p>
         </div>
 
         <h3>🗂 Historial / Activas</h3>
         <button onclick="cargarMisPartidas()">🔄 Actualizar Listas</button>
-        <div id="listaMisPartidas" style="text-align: left; max-height: 300px; overflow-y: auto; background: #eee; padding: 10px; margin-top: 10px; border-radius: 5px;">
+        <div id="listaMisPartidas"
+            style="text-align: left; max-height: 300px; overflow-y: auto; background: #eee; padding: 10px; margin-top: 10px; border-radius: 5px;">
             <p>Cargando...</p>
         </div>
     </div>
@@ -303,25 +374,29 @@
     <div id="lobbyPartida" class="card hidden">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <h2>Sala de Espera</h2>
-            <button onclick="salirDelLobby()" style="background:#6c757d; font-size:0.9em; padding: 5px 10px; border-radius: 4px;">⬅ Volver</button>
+            <button onclick="salirDelLobby()"
+                style="background:#6c757d; font-size:0.9em; padding: 5px 10px; border-radius: 4px;">⬅ Volver</button>
         </div>
         <h1 style="font-size: 4em; margin: 10px;">PIN: <span id="pinDisplay">---</span></h1>
         <p>Jugadores: <span id="contadorJugadores">0</span></p>
         <div id="listaJugadores"></div>
         <br>
-        <button onclick="iniciarPartida()" style="background: green; font-size: 1.2em; padding: 15px 30px; color:white; border:none; border-radius:5px; cursor:pointer;">▶ INICIAR JUEGO</button>
+        <button onclick="iniciarPartida()"
+            style="background: green; font-size: 1.2em; padding: 15px 30px; color:white; border:none; border-radius:5px; cursor:pointer;">▶
+            INICIAR JUEGO</button>
     </div>
 
     <!-- SCREEN: EXAMEN PROGRESS (PROFESOR) -->
     <div id="screenExamenProfesor" class="card hidden" style="text-align: center; padding: 50px;">
         <h1 style="color:#2E7D32;">📝 Examen en Curso</h1>
         <p>Los alumnos están respondiendo. No cierre esta pestaña.</p>
-        
+
         <div style="font-size: 3em; margin: 30px; font-weight: bold; color: #d32f2f;" id="timerProfe">00:00</div>
-        
+
         <p>Alumnos conectados: <strong><span id="examActivePlayers">--</span></strong></p>
 
-        <button onclick="finalizarPartida()" style="background: #d32f2f; color: white; padding: 15px 30px; border: none; font-size: 1.2em; border-radius: 5px; cursor: pointer; margin-top: 30px;">
+        <button onclick="finalizarPartida()"
+            style="background: #d32f2f; color: white; padding: 15px 30px; border: none; font-size: 1.2em; border-radius: 5px; cursor: pointer; margin-top: 30px;">
             🏁 Finalizar Examen
         </button>
     </div>
@@ -331,7 +406,7 @@
         <h2>Pregunta <span id="numPreguntaDisplay">1/10</span></h2>
         <div class="timer-circle" id="timerVisual">20</div>
         <p id="textoPreguntaProfe" style="font-size: 1.5em; font-weight: bold;">¿Pregunta...?</p>
-        
+
         <div id="contenedorGrafica" class="grafica-container hidden">
             <div class="barra-columna b-0" id="bar-0" style="height: 0%;">
                 <span class="count-badge">0</span>
@@ -374,9 +449,9 @@
     <div id="screenReporteExamen" class="card hidden" style="text-align: center;">
         <h1>📝 Examen Finalizado</h1>
         <p>El examen ha terminado. Aquí están los resultados:</p>
-        
+
         <div id="rankingExamen" style="text-align: left; max-width: 600px; margin: 20px auto;"></div>
-        
+
         <br>
         <button onclick="verDetalles()" style="background: #333;">📊 Ver Detalles</button>
         <button onclick="descargarReporte()" style="background: #28a745;">📄 Descargar Reporte PDF</button>
@@ -384,8 +459,8 @@
     </div>
 
     <script>
-        const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') 
-            ? 'http://localhost:3000/api' 
+        const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
+            ? 'http://localhost:3000/api'
             : `${window.location.origin}/api`;
 
         let socket = null;
@@ -395,67 +470,152 @@
         let reporteGlobal = [];
 
         window.addEventListener('load', () => {
-             cargarCuestionarios();
-             cargarMisPartidas();
+            cargarCuestionarios();
+            cargarProfesores();
+            cargarMisPartidas();
+            cargarAlumnosLobby();
         });
 
+        async function cargarProfesores() {
+            try {
+                const res = await fetch(`${API_URL}/usuarios?rol=profesor`);
+                const data = await res.json();
+                if (data.ok && data.data) {
+                    const select = document.getElementById('idProfesor');
+                    select.innerHTML = '';
+                    data.data.forEach(p => {
+                        if (p.rol !== 'profesor') return; // Frontend safeguard
+                        const opt = document.createElement('option');
+                        opt.value = p.idPortal;
+                        opt.textContent = `${p.nombre} (${p.idPortal})`;
+                        select.appendChild(opt);
+                    });
+                    // Refresh history after loading profiles
+                    cargarMisPartidas();
+                }
+            } catch (e) {
+                console.error("Error cargando profesores:", e);
+            }
+        }
+
+        function toggleLobbyConfig() {
+            const esPrivado = document.querySelector('input[name="tipoLobby"]:checked').value === 'privada';
+            const configDiv = document.getElementById('configLobbyPrivado');
+            if (esPrivado) {
+                configDiv.classList.remove('hidden');
+                cargarAlumnosLobby();
+            } else {
+                configDiv.classList.add('hidden');
+            }
+        }
+
+        let alumnosCache = [];
+        async function cargarAlumnosLobby() {
+            try {
+                const res = await fetch(`${API_URL}/usuarios?limit=1000`);
+                const data = await res.json();
+                if (data.ok && data.data) {
+                    alumnosCache = data.data.filter(u => u.rol === 'alumno');
+                    renderListaAlumnos();
+                }
+            } catch (e) {
+                console.error("Error cargando alumnos:", e);
+            }
+        }
+
+        function renderListaAlumnos() {
+            const container = document.getElementById('listaAlumnosPrivado');
+            if (!container) return;
+
+            // Opcional: filtrar por el curso del cuestionario seleccionado
+            const idQuest = document.getElementById('selectCuestionario').value;
+            let cursoFiltro = null;
+            if (idQuest) {
+                const q = cuestionariosCache.find(c => c._id === idQuest);
+                if (q && q.curso) cursoFiltro = q.curso;
+            }
+
+            const alumnosAMostrar = cursoFiltro
+                ? alumnosCache.filter(a => a.curso === cursoFiltro)
+                : alumnosCache;
+
+            if (alumnosAMostrar.length === 0) {
+                container.innerHTML = '<p style="color: gray; font-size: 0.9em;">No hay alumnos disponibles para este curso.</p>';
+                return;
+            }
+
+            container.innerHTML = alumnosAMostrar.map(a => `
+                <div style="margin-bottom: 5px;">
+                    <label style="cursor: pointer; font-weight: normal;">
+                        <input type="checkbox" name="participantePrivado" value="${a.idPortal}"> 
+                        ${a.nombre} (${a.curso || 'Sin curso'})
+                    </label>
+                </div>
+            `).join('');
+        }
+
+        // Listener para actualizar lista al cambiar cuestionario
+        document.getElementById('selectCuestionario').addEventListener('change', renderListaAlumnos);
+
+        let cuestionariosCache = [];
         async function cargarCuestionarios() {
             const sel = document.getElementById('selectCuestionario');
             try {
                 const res = await fetch(`${API_URL}/cuestionarios`);
                 const data = await res.json();
-                if(data.ok && data.data) {
-                    sel.innerHTML = '<option value="">-- Selecciona un Cuestionario --</option>';
+                if (data.ok && data.data) {
+                    cuestionariosCache = data.data;
+                    sel.innerHTML = '<option value="">-- Selecciona --</option>';
                     data.data.forEach(c => {
                         const opt = document.createElement('option');
                         opt.value = c._id;
-                        opt.text = `${c.titulo} (${c.asignatura || 'General'})`;
+                        opt.textContent = `[${c.curso || 'G'}] ${c.titulo} (${c.asignatura})`;
                         sel.appendChild(opt);
                     });
                 }
-            } catch(e) {
-                console.error(e);
+            } catch (error) {
+                console.error("Error cargando cuestionarios", error);
                 sel.innerHTML = '<option>Error cargando</option>';
             }
         }
-        
+
         async function cargarMisPartidas() {
-             const divOtras = document.getElementById('listaMisPartidas');
-             const divProgramadas = document.getElementById('listaProgramadas');
-             const idProfe = document.getElementById('idProfesor').value; // PROFE_01
-             
-             divOtras.innerHTML = 'Cargando...';
-             divProgramadas.innerHTML = 'Cargando...';
-             
-             try {
+            const divOtras = document.getElementById('listaMisPartidas');
+            const divProgramadas = document.getElementById('listaProgramadas');
+            const idProfe = document.getElementById('idProfesor').value; // PROFE_01
+
+            divOtras.innerHTML = 'Cargando...';
+            divProgramadas.innerHTML = 'Cargando...';
+
+            try {
                 const res = await fetch(`${API_URL}/partidas?idProfesor=${idProfe}&t=${Date.now()}`);
                 const data = await res.json();
-                
-                if(data.ok && data.data) {
+
+                if (data.ok && data.data) {
                     divOtras.innerHTML = '';
                     divProgramadas.innerHTML = '';
-                    
+
                     const ahora = new Date();
                     let hayProgramadas = false;
                     let hayOtras = false;
 
-                    if(data.data.length === 0) {
+                    if (data.data.length === 0) {
                         divOtras.innerHTML = '<p>No hay partidas creadas.</p>';
                         divProgramadas.innerHTML = '<p>No hay exámenes programados.</p>';
                         return;
                     }
-                    
+
                     data.data.forEach(p => {
                         let esProgramada = false;
                         let fechaProg = null;
-                        
-                        if(p.tipoPartida === 'examen' && p.estadoPartida === 'espera' && p.configuracionExamen?.programadaPara) {
+
+                        if (p.tipoPartida === 'examen' && p.estadoPartida === 'espera' && p.configuracionExamen?.programadaPara) {
                             fechaProg = new Date(p.configuracionExamen.programadaPara);
-                            if(fechaProg > ahora) esProgramada = true;
+                            if (fechaProg > ahora) esProgramada = true;
                         }
 
                         const targetDiv = esProgramada ? divProgramadas : divOtras;
-                        if(esProgramada) hayProgramadas = true; else hayOtras = true;
+                        if (esProgramada) hayProgramadas = true; else hayOtras = true;
 
                         const row = document.createElement('div');
                         row.style.borderBottom = "1px solid #ccc";
@@ -467,15 +627,15 @@
                         row.style.marginBottom = "5px";
 
                         let titulo = "Sin Título";
-                        if(p.idCuestionario && p.idCuestionario.titulo) titulo = p.idCuestionario.titulo;
-                        
+                        if (p.idCuestionario && p.idCuestionario.titulo) titulo = p.idCuestionario.titulo;
+
                         let estadoColor = "black";
-                        if(p.estadoPartida === 'activa') estadoColor = "green";
-                        if(p.estadoPartida === 'finalizada') estadoColor = "red";
-                        if(p.estadoPartida === 'espera') estadoColor = "orange";
+                        if (p.estadoPartida === 'activa') estadoColor = "green";
+                        if (p.estadoPartida === 'finalizada') estadoColor = "red";
+                        if (p.estadoPartida === 'espera') estadoColor = "orange";
 
                         let infoExtra = '';
-                        if(esProgramada && fechaProg) {
+                        if (esProgramada && fechaProg) {
                             infoExtra = `<br><strong style="color:#0277BD">📅 Programado para: ${fechaProg.toLocaleString()}</strong>`;
                         }
 
@@ -483,19 +643,19 @@
                         // Si es programada, botón para "Administrar" o "Entrar" (para iniciarla cuando quiera)
                         // Si es activa, "Entrar al Lobby"
                         // Si es finalizada, "Ver Reporte" (ya lo tiene abajo, pero bueno para borrar)
-                        
+
                         // Action buttons logic
                         let botones = `
                             <button onclick="borrarPartida('${p._id}')" style="background: #dc3545; padding: 5px 10px; font-size: 0.8em; margin-left:5px;">🗑</button>
                         `;
-                        
+
                         // Si está en espera, permitir Gestionar (ir al lobby) siempre
-                        if(p.estadoPartida === 'espera') {
-                             botones = `<button onclick="retomarPartida('${p._id}', '${p.pin}')" style="background: #0277BD; padding: 5px 10px; font-size: 0.8em;">⚙️ Gestionar</button>` + botones;
-                        } else if(p.estadoPartida === 'activa') {
-                             botones = `<button onclick="retomarPartida('${p._id}', '${p.pin}')" style="background: #2E7D32; padding: 5px 10px; font-size: 0.8em;">▶ En Curso</button>` + botones;
-                        } else if(p.estadoPartida === 'finalizada') {
-                             botones = `<button onclick="verReportePartida('${p._id}')" style="background: #28a745; padding: 5px 10px; font-size: 0.8em;">📊 Ver Reporte</button>` + botones;
+                        if (p.estadoPartida === 'espera') {
+                            botones = `<button onclick="retomarPartida('${p._id}', '${p.pin}')" style="background: #0277BD; padding: 5px 10px; font-size: 0.8em;">⚙️ Gestionar</button>` + botones;
+                        } else if (p.estadoPartida === 'activa') {
+                            botones = `<button onclick="retomarPartida('${p._id}', '${p.pin}')" style="background: #2E7D32; padding: 5px 10px; font-size: 0.8em;">▶ En Curso</button>` + botones;
+                        } else if (p.estadoPartida === 'finalizada') {
+                            botones = `<button onclick="verReportePartida('${p._id}')" style="background: #28a745; padding: 5px 10px; font-size: 0.8em;">📊 Ver Reporte</button>` + botones;
                         }
 
                         row.innerHTML = `
@@ -509,20 +669,20 @@
                         targetDiv.appendChild(row);
                     });
 
-                    if(!hayProgramadas) divProgramadas.innerHTML = '<p style="color:#666; padding:10px;">No hay exámenes futuros.</p>';
-                    if(!hayOtras) divOtras.innerHTML = '<p style="color:#666; padding:10px;">No hay historial.</p>';
+                    if (!hayProgramadas) divProgramadas.innerHTML = '<p style="color:#666; padding:10px;">No hay exámenes futuros.</p>';
+                    if (!hayOtras) divOtras.innerHTML = '<p style="color:#666; padding:10px;">No hay historial.</p>';
 
                 } else {
-                     divOtras.innerHTML = 'Error cargando datos.';
-                     divProgramadas.innerHTML = 'Error cargando datos.';
+                    divOtras.innerHTML = 'Error cargando datos.';
+                    divProgramadas.innerHTML = 'Error cargando datos.';
                 }
-             } catch(e) {
-                 divOtras.innerHTML = '<p>Error al cargar partidas.</p>';
-                 divProgramadas.innerHTML = 'Error de conexión.';
-                 console.error(e);
-             }
+            } catch (e) {
+                divOtras.innerHTML = '<p>Error al cargar partidas.</p>';
+                divProgramadas.innerHTML = 'Error de conexión.';
+                console.error(e);
+            }
         }
-        
+
         function retomarPartida(id, pin) {
             idPartidaActual = id;
             document.getElementById('setupPartida').classList.add('hidden');
@@ -532,23 +692,23 @@
         }
 
         async function borrarPartida(id) {
-            if(!confirm("¿Estás seguro de borrar esta partida y todos sus datos de alumnos?")) return;
+            if (!confirm("¿Estás seguro de borrar esta partida y todos sus datos de alumnos?")) return;
             try {
                 const res = await fetch(`${API_URL}/partidas/${id}`, { method: 'DELETE' });
                 const data = await res.json();
-                if(data.ok) {
+                if (data.ok) {
                     alert("Partida eliminada");
                     cargarMisPartidas();
                 } else {
                     alert("Error eliminando: " + data.error);
                 }
-            } catch(e) {
+            } catch (e) {
                 alert("Error de conexión");
             }
         }
 
         function salirDelLobby() {
-            if(socket) {
+            if (socket) {
                 socket.disconnect();
                 socket = null;
             }
@@ -561,20 +721,29 @@
         async function crearPartida() {
             const idCuestionario = document.getElementById('selectCuestionario').value;
             const idProfesor = document.getElementById('idProfesor').value;
+            const tipoPartida = document.querySelector('input[name="tipoPartida"]:checked').value;
+            const modoAcceso = document.querySelector('input[name="tipoLobby"]:checked').value;
 
-            if(!idCuestionario) { alert("Selecciona un cuestionario"); return; }
-            
-            const tipo = document.querySelector('input[name="tipoPartida"]:checked').value;
+            if (!idCuestionario) return alert("Selecciona un cuestionario");
 
-            const bodyData = {
+            const payload = {
                 idCuestionario,
                 idProfesor,
-                tipoPartida: tipo,
-                modoAcceso: 'publica'
+                tipoPartida,
+                modoAcceso
             };
-            
-            if(tipo === 'en_vivo') {
-                bodyData.configuracionEnvivo = {
+
+            // Participantes si es privado
+            if (modoAcceso === 'privada') {
+                const checks = document.querySelectorAll('input[name="participantePrivado"]:checked');
+                payload.participantesPermitidos = Array.from(checks).map(c => c.value);
+                if (payload.participantesPermitidos.length === 0) {
+                    if (!confirm("No has seleccionado ningún alumno para la partida privada. ¿Deseas continuar?")) return;
+                }
+            }
+
+            if (tipoPartida === 'en_vivo') {
+                payload.configuracionEnvivo = {
                     tiempoPorPreguntaSeg: document.getElementById('evTiempo').value,
                     mezclarPreguntas: document.getElementById('evMezclarP').checked,
                     mezclarRespuestas: document.getElementById('evMezclarR').checked,
@@ -582,34 +751,34 @@
                     mostrarRanking: true
                 };
             } else {
-                 const fechaStr = document.getElementById('exFecha').value;
-                 const programada = fechaStr ? new Date(fechaStr).toISOString() : new Date().toISOString();
-                 
-                 bodyData.configuracionExamen = {
-                     programadaPara: programada,
-                     tiempoTotalMin: document.getElementById('exTiempo').value,
-                     permitirNavegacion: true,
-                     envioAutomatico: true
-                 };
+                const fechaStr = document.getElementById('exFecha').value;
+                const programada = fechaStr ? new Date(fechaStr).toISOString() : new Date().toISOString();
+
+                payload.configuracionExamen = {
+                    programadaPara: programada,
+                    tiempoTotalMin: document.getElementById('exTiempo').value,
+                    permitirNavegacion: true,
+                    envioAutomatico: true
+                };
             }
 
             try {
                 const res = await fetch(`${API_URL}/partidas`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bodyData)
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
                 if (data.ok) {
-                    
+
                     let esFuturo = false;
-                    if(data.data.tipoPartida === 'examen' && data.data.configuracionExamen?.programadaPara) {
-                         const f = new Date(data.data.configuracionExamen.programadaPara);
-                         // Margen : si es para >1 min en el futuro (time.now+60000)
-                         if(f.getTime() > (Date.now() + 60000)) esFuturo = true;
+                    if (data.data.tipoPartida === 'examen' && data.data.configuracionExamen?.programadaPara) {
+                        const f = new Date(data.data.configuracionExamen.programadaPara);
+                        // Margen : si es para >1 min en el futuro (time.now+60000)
+                        if (f.getTime() > (Date.now() + 60000)) esFuturo = true;
                     }
 
-                    if(esFuturo) {
+                    if (esFuturo) {
                         alert("Examen programado. Aparecerá en la lista de 'Exámenes Programados'.");
                         cargarMisPartidas();
                         // Nos quedamos en setupPartida
@@ -620,22 +789,22 @@
                     document.getElementById('setupPartida').classList.add('hidden');
                     document.getElementById('lobbyPartida').classList.remove('hidden');
                     document.getElementById('pinDisplay').innerText = data.data.pin || (data.data.tipoPartida === 'examen' ? 'EXAMEN' : '---');
-                    
-                    if(data.data.pin) conectarSocket(data.data.pin);
-                    
+
+                    if (data.data.pin) conectarSocket(data.data.pin);
+
                 } else { alert(data.mensaje || data.error); }
             } catch (e) { console.error(e); }
         }
-        
+
         function toggleConfig() {
-           const tipo = document.querySelector('input[name="tipoPartida"]:checked').value;
-           if(tipo === 'en_vivo') {
-               document.getElementById('configEnVivo').classList.remove('hidden');
-               document.getElementById('configExamen').classList.add('hidden');
-           } else {
-               document.getElementById('configEnVivo').classList.add('hidden');
-               document.getElementById('configExamen').classList.remove('hidden');
-           }
+            const tipo = document.querySelector('input[name="tipoPartida"]:checked').value;
+            if (tipo === 'en_vivo') {
+                document.getElementById('configEnVivo').classList.remove('hidden');
+                document.getElementById('configExamen').classList.add('hidden');
+            } else {
+                document.getElementById('configEnVivo').classList.add('hidden');
+                document.getElementById('configExamen').classList.remove('hidden');
+            }
         }
 
         function conectarSocket(pin) {
@@ -653,8 +822,8 @@
             socket.on('estado_lobby', (data) => {
                 document.getElementById('contadorJugadores').innerText = data.total;
                 const divLista = document.getElementById('listaJugadores');
-                divLista.innerHTML = ''; 
-                
+                divLista.innerHTML = '';
+
                 data.jugadores.forEach(j => {
                     const badgeId = `player-${j.idAlumno}`;
                     const span = document.createElement('span');
@@ -754,9 +923,9 @@
             socket.on('fin_partida', async (data) => {
                 clearInterval(timerInterval);
                 clearInterval(timerExamenProfeInterval);
-                
+
                 // Si estamos en modo examen, mostrar pantalla de reporte de examen
-                if(tipoPartidaActual === 'examen') {
+                if (tipoPartidaActual === 'examen') {
                     console.log("Examen finalizado. Cargando resultados...");
                     await cargarResultadosExamen();
                     ocultarTodasPantallas();
@@ -767,7 +936,7 @@
                     document.getElementById('pantallaFinal').classList.remove('hidden');
 
                     let html = '<div class="podium-container">';
-                    
+
                     // Orden visual: 2 (Plata), 1 (Oro), 3 (Bronce) -> Controlado por CSS 'order'
                     const topRanking = data.ranking.slice(0, 3);
                     const placeholders = [
@@ -780,10 +949,10 @@
                         // El array es 0-indexed, así que rank 1 es indice 0
                         const idx = p.rank - 1;
                         const jugador = topRanking[idx];
-                        
+
                         // Si hay jugador para esta posición, lo mostramos
                         // Sino mostramos placeholder vacío o nada si no hay tantos jugadores
-                        if(jugador || topRanking.length >= p.rank) {
+                        if (jugador || topRanking.length >= p.rank) {
                             html += `
                             <div class="podium-item podium-${p.rank}">
                                 <div class="podium-name">${jugador ? jugador.nombre : '-'}</div>
@@ -794,26 +963,26 @@
                             </div>`;
                         }
                     });
-                    
+
                     html += '</div>';
 
                     // Resto del ranking
-                    if(data.ranking.length > 3) {
-                         html += '<div style="margin-top:20px; text-align:left; display:inline-block; max-width:500px; width:100%; border-top:1px solid #ddd; padding-top:10px;">';
-                         html += '<h3 style="text-align:center; font-size:1rem; margin-bottom:10px;">Resto de participantes</h3>';
-                         data.ranking.slice(3).forEach((jugador, i) => {
-                             html += `
-                             <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee; background:${i%2===0 ? '#f9f9f9':'#fff'}">
+                    if (data.ranking.length > 3) {
+                        html += '<div style="margin-top:20px; text-align:left; display:inline-block; max-width:500px; width:100%; border-top:1px solid #ddd; padding-top:10px;">';
+                        html += '<h3 style="text-align:center; font-size:1rem; margin-bottom:10px;">Resto de participantes</h3>';
+                        data.ranking.slice(3).forEach((jugador, i) => {
+                            html += `
+                             <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee; background:${i % 2 === 0 ? '#f9f9f9' : '#fff'}">
                                 <span>#${i + 4} <b>${jugador.nombre}</b></span>
                                 <span>${jugador.puntos} pts</span>
                              </div>`;
-                         });
-                         html += '</div>';
+                        });
+                        html += '</div>';
                     }
 
                     document.getElementById('rankingFinal').innerHTML = html;
                 }
-                
+
                 reporteGlobal = data.reporte || [];
             });
 
@@ -821,11 +990,11 @@
             socket.on('inicio_examen', (data) => {
                 console.log("Examen iniciado:", data);
                 tipoPartidaActual = 'examen';
-                
+
                 // Ocultar lobby, mostrar pantalla examen profesor
                 ocultarTodasPantallas();
                 document.getElementById('screenExamenProfesor').classList.remove('hidden');
-                
+
                 // Actualizar contador de jugadores
                 // Usar el valor que viene del servidor, o fallback al del lobby si no viene
                 let total = data.totalJugadores;
@@ -834,7 +1003,7 @@
                     total = lobbyCount || '0';
                 }
                 document.getElementById('examActivePlayers').textContent = total;
-                
+
                 // Iniciar timer del profesor
                 iniciarTimerExamenProfesor(data.duracionMin || 60, data.horaInicio || Date.now());
             });
@@ -898,7 +1067,7 @@
         }
 
         function descargarReporte() {
-            if(!idPartidaActual) return alert("Error: ID de partida desconocido");
+            if (!idPartidaActual) return alert("Error: ID de partida desconocido");
             const url = `${API_URL}/partidas/${idPartidaActual}/reporte?formato=pdf`;
             window.open(url, '_blank');
         }
@@ -915,27 +1084,27 @@
         let tipoPartidaActual = 'en_vivo'; // Para saber si es examen o en vivo
 
         async function finalizarPartida() {
-            if(!idPartidaActual) return;
-            
-            if(!confirm("¿Estás seguro de finalizar esta partida? Los alumnos serán desconectados.")) return;
-            
+            if (!idPartidaActual) return;
+
+            if (!confirm("¿Estás seguro de finalizar esta partida? Los alumnos serán desconectados.")) return;
+
             try {
                 const res = await fetch(`${API_URL}/partidas/finalizar/${idPartidaActual}`, { method: 'PUT' });
                 const data = await res.json();
-                
-                if(data.ok) {
+
+                if (data.ok) {
                     clearInterval(timerExamenProfeInterval);
-                    
+
                     // Cargar resultados del examen
                     await cargarResultadosExamen();
-                    
+
                     // Mostrar pantalla de reporte
                     ocultarTodasPantallas();
                     document.getElementById('screenReporteExamen').classList.remove('hidden');
                 } else {
                     alert("Error finalizando: " + (data.error || data.mensaje));
                 }
-            } catch(e) {
+            } catch (e) {
                 console.error(e);
                 alert("Error de conexión al finalizar");
             }
@@ -945,22 +1114,22 @@
             try {
                 const res = await fetch(`${API_URL}/partidas/${idPartidaActual}`);
                 const data = await res.json();
-                
-                if(data.ok && data.data) {
+
+                if (data.ok && data.data) {
                     const partida = data.data;
                     const rankingDiv = document.getElementById('rankingExamen');
                     rankingDiv.innerHTML = '';
-                    
-                    if(partida.jugadores && partida.jugadores.length > 0) {
+
+                    if (partida.jugadores && partida.jugadores.length > 0) {
                         // Ordenar por puntuación
-                        const jugadoresOrdenados = partida.jugadores.sort((a, b) => 
+                        const jugadoresOrdenados = partida.jugadores.sort((a, b) =>
                             (b.puntuacionTotal || 0) - (a.puntuacionTotal || 0)
                         );
-                        
+
                         jugadoresOrdenados.forEach((j, i) => {
                             const nota = j.puntuacionTotal || 0;
                             const colorNota = nota >= 5 ? '#2E7D32' : '#d32f2f';
-                            
+
                             const row = document.createElement('div');
                             row.style.padding = '10px';
                             row.style.marginBottom = '5px';
@@ -968,7 +1137,7 @@
                             row.style.borderRadius = '5px';
                             row.style.display = 'flex';
                             row.style.justifyContent = 'space-between';
-                            
+
                             row.innerHTML = `
                                 <span><strong>#${i + 1}</strong> ${j.nombreAlumno}</span>
                                 <span style="color: ${colorNota}; font-weight: bold;">${nota.toFixed(1)} / 10</span>
@@ -979,7 +1148,7 @@
                         rankingDiv.innerHTML = '<p style="color:#666;">No hay resultados disponibles.</p>';
                     }
                 }
-            } catch(e) {
+            } catch (e) {
                 console.error(e);
             }
         }
@@ -988,7 +1157,7 @@
             ocultarTodasPantallas();
             document.getElementById('setupPartida').classList.remove('hidden');
             idPartidaActual = null;
-            if(socket) {
+            if (socket) {
                 socket.disconnect();
                 socket = null;
             }
@@ -999,27 +1168,27 @@
             const pantallas = ['setupPartida', 'lobbyPartida', 'screenExamenProfesor', 'dashboardJuego', 'pantallaFinal', 'pantallaDetalles', 'screenReporteExamen'];
             pantallas.forEach(id => {
                 const el = document.getElementById(id);
-                if(el) el.classList.add('hidden');
+                if (el) el.classList.add('hidden');
             });
         }
 
         function iniciarTimerExamenProfesor(duracionMin, horaInicio) {
             const finTime = new Date(horaInicio).getTime() + (duracionMin * 60 * 1000);
-            
-            if(timerExamenProfeInterval) clearInterval(timerExamenProfeInterval);
-            
+
+            if (timerExamenProfeInterval) clearInterval(timerExamenProfeInterval);
+
             timerExamenProfeInterval = setInterval(() => {
                 const now = Date.now();
                 const diff = finTime - now;
-                
-                if(diff <= 0) {
+
+                if (diff <= 0) {
                     document.getElementById('timerProfe').textContent = "00:00";
                     clearInterval(timerExamenProfeInterval);
                 } else {
                     const min = Math.floor(diff / 60000);
                     const sec = Math.floor((diff % 60000) / 1000);
-                    document.getElementById('timerProfe').textContent = 
-                        `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+                    document.getElementById('timerProfe').textContent =
+                        `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
                 }
             }, 1000);
         }

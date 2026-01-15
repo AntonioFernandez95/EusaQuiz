@@ -18,7 +18,8 @@ async function listarUsuarios(req, res, next) {
   try {
     const limit = req.query.limit || 100;
     const skip = req.query.skip || 0;
-    const usuarios = await usuarioService.listarUsuarios({ limit, skip });
+    const rol = req.query.rol;
+    const usuarios = await usuarioService.listarUsuarios({ limit, skip, rol });
     return res.json({ ok: true, data: usuarios });
   } catch (err) {
     next(err);
