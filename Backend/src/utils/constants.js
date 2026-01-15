@@ -63,7 +63,7 @@ module.exports = {
             mezclarRespuestas: true,
             modoCalificacion: 'velocidad_precision'
         },
-        PROGRAMADA: { 
+        PROGRAMADA: {
             tiempoTotalMin: 60,
             permitirNavegacion: true,
             envioAutomatico: true

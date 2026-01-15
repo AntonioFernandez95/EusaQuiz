@@ -184,10 +184,10 @@ async function generarPDFDesdeHTML(htmlString) {
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     const page = await browser.newPage();
-    
+
     // Set content and wait for it to load
     await page.setContent(htmlString, { waitUntil: 'networkidle0' });
-    
+
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -205,19 +205,48 @@ async function generarPDFDesdeHTML(htmlString) {
   }
 }
 
+const Usuario = require('../models/usuario');
+
+// ... (existing imports skipped in replacement if not targeted, but I will target the end of file for function update)
+
+// ...
+
 /**
  * Genera reporte completo (entrada principal)
  * @param {String} idPartida - ID de la partida
  * @param {String} formato - 'xml', 'html' o 'pdf' (default: 'html')
- * @returns {Object} { contenido: String|Buffer, contentType: String }
+ * @param {String} idAlumno - Opcional: ID del alumno para personalizar el nombre
+ * @returns {Object} { contenido: String|Buffer, contentType: String, filename: String }
  */
-async function generarReporteCompleto(idPartida, formato = 'html') {
+async function generarReporteCompleto(idPartida, formato = 'html', idAlumno = null) {
+  // 1. Generar nombre de archivo personalizado
+  // Hacemos una búsqueda rápida para obtener metadatos (aunque se repita en generarXML, es despreciable)
+  const pMeta = await Partida.findById(idPartida).populate('idCuestionario');
+
+  let nombreSujeto = "";
+  if (idAlumno) {
+    const u = await Usuario.findOne({ idPortal: idAlumno });
+    nombreSujeto = u ? u.nombre : "Alumno";
+  } else {
+    nombreSujeto = pMeta?.tipoPartida || 'Reporte';
+  }
+
+  const asignatura = pMeta?.idCuestionario?.asignatura || 'General';
+  const curso = pMeta?.idCuestionario?.curso || 'Curso';
+  const titulo = pMeta?.idCuestionario?.titulo || 'Quiz';
+
+  const sanitize = (s) => (s || '').toString().trim().replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_ -]/g, '').replace(/\s+/g, '_');
+  const ext = formato === 'pdf' ? 'pdf' : (formato === 'xml' ? 'xml' : 'html');
+  const filename = `reporte_${sanitize(nombreSujeto)}_${sanitize(asignatura)}_${sanitize(curso)}_${sanitize(titulo)}.${ext}`;
+
+  // 2. Generar contenido
   const xml = await generarXMLPartida(idPartida);
 
   if (formato === 'xml') {
     return {
       contenido: xml,
-      contentType: 'application/xml'
+      contentType: 'application/xml',
+      filename
     };
   }
 
@@ -228,14 +257,16 @@ async function generarReporteCompleto(idPartida, formato = 'html') {
     const pdfBuffer = await generarPDFDesdeHTML(html);
     return {
       contenido: pdfBuffer,
-      contentType: 'application/pdf'
+      contentType: 'application/pdf',
+      filename
     };
   }
 
   // Por defecto HTML
   return {
     contenido: html,
-    contentType: 'text/html'
+    contentType: 'text/html',
+    filename
   };
 }
 

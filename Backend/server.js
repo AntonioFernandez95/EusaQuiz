@@ -25,12 +25,7 @@ connectDB();
 // Nota: Socket.io necesita su propia config de CORS aparte de Express
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:3000",
-      "http://127.0.0.1:5500",
-      "http://localhost:5500",
-      "/\. devtunnels\. ms$/"
-    ],
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
 
   }
@@ -48,6 +43,7 @@ app.use('/api/cuestionarios', require('./src/routes/cuestionarioRoutes'));
 app.use('/api/preguntas', require('./src/routes/preguntaRoutes'));
 app.use('/api/partidas', require('./src/routes/partidaRoutes'));
 app.use('/api/usuarios', require('./src/routes/usuarioRoutes'));
+app.use('/api/participaciones', require('./src/routes/participacionRoutes'));
 app.use(authFromParent);
 //Importar FRONT 
 app.use(express.static(path.join(__dirname, '../Frontend/Pruebas_Backend/')));

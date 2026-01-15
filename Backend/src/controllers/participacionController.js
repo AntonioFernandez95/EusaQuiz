@@ -63,3 +63,17 @@ exports.obtenerRankingPartida = async (req, res) => {
     return sendError(res, err);
   }
 };
+
+/**
+ * 4. Obtener historial de partidas de un alumno
+ * Params: /historial/:idAlumno
+ */
+exports.obtenerHistorialAlumno = async (req, res) => {
+  try {
+    const { idAlumno } = req.params;
+    const historial = await participacionService.obtenerHistorialAlumno(idAlumno);
+    res.json({ ok: true, data: historial });
+  } catch (err) {
+    return sendError(res, err);
+  }
+};

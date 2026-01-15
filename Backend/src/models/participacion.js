@@ -5,7 +5,7 @@ const tipos = require('../utils/constants');
 const RespuestaSchema = new mongoose.Schema({
     idPregunta: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'preguntas',
+        ref: 'Pregunta',
         required: true
     },
 
@@ -46,7 +46,7 @@ const ParticipacionSchema = new mongoose.Schema({
 
     idAlumno: {//!ATENCION
         type: String,
-        ref: 'usuarios',
+        ref: 'Usuario',
         required: true
     },
 
@@ -81,7 +81,7 @@ const ParticipacionSchema = new mongoose.Schema({
     respuestas: [RespuestaSchema] // Lista con TODO lo respondido  
 
 }, {
-    timestamps: false 
+    timestamps: false
 });
 
 // Índice compuesto para asegurar que un alumno no tenga duplicados en la misma partida activa

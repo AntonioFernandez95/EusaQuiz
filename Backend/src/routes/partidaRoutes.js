@@ -289,11 +289,17 @@ router.put('/finalizar/:id', controller.finalizarPartida);
 
 // --- RUTAS DE CONSULTA AUXILIAR (ALUMNO) ---
 
+// GET /api/partidas/pendientes/:idAlumno -> Obtener partidas para un alumno
+router.get('/pendientes/:idAlumno', controller.obtenerPartidasPendientesAlumno);
+
 // GET /api/partidas/pin/:pin -> Buscar partida por PIN
 router.get('/pin/:pin', controller.obtenerPartidaPorPin);
 
 // GET /api/partidas/examen/:idPartida/preguntas -> Descargar examen completo
 router.get('/examen/:idPartida/preguntas', controller.obtenerPreguntasExamen);
+
+// POST /api/partidas/finalizar-examen/:idPartida -> Finalizar examen (Alumno)
+router.post('/finalizar-examen/:idPartida', controller.finalizarExamenAlumno);
 
 // POST /api/partidas/finalizar-examen -> Alumno entrega examen
 router.post('/finalizar-examen', controller.finalizarExamenAlumno);

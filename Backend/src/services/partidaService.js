@@ -3,6 +3,7 @@ const Partida = require('../models/partida');
 const Participacion = require('../models/participacion');
 const Pregunta = require('../models/pregunta');
 const Cuestionario = require('../models/cuestionario');
+const Usuario = require('../models/usuario');
 const tipos = require('../utils/constants');
 // Importamos enviarRespuesta desde participacionService (donde está la lógica de respuestas)
 const { enviarRespuesta: _enviarRespuestaInternal } = require('./participacionService');
@@ -283,13 +284,40 @@ async function cerrarPartidaLogic(partida, io) {
   }
 
   partida.estadoPartida = tipos.ESTADOS_PARTIDA.FINALIZADA;
-  partida.finEn = Date.now();
-  await partida.save();
+  if (!partida.fechas) partida.fechas = {};
+  partida.fechas.finalizadaEn = new Date();
 
-  await Participacion.updateMany(
-    { idPartida: partida._id },
-    { $set: { estado: 'finalizada', finEn: Date.now() } }
-  );
+  // Si es EXAMEN, recalculamos notas finales sobre 10
+  if (partida.tipoPartida !== tipos.MODOS_JUEGO.EN_VIVO) {
+    const totalPreguntas = await Pregunta.countDocuments({ idCuestionario: partida.idCuestionario });
+    const participaciones = await Participacion.find({ idPartida: partida._id });
+
+    for (const p of participaciones) {
+      const aciertos = p.aciertos || 0;
+      const nota = totalPreguntas > 0 ? (aciertos / totalPreguntas) * 10 : 0;
+      p.puntuacionTotal = Math.round(nota * 10) / 10;
+      p.estado = 'finalizada';
+      p.finEn = Date.now();
+      await p.save();
+
+      // Sincronizar con partida.jugadores
+      const jIdx = partida.jugadores.findIndex(j => j.idAlumno === p.idAlumno);
+      if (jIdx !== -1) {
+        partida.jugadores[jIdx].puntuacionTotal = p.puntuacionTotal;
+        // No cambiamos estado del user a 'finalizado' ya que no está en el enum
+        // partida.jugadores[jIdx].estado = 'finalizado'; 
+      }
+    }
+    partida.markModified('jugadores');
+  } else {
+    // En Vivo: Solo marcamos como finalizadas
+    await Participacion.updateMany(
+      { idPartida: partida._id },
+      { $set: { estado: 'finalizada', finEn: Date.now() } }
+    );
+  }
+
+  await partida.save();
 
   let reporteGlobal = [];
   try {
@@ -330,9 +358,16 @@ async function cerrarPartidaLogic(partida, io) {
 /**
  * crearPartida(data)
  * data: { idCuestionario, idProfesor, modoAcceso, tipoPartida, configuracionEnvivo, configuracionProgramada, fechas }
+ * Verifica que el profesor exista en la BD mediante su idPortal
  */
 async function crearPartida(data) {
   const { idCuestionario, idProfesor, modoAcceso, tipoPartida, configuracionEnvivo, configuracionExamen, fechas } = data;
+
+  // Verificar que el profesor existe en la BD
+  const profesor = await Usuario.findOne({ idPortal: idProfesor });
+  if (!profesor) throw new Error('Profesor no encontrado en el sistema');
+  if (profesor.rol !== 'profesor') throw new Error('El usuario no tiene rol de profesor');
+
   const cuestionarioPadre = await Cuestionario.findById(idCuestionario);
   if (!cuestionarioPadre) throw new Error('Cuestionario no encontrado');
 
@@ -353,9 +388,18 @@ async function crearPartida(data) {
 }
 
 /**
- * unirseAPartida(pin, idAlumno, nombreAlumno, io)
+ * unirseAPartida(pin, idAlumno, io)
+ * El idAlumno corresponde al idPortal del usuario.
+ * El nombre se obtiene automáticamente de la BD.
  */
-async function unirseAPartida(pin, idAlumno, nombreAlumno, io) {
+async function unirseAPartida(pin, idAlumno, nombreAlumnoParam, io) {
+  // Verificar que el alumno existe en la BD mediante su idPortal
+  const alumno = await Usuario.findOne({ idPortal: idAlumno });
+  if (!alumno) throw new Error('Usuario no encontrado en el sistema');
+
+  // Construir nombre completo desde la BD (ignoramos nombreAlumnoParam para compatibilidad)
+  const nombreAlumno = alumno.nombre;
+
   const partida = await Partida.findOne({ pin, estadoPartida: { $ne: tipos.ESTADOS_PARTIDA.FINALIZADA } });
   if (!partida) throw new Error('Partida no encontrada');
 
@@ -380,7 +424,8 @@ async function unirseAPartida(pin, idAlumno, nombreAlumno, io) {
   return {
     idPartida: partida._id,
     modo: partida.tipoPartida,
-    configuracion: partida.tipoPartida === 'en_vivo' ? partida.configuracionEnvivo : partida.configuracionProgramada
+    configuracion: partida.tipoPartida === 'en_vivo' ? partida.configuracionEnvivo : partida.configuracionProgramada,
+    nombreAlumno: nombreAlumno
   };
 }
 
@@ -401,11 +446,30 @@ async function iniciarPartida(id, io) {
     return { mensaje: 'Iniciada' };
   } else {
     // MODO EXAMEN: Notificar inicio
+    const duracionMin = partida.configuracionExamen?.tiempoTotalMin || 20;
     io.to(partida.pin).emit('inicio_examen', {
       mensaje: 'Examen iniciado',
       horaInicio: partida.inicioEn,
-      duracionMin: partida.configuracionExamen?.tiempoTotalMin || 20
+      duracionMin: duracionMin,
+      totalJugadores: partida.jugadores.length
     });
+
+    // Programar cierre automático de seguridad (+1 minuto de margen)
+    const tiempoTotalMs = (duracionMin * 60 * 1000) + 60000;
+    console.log(`[Examen] Cierre automático programado en ${duracionMin} min (+1 min margen)`);
+
+    temporizadoresPartidas[String(partida._id)] = setTimeout(async () => {
+      try {
+        console.log(`[Examen] Tiempo agotado por servidor. Cerrando partida ${partida._id}...`);
+        const pActualizada = await Partida.findById(id);
+        if (pActualizada && pActualizada.estadoPartida !== tipos.ESTADOS_PARTIDA.FINALIZADA) {
+          await cerrarPartidaLogic(pActualizada, io);
+        }
+      } catch (e) {
+        console.error("Error en cierre automático de examen:", e);
+      }
+    }, tiempoTotalMs);
+
     return { mensaje: 'Examen iniciado' };
   }
 }
@@ -487,16 +551,32 @@ async function obtenerPartidaPorPin(pin) {
 async function obtenerPreguntasExamen(idPartida) {
   const partida = await Partida.findById(idPartida);
   if (!partida) throw new Error('Partida no encontrada');
-  return await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
+  const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 }).lean();
+
+  // Sanitizar para no enviar respuestas correctas al cliente
+  return preguntas.map(p => ({
+    _id: p._id,
+    textoPregunta: p.textoPregunta,
+    tipoPregunta: p.tipoPregunta,
+    opciones: p.opciones.map(o => ({
+      textoOpcion: o.textoOpcion,
+      _id: o._id
+    }))
+  }));
 }
 
-async function finalizarExamenAlumno(idPartida, idAlumno) {
+async function finalizarExamenAlumno(idPartida, idAlumno, io) {
   const partida = await Partida.findById(idPartida);
   if (!partida) throw new Error('Partida no encontrada');
 
   // Recuperamos la participacion
   const participacion = await Participacion.findOne({ idPartida, idAlumno });
   if (!participacion) throw new Error('Participación no encontrada');
+
+  // Si ya está finalizada, no hacer nada
+  if (participacion.estado === 'finalizada') {
+    return { nota: participacion.puntuacionTotal, yaFinalizada: true };
+  }
 
   // Calcular score base 10
   // Necesitamos el total de preguntas del cuestionario
@@ -524,7 +604,24 @@ async function finalizarExamenAlumno(idPartida, idAlumno) {
   const jugador = partida.jugadores.find(j => j.idAlumno === idAlumno);
   if (jugador) {
     jugador.puntuacionTotal = notaRedondeada;
+    // jugador.estado = 'finalizado'; // NO VALIDO EN ENUM
+    partida.markModified('jugadores');
     await partida.save();
+  }
+
+  // Verificar si TODOS los alumnos han finalizado
+  const totalJugadores = partida.jugadores.length;
+  const participacionesFinalizadas = await Participacion.countDocuments({
+    idPartida,
+    estado: 'finalizada'
+  });
+
+  console.log(`[Examen] Alumno ${idAlumno} finalizó. ${participacionesFinalizadas}/${totalJugadores} han terminado.`);
+
+  // Si todos han finalizado, cerrar la partida automáticamente
+  if (participacionesFinalizadas >= totalJugadores && partida.estadoPartida !== tipos.ESTADOS_PARTIDA.FINALIZADA) {
+    console.log(`[Examen] Todos los alumnos han finalizado. Cerrando partida automáticamente.`);
+    await cerrarPartidaLogic(partida, io);
   }
 
   return { nota: notaRedondeada, aciertos, total: totalPreguntas };
@@ -549,6 +646,49 @@ async function obtenerOpcionesConfiguracion() {
   };
 }
 
+async function obtenerPartidasPendientesAlumno(idAlumno) {
+  const alumno = await Usuario.findOne({ idPortal: idAlumno });
+  if (!alumno) throw new Error('Alumno no encontrado');
+
+  // Buscar partidas en estado 'espera' (lobby abierto)
+  const partidas = await Partida.find({
+    estadoPartida: { $in: [tipos.ESTADOS_PARTIDA.ESPERA] }
+  })
+    .populate('idCuestionario')
+    .sort({ 'fechas.creadaEn': -1 });
+
+  // Filtrar por curso del alumno
+  const cursoAlumno = (alumno.curso || '').trim().toLowerCase();
+
+  const filtradas = partidas.filter(p => {
+    const q = p.idCuestionario;
+    if (!q) return false;
+    // Si el cuestionario tiene curso, debe coincidir. Si no tiene, ¿se muestra a todos? Asumamos que sí o no.
+    // El usuario quiere "datos que existan para el curso". Si curso está vacío, tal vez es general.
+    // Vamos a ser estrictos: debe coincidir el curso, O el cuestionario ser "General"
+    const cursoQ = (q.curso || '').trim().toLowerCase();
+    if (!cursoQ) return true; // Cuestionario sin curso específico -> visible
+    return cursoQ === cursoAlumno;
+  });
+
+  return filtradas.map(p => {
+    let fechaMostrar = p.fechas?.creadaEn;
+    if (p.tipoPartida === 'examen' && p.configuracionExamen?.programadaPara) {
+      fechaMostrar = p.configuracionExamen.programadaPara;
+    }
+
+    return {
+      idPartida: p._id,
+      titulo: p.idCuestionario.titulo,
+      asignatura: p.idCuestionario.asignatura,
+      fecha: fechaMostrar,
+      pin: p.pin,
+      estado: p.estadoPartida,
+      tipo: p.tipoPartida
+    };
+  });
+}
+
 /* --------------------- EXPORTS --------------------- */
 module.exports = {
   obtenerOpcionesConfiguracion,
@@ -563,5 +703,6 @@ module.exports = {
   obtenerPartidaPorPin,
   obtenerPreguntasExamen,
   finalizarPartida,
-  finalizarExamenAlumno
+  finalizarExamenAlumno,
+  obtenerPartidasPendientesAlumno
 };
