@@ -1,0 +1,160 @@
+<div class="import-container">
+  <!-- Header -->
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo" (click)="goBack()" style="cursor: pointer">
+      <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
+    </div>
+
+    <div class="page-title-center">Importar Preguntas - PROFESOR</div>
+
+    <div class="user-profile">
+      <div class="user-avatar-wrapper">
+        <div class="user-avatar">
+          <span>{{ userInitials }}</span>
+        </div>
+      </div>
+      <span class="user-name">{{ userName }}</span>
+    </div>
+  </header>
+
+  <main class="import-content animate-slide-up">
+    <!-- Drop Zone -->
+    <div
+      class="drop-zone"
+      (drop)="onFileDropped($event)"
+      (dragover)="onDragOver($event)"
+      [class.has-file]="fileLoaded"
+    >
+      <div class="drop-zone-content">
+        <h2 class="drop-title">Arrastra tu archivo aquí</h2>
+        <p class="drop-subtitle">Archivo JSON</p>
+
+        <label class="btn-select-file">
+          Seleccionar archivo
+          <input
+            type="file"
+            (change)="onFileSelected($event)"
+            accept=".json"
+            hidden
+          />
+        </label>
+      </div>
+    </div>
+
+    <div class="results-section" *ngIf="fileLoaded">
+      <!-- Archivo Cargado y Datos del Examen -->
+      <section class="section">
+        <h3 class="section-label">Información del Cuestionario</h3>
+        <div class="file-card">
+          <div class="exam-form">
+            <div class="form-group">
+              <label>Título del Cuestionario</label>
+              <input
+                type="text"
+                [(ngModel)]="examName"
+                placeholder="Nombre del cuestionario"
+              />
+            </div>
+            <div class="form-group">
+              <label>Asignatura</label>
+              <input
+                type="text"
+                [(ngModel)]="examSubject"
+                placeholder="Módulo / Asignatura"
+              />
+            </div>
+          </div>
+          <div class="file-info-mini">
+            <span>{{ fileMetadata?.name }} ({{ fileMetadata?.size }})</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Vista Previa / Edición -->
+      <section class="section">
+        <div class="section-header-row">
+          <h3 class="section-label">
+            Listado de preguntas ({{ questions.length }})
+          </h3>
+        </div>
+
+        <div class="questions-list">
+          <div
+            class="question-preview-card"
+            *ngFor="let q of questions; let i = index"
+            [class.editing]="isGlobalEditing"
+          >
+            <div class="question-body">
+              <div class="q-header">
+                <span class="q-number">P{{ i + 1 }}:</span>
+                <input
+                  *ngIf="isGlobalEditing"
+                  type="text"
+                  [(ngModel)]="q.enunciado"
+                  class="edit-input"
+                />
+                <span *ngIf="!isGlobalEditing" class="q-text">{{
+                  q.enunciado
+                }}</span>
+              </div>
+
+              <div class="q-answer-row">
+                <span class="label">Respuesta correcta:</span>
+                <input
+                  *ngIf="isGlobalEditing"
+                  type="text"
+                  [(ngModel)]="q.respuesta_correcta"
+                  class="edit-input-sm"
+                />
+                <span *ngIf="!isGlobalEditing" class="answer-text">{{
+                  q.respuesta_correcta
+                }}</span>
+              </div>
+
+              <div class="q-options-preview" *ngIf="!isGlobalEditing">
+                <span class="badge" *ngFor="let opt of q.opciones">{{
+                  opt
+                }}</span>
+              </div>
+
+              <div class="q-options-edit" *ngIf="isGlobalEditing">
+                <div
+                  class="option-edit-item"
+                  *ngFor="
+                    let opt of q.opciones;
+                    let optIdx = index;
+                    trackBy: trackByIndex
+                  "
+                >
+                  <input
+                    type="text"
+                    [(ngModel)]="q.opciones[optIdx]"
+                    class="edit-input-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Botones de Acción -->
+      <div class="action-footer">
+        <button
+          class="btn-import"
+          (click)="importAll()"
+          [disabled]="isSaving || isGlobalEditing"
+          [title]="
+            isGlobalEditing ? 'Finaliza la edición antes de importar' : ''
+          "
+        >
+          {{ isSaving ? "Procesando..." : "Importar todas" }}
+        </button>
+        <button class="btn-edit" (click)="toggleGlobalEdit()">
+          {{ isGlobalEditing ? "Guardar Cambios" : "Editar" }}
+        </button>
+        <button class="btn-cancel" (click)="cancel()">Cancelar</button>
+      </div>
+    </div>
+  </main>
+</div>

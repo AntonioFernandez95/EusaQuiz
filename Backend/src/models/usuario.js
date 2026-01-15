@@ -48,12 +48,25 @@ const UsuarioSchema = new mongoose.Schema({
         enum: Object.values(tipos.CENTROS),
         required: true
     },
+    asignaturas: {
+        type: [String],
+        default: []
+    },
+    password: {
+        type: String,
+        required: false // Opcional para usuarios que vienen solo de portal
+    },
 
     activo: { type: Boolean, default: true },
     ultimoAcceso: { type: Date, default: Date.now },
 
     creadoEn: { type: Date, default: Date.now },
-    actualizadoEn: { type: Date, default: Date.now }
+    actualizadoEn: { type: Date, default: Date.now },
+
+    fotoPerfil: {
+        type: String,
+        default: null
+    }
 });
 
 module.exports = mongoose.model('Usuario', UsuarioSchema);

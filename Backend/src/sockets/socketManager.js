@@ -1,5 +1,6 @@
 const Partida = require('../models/partida');
 const Participacion = require('../models/participacion');
+const Usuario = require('../models/usuario');
 const tipos = require('../utils/constants');
 
 module.exports = (io) => {
@@ -21,6 +22,21 @@ module.exports = (io) => {
                 socket.data.idPartida = data.idPartida;
                 socket.data.esJugador = true;
                 console.log(`✅ Alumno ${data.idAlumno} unido a sala ${sala}`);
+
+                // Notificar a la sala que un jugador se ha conectado/reconectado
+                try {
+                    const usuario = await Usuario.findOne({ idPortal: data.idAlumno });
+                    const partida = await Partida.findOne({ pin: sala });
+                    if (usuario && partida) {
+                        io.to(sala).emit('nuevo_jugador', {
+                            nombre: usuario.nombre,
+                            idAlumno: data.idAlumno,
+                            total: partida.jugadores.length
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error notificando nuevo_jugador en join_room:", e);
+                }
             } else {
                 console.log(`👨‍🏫 Profesor/Monitor unido a sala ${sala}`);
                 // Recuperar estado actual si es lobby

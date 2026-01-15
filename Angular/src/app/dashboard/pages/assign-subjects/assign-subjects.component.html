@@ -1,0 +1,57 @@
+<div class="assign-container animate-fade-in">
+  <header class="header">
+    <div class="header-left">
+      <button class="btn-back" (click)="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <h1 class="title">Asignar Módulos</h1>
+    </div>
+    <div class="user-info">
+      <span>{{ userName }}</span>
+    </div>
+  </header>
+
+  <div class="content" *ngIf="!isLoading">
+    <p class="subtitle">Selecciona los módulos que impartirás durante este curso académico para DAM 1 y DAM 2.</p>
+
+    <div class="subjects-grid">
+      <div class="subject-group" *ngFor="let group of availableSubjects">
+        <h2 class="group-title">{{ group.name }}</h2>
+        <div class="subjects-list">
+          <div 
+            class="subject-card" 
+            *ngFor="let subject of group.subjects"
+            [class.selected]="isSelected(subject)"
+            (click)="toggleSubject(subject)"
+          >
+            <div class="checkbox">
+              <svg *ngIf="isSelected(subject)" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+            <span class="subject-name">{{ subject }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn--secondary" (click)="goBack()">Cancelar</button>
+      <button 
+        class="btn btn--primary" 
+        (click)="saveSubjects()" 
+        [disabled]="isSaving"
+      >
+        <span *ngIf="!isSaving">Guardar Asignación</span>
+        <div *ngIf="isSaving" class="spinner"></div>
+      </button>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Cargando asignaturas...</p>
+  </div>
+</div>

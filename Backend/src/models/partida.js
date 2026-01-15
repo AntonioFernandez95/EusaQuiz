@@ -56,8 +56,8 @@ const JugadorSchema = new mongoose.Schema({
 
     estado: {
         type: String,
-        enum: Object.values(tipos.ESTADO_USER),
-        default: tipos.ESTADO_USER.ACTIVO,
+        enum: [...Object.values(tipos.ESTADOS_PARTIDA), tipos.ESTADO_USER.ABANDONADO],
+        default: tipos.ESTADOS_PARTIDA.ACTIVA,
     },
 
     aciertos: { type: Number, default: 0 },
@@ -127,6 +127,10 @@ const PartidaSchema = new mongoose.Schema({
         ref: 'usuarios',
         required: true
     },
+
+    nombrePartida: { type: String },
+    asignatura: { type: String },
+    curso: { type: String },
 
     pin: { type: String, required: true, unique: true },
 

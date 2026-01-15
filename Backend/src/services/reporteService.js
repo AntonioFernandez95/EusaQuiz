@@ -41,9 +41,10 @@ function formatearFecha(fecha) {
 /**
  * Genera XML con los datos completos de una partida finalizada
  * @param {String} idPartida - ID de la partida
+ * @param {String} idSolicitante - ID del alumno que solicita el reporte (opcional)
  * @returns {String} XML como string
  */
-async function generarXMLPartida(idPartida) {
+async function generarXMLPartida(idPartida, idSolicitante = null) {
   // Obtener datos
   const partida = await Partida.findById(idPartida);
   if (!partida) throw new Error('Partida no encontrada');
@@ -65,6 +66,10 @@ async function generarXMLPartida(idPartida) {
   // Construir XML
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
   xml += '<reporte>\n';
+
+  if (idSolicitante) {
+    xml += `  <idSolicitante>${escapeXml(idSolicitante)}</idSolicitante>\n`;
+  }
 
   // Metadatos de la partida
   xml += '  <partida>\n';
@@ -144,6 +149,36 @@ async function generarXMLPartida(idPartida) {
     xml += '    </pregunta>\n';
   });
   xml += '  </preguntas>\n';
+
+  // Si hay un solicitante, añadir sus respuestas detalladas
+  if (idSolicitante) {
+    const participacionSolo = participaciones.find(p => p.idAlumno === idSolicitante);
+    if (participacionSolo) {
+      xml += '  <respuestasSolicitante>\n';
+      preguntas.forEach((pregunta, idx) => {
+        const res = participacionSolo.respuestas.find(r => r.idPregunta.toString() === pregunta._id.toString());
+        xml += '    <respuesta>\n';
+        xml += `      <numero>${idx + 1}</numero>\n`;
+        xml += `      <textoPregunta>${escapeXml(pregunta.textoPregunta)}</textoPregunta>\n`;
+        xml += `      <esCorrecta>${res ? res.esCorrecta : 'false'}</esCorrecta>\n`;
+
+        // Texto de respuesta seleccionada
+        let seleccionado = 'Sin responder';
+        if (res && res.opcionesMarcadas && res.opcionesMarcadas.length > 0) {
+          seleccionado = res.opcionesMarcadas.map(opIdx => {
+            return pregunta.opciones[opIdx] ? pregunta.opciones[opIdx].textoOpcion : null;
+          }).filter(t => t).join(', ');
+        }
+        xml += `      <textoSeleccionado>${escapeXml(seleccionado)}</textoSeleccionado>\n`;
+
+        // Texto de respuesta correcta
+        const correcta = pregunta.opciones.filter(o => o.esCorrecta).map(o => o.textoOpcion).join(', ');
+        xml += `      <textoCorrecto>${escapeXml(correcta)}</textoCorrecto>\n`;
+        xml += '    </respuesta>\n';
+      });
+      xml += '  </respuestasSolicitante>\n';
+    }
+  }
 
   xml += '</reporte>';
 
@@ -240,7 +275,7 @@ async function generarReporteCompleto(idPartida, formato = 'html', idAlumno = nu
   const filename = `reporte_${sanitize(nombreSujeto)}_${sanitize(asignatura)}_${sanitize(curso)}_${sanitize(titulo)}.${ext}`;
 
   // 2. Generar contenido
-  const xml = await generarXMLPartida(idPartida);
+  const xml = await generarXMLPartida(idPartida, idAlumno);
 
   if (formato === 'xml') {
     return {

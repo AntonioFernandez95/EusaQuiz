@@ -1,0 +1,133 @@
+<div class="reports-container">
+  <!-- Header -->
+  <header class="reports-header">
+    <div class="logo">
+      <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
+    </div>
+    <div class="header-center">
+      <h2>Pantalla 12: Análisis y Reportes - ALUMNO</h2>
+    </div>
+    <div class="user-info">
+      <div class="user-avatar">
+        <img
+          *ngIf="userProfileImg"
+          [src]="userProfileImg"
+          alt="Perfil"
+          class="profile-img-avatar"
+        />
+        <span *ngIf="!userProfileImg">{{ userInitials }}</span>
+      </div>
+      <span class="user-name">{{ userName }}</span>
+    </div>
+  </header>
+
+  <!-- Filtros -->
+  <div class="filters-grid">
+    <div class="filter-item">
+      <select
+        [(ngModel)]="selectedSubject"
+        (change)="onSubjectChange()"
+        class="report-select"
+      >
+        <option value="">Asignatura y curso</option>
+        <option *ngFor="let s of subjects" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <select
+        [(ngModel)]="selectedGameId"
+        (change)="onGameChange()"
+        class="report-select"
+        [disabled]="!selectedSubject"
+      >
+        <option value="">Nombre de la partida</option>
+        <option *ngFor="let g of filteredGames" [value]="g.idPartida._id">
+          {{ g.idPartida.nombrePartida || g.idPartida.idCuestionario.titulo }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Contenido de Reportes -->
+  <div class="reports-content" *ngIf="selectedGameId; else emptyState">
+    <!-- Rendimiento Alumno -->
+    <section class="report-section">
+      <h3 class="section-label">Rendimiento {{ userName }}</h3>
+      <div class="report-card green">
+        <div class="card-main">
+          <strong
+            >{{ selectedSubject.split("/")[0] }}: {{ performance.accuracy }}%
+            aciertos ({{ performance.status }})</strong
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- Preguntas Fallidas -->
+    <section class="report-section" *ngIf="failedQuestions.length > 0">
+      <h3 class="section-label">Preguntas fallidas</h3>
+      <div class="report-card red">
+        <div class="failed-questions-list">
+          <div
+            *ngFor="let q of failedQuestions; let i = index"
+            class="failed-item"
+          >
+            <strong>P{{ i + 1 }}:</strong> {{ q.textoPregunta }}
+          </div>
+        </div>
+      </div>
+      <div class="report-card green" *ngIf="failedQuestions.length === 0">
+        <div class="card-main">
+          <strong
+            >¡Increíble! No has fallado ninguna pregunta en esta
+            partida.</strong
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- Evolución en la asignatura -->
+    <section class="report-section">
+      <h3 class="section-label">Evolución en la asignatura</h3>
+      <div class="evolution-box">
+        <div class="evolution-list">
+          <div *ngFor="let ev of subjectEvolution" class="evolution-item">
+            {{ ev.subject }}: {{ ev.accuracy }}% aciertos ({{ ev.status }})
+          </div>
+          <div *ngIf="subjectEvolution.length === 0" class="empty-list">
+            No hay datos de evolución disponibles.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resumen -->
+    <div class="report-summary">
+      <p>{{ getSummary() }}</p>
+    </div>
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="actions-footer">
+    <button class="btn-action back" (click)="goBack()">
+      Volver a Dashboard
+    </button>
+    <button
+      class="btn-action export"
+      (click)="exportPDF()"
+      [disabled]="!selectedGameId || isDownloadingPDF"
+    >
+      {{ isDownloadingPDF ? "Exportando..." : "Exportar PDF" }}
+    </button>
+  </div>
+
+  <ng-template #emptyState>
+    <div class="empty-reports">
+      <p *ngIf="!isLoading">
+        Selecciona una asignatura y una partida para ver tus resultados
+        detallados.
+      </p>
+      <div class="spinner" *ngIf="isLoading"></div>
+    </div>
+  </ng-template>
+</div>
