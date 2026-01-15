@@ -1,0 +1,128 @@
+<div class="auth-container">
+  <!-- Background decorativo -->
+  <div class="auth-background">
+    <div class="bg-shape bg-shape--1"></div>
+    <div class="bg-shape bg-shape--2"></div>
+    <div class="bg-shape bg-shape--3"></div>
+  </div>
+
+  <!-- Card de login -->
+  <div class="auth-card animate-fade-in">
+    <!-- Header -->
+    <div class="auth-header">
+      <div class="logo">
+        <img src="assets/img/logo-camera.png" alt="Escuela de Negocios Campus Cámara" class="logo-img">
+      </div>
+      <h1 class="auth-title">Bienvenido de nuevo</h1>
+      <p class="auth-subtitle">Inicia sesión para continuar</p>
+    </div>
+
+    <!-- Alerta de error -->
+    <div *ngIf="errorMessage" class="alert alert--error">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      {{ errorMessage }}
+    </div>
+
+    <!-- Formulario -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+      <div class="form-group">
+        <label for="email">Correo electrónico</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          class="form-input"
+          placeholder="tu@email.com"
+          autocomplete="email"
+        />
+        <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error-message">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          <span *ngIf="loginForm.get('email')?.errors?.['required']">El correo es obligatorio</span>
+          <span *ngIf="loginForm.get('email')?.errors?.['email']">Introduce un correo válido</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <div class="password-input-wrapper">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            class="form-input"
+            placeholder="••••••••"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()"
+            tabindex="-1"
+          >
+            <svg *ngIf="!showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg *ngIf="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-message">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          <span>La contraseña es obligatoria</span>
+        </div>
+      </div>
+
+      <div class="form-options">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="rememberMe" />
+          <span class="checkbox-custom"></span>
+          Recordarme
+        </label>
+        <a routerLink="/auth/forgot-password" class="forgot-link">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn--primary btn--full-width btn--lg"
+        [disabled]="loginForm.invalid || isLoading"
+      >
+        <span *ngIf="!isLoading">Iniciar sesión</span>
+        <span *ngIf="isLoading" class="btn-loading">
+          <span class="spinner"></span>
+          Iniciando sesión...
+        </span>
+      </button>
+    </form>
+
+    <!-- Divisor -->
+    <div class="auth-divider">
+      <span>o continúa con</span>
+    </div>
+
+    <!-- Login desde Portal -->
+    <button class="btn btn--secondary btn--full-width portal-btn" (click)="loginFromPortal()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+        <polyline points="10 17 15 12 10 7"/>
+        <line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+      Acceder desde Portal EUSA
+    </button>
+
+    <!-- Footer -->
+    <div class="auth-footer">
+      <p>¿No tienes una cuenta? <a routerLink="/auth/register">Regístrate aquí</a></p>
+    </div>
+  </div>
+</div>

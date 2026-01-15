@@ -13,6 +13,8 @@
  */
 
 const usuarioService = require('../services/usuarioService');
+const fs = require('fs');
+const path = require('path');
 
 async function listarUsuarios(req, res, next) {
   try {
@@ -74,10 +76,61 @@ async function borrarUsuario(req, res, next) {
   }
 }
 
+async function actualizarFotoPerfil(req, res, next) {
+  try {
+    const id = req.params.id;
+    if (!req.file) {
+      return res.status(400).json({ ok: false, mensaje: 'No se ha subido ningún archivo' });
+    }
+
+    const u = await usuarioService.obtenerUsuarioPorId(id);
+    if (!u) {
+      // Borrar el archivo si el usuario no existe
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ ok: false, mensaje: 'Usuario no encontrado' });
+    }
+
+    // Nombre de usuario sanitizado para el archivo
+    const nombreSanitizado = u.nombre.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const extension = path.extname(req.file.originalname);
+    const nuevoNombre = `${nombreSanitizado}_${u.idPortal}${extension}`;
+    const nuevaRuta = path.join('uploads/profiles', nuevoNombre);
+
+    // Borrar imagen anterior si existe
+    if (u.fotoPerfil) {
+      const rutaAnterior = path.join(__dirname, '../../', u.fotoPerfil);
+      if (fs.existsSync(rutaAnterior)) {
+        try {
+          fs.unlinkSync(rutaAnterior);
+        } catch (e) {
+          console.error('Error borrando foto anterior:', e);
+        }
+      }
+    }
+
+    // Renombrar el archivo temporal al nombre definitivo
+    fs.renameSync(req.file.path, nuevaRuta);
+
+    // Actualizar usuario en DB (guardamos la ruta relativa)
+    const urlFoto = `uploads/profiles/${nuevoNombre}`;
+    await usuarioService.actualizarUsuario(id, { fotoPerfil: urlFoto });
+
+    return res.json({
+      ok: true,
+      mensaje: 'Foto de perfil actualizada',
+      fotoPerfil: urlFoto
+    });
+  } catch (err) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    next(err);
+  }
+}
+
 module.exports = {
   listarUsuarios,
   obtenerUsuario,
   crearUsuario,
   actualizarUsuario,
-  borrarUsuario
+  borrarUsuario,
+  actualizarFotoPerfil
 };

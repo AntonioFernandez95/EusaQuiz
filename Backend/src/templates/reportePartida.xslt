@@ -58,6 +58,7 @@
           .pos-1 { background: linear-gradient(90deg, #ffd700 0%, #fff9c4 100%) !important; }
           .pos-2 { background: linear-gradient(90deg, #c0c0c0 0%, #e8e8e8 100%) !important; }
           .pos-3 { background: linear-gradient(90deg, #cd7f32 0%, #deb887 100%) !important; }
+          .mi-fila { background-color: #e0f2fe !important; border: 2px solid #0ea5e9; }
           .medal { font-size: 1.3rem; margin-right: 8px; }
           .badge { 
             display: inline-block; 
@@ -138,7 +139,12 @@
           </div>
           
           <div class="section">
-            <h2 class="section-title">🏆 Ranking de Jugadores</h2>
+            <h2 class="section-title">
+              <xsl:choose>
+                <xsl:when test="/reporte/idSolicitante">🏆 Mi Resultado y Podio</xsl:when>
+                <xsl:otherwise>🏆 Ranking de Jugadores</xsl:otherwise>
+              </xsl:choose>
+            </h2>
             <table>
               <thead>
                 <tr>
@@ -153,58 +159,110 @@
               </thead>
               <tbody>
                 <xsl:for-each select="/reporte/jugadores/jugador">
-                  <tr>
-                    <xsl:attribute name="class">
-                      <xsl:choose>
-                        <xsl:when test="posicion = 1">pos-1</xsl:when>
-                        <xsl:when test="posicion = 2">pos-2</xsl:when>
-                        <xsl:when test="posicion = 3">pos-3</xsl:when>
-                      </xsl:choose>
-                    </xsl:attribute>
-                    <td>
-                      <xsl:choose>
-                        <xsl:when test="posicion = 1"><span class="medal">🥇</span></xsl:when>
-                        <xsl:when test="posicion = 2"><span class="medal">🥈</span></xsl:when>
-                        <xsl:when test="posicion = 3"><span class="medal">🥉</span></xsl:when>
-                        <xsl:otherwise><xsl:value-of select="posicion"/></xsl:otherwise>
-                      </xsl:choose>
-                    </td>
-                    <td><strong><xsl:value-of select="nombre"/></strong></td>
-                    <td><strong><xsl:value-of select="puntuacion"/></strong></td>
-                    <td><span class="badge badge-success"><xsl:value-of select="aciertos"/></span></td>
-                    <td><span class="badge badge-danger"><xsl:value-of select="fallos"/></span></td>
-                    <td><span class="badge badge-warning"><xsl:value-of select="sinResponder"/></span></td>
-                    <td><xsl:value-of select="estado"/></td>
-                  </tr>
+                  <!-- Mostrar si no hay solicitante (profe) O si es podio (pos <=3) O si es el propio alumno -->
+                  <xsl:if test="not(/reporte/idSolicitante) or posicion &lt;= 3 or idAlumno = /reporte/idSolicitante">
+                    <tr>
+                      <xsl:attribute name="class">
+                        <xsl:choose>
+                          <xsl:when test="posicion = 1">pos-1</xsl:when>
+                          <xsl:when test="posicion = 2">pos-2</xsl:when>
+                          <xsl:when test="posicion = 3">pos-3</xsl:when>
+                          <xsl:when test="idAlumno = /reporte/idSolicitante">mi-fila</xsl:when>
+                        </xsl:choose>
+                      </xsl:attribute>
+                      <td>
+                        <xsl:choose>
+                          <xsl:when test="posicion = 1"><span class="medal">🥇</span></xsl:when>
+                          <xsl:when test="posicion = 2"><span class="medal">🥈</span></xsl:when>
+                          <xsl:when test="posicion = 3"><span class="medal">🥉</span></xsl:when>
+                          <xsl:otherwise><xsl:value-of select="posicion"/></xsl:otherwise>
+                        </xsl:choose>
+                      </td>
+                      <td>
+                        <strong><xsl:value-of select="nombre"/></strong>
+                        <xsl:if test="idAlumno = /reporte/idSolicitante"> (Tú)</xsl:if>
+                      </td>
+                      <td><strong><xsl:value-of select="puntuacion"/></strong></td>
+                      <td><span class="badge badge-success"><xsl:value-of select="aciertos"/></span></td>
+                      <td><span class="badge badge-danger"><xsl:value-of select="fallos"/></span></td>
+                      <td><span class="badge badge-warning"><xsl:value-of select="sinResponder"/></span></td>
+                      <td><xsl:value-of select="estado"/></td>
+                    </tr>
+                  </xsl:if>
                 </xsl:for-each>
               </tbody>
             </table>
           </div>
           
-          <div class="section">
-            <h2 class="section-title">📝 Resumen por Pregunta</h2>
-            <xsl:for-each select="/reporte/preguntas/pregunta">
-              <div class="pregunta-card">
-                <div class="pregunta-header">
-                  <span class="pregunta-num">Pregunta <xsl:value-of select="numero"/></span>
-                  <span class="badge badge-success"><xsl:value-of select="porcentajeAcierto"/>% acierto</span>
-                </div>
-                <p class="pregunta-texto"><xsl:value-of select="texto"/></p>
-                <div class="opciones-grid">
-                  <xsl:for-each select="opciones/opcion">
-                    <div>
-                      <xsl:attribute name="class">
-                        opcion <xsl:if test="esCorrecta = 'true'">correcta</xsl:if>
-                      </xsl:attribute>
-                      <xsl:if test="esCorrecta = 'true'">✓ </xsl:if>
-                      <xsl:value-of select="texto"/>
-                      <span class="count"><xsl:value-of select="vecesSeleccionada"/></span>
-                    </div>
+          <!-- Sección Detallada para el Alumno -->
+          <xsl:if test="/reporte/idSolicitante">
+            <div class="section">
+              <h2 class="section-title">📝 Detalle de Mis Respuestas</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Pregunta</th>
+                    <th>Tu Respuesta</th>
+                    <th>Correcta</th>
+                    <th>Resultado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <xsl:for-each select="/reporte/respuestasSolicitante/respuesta">
+                    <tr>
+                      <td><xsl:value-of select="numero"/></td>
+                      <td><xsl:value-of select="textoPregunta"/></td>
+                      <td>
+                        <xsl:attribute name="style">
+                           <xsl:choose>
+                             <xsl:when test="esCorrecta = 'true'">color: #155724; font-weight: 600;</xsl:when>
+                             <xsl:otherwise>color: #721c24; font-weight: 600;</xsl:otherwise>
+                           </xsl:choose>
+                        </xsl:attribute>
+                        <xsl:value-of select="textoSeleccionado"/>
+                      </td>
+                      <td style="color: #6c757d; font-style: italic;"><xsl:value-of select="textoCorrecto"/></td>
+                      <td>
+                        <xsl:choose>
+                          <xsl:when test="esCorrecta = 'true'"><span class="badge badge-success">Correcto ✅</span></xsl:when>
+                          <xsl:otherwise><span class="badge badge-danger">Incorrecto ❌</span></xsl:otherwise>
+                        </xsl:choose>
+                      </td>
+                    </tr>
                   </xsl:for-each>
+                </tbody>
+              </table>
+            </div>
+          </xsl:if>
+          
+          <!-- Sección de Resumen Global (Solo para Profesor) -->
+          <xsl:if test="not(/reporte/idSolicitante)">
+            <div class="section">
+              <h2 class="section-title">📊 Resumen Global por Pregunta</h2>
+              <xsl:for-each select="/reporte/preguntas/pregunta">
+                <div class="pregunta-card">
+                  <div class="pregunta-header">
+                    <span class="pregunta-num">Pregunta <xsl:value-of select="numero"/></span>
+                    <span class="badge badge-success"><xsl:value-of select="porcentajeAcierto"/>% acierto global</span>
+                  </div>
+                  <p class="pregunta-texto"><xsl:value-of select="texto"/></p>
+                  <div class="opciones-grid">
+                    <xsl:for-each select="opciones/opcion">
+                      <div>
+                        <xsl:attribute name="class">
+                          opcion <xsl:if test="esCorrecta = 'true'">correcta</xsl:if>
+                        </xsl:attribute>
+                        <xsl:if test="esCorrecta = 'true'">✓ </xsl:if>
+                        <xsl:value-of select="texto"/>
+                        <span class="count"><xsl:value-of select="vecesSeleccionada"/> selecciones</span>
+                      </div>
+                    </xsl:for-each>
+                  </div>
                 </div>
-              </div>
-            </xsl:for-each>
-          </div>
+              </xsl:for-each>
+            </div>
+          </xsl:if>
           
           <div class="footer">
             Generado por EusaQuiz | © 2026 EUSA - Campus Cámara de Comercio
