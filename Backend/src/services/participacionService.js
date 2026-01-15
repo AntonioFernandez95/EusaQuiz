@@ -114,19 +114,27 @@ async function enviarRespuesta(payload, io) {
   };
 
   // Si es modo programada y ya había respuesta, eliminamos la anterior para reemplazarla
+  let anteriores = { puntos: 0, acierto: 0, fallo: 0 };
+
   if (modo !== 'en_vivo' && yaRespondida) {
+    const respAnt = participacion.respuestas.find(r => r.idPregunta.toString() === String(idPregunta));
+    if (respAnt) {
+      anteriores.puntos = respAnt.puntosObtenidos || 0;
+      anteriores.acierto = respAnt.esCorrecta ? 1 : 0;
+      anteriores.fallo = respAnt.esCorrecta ? 0 : 1;
+    }
+
     await Participacion.updateOne(
       { _id: participacion._id },
       { $pull: { respuestas: { idPregunta: preguntaDoc._id } } }
     );
-    // Nota: aquí podríamos recomputar contadores si fuera necesario; simplificamos actualizando con $inc abajo
   }
 
-  // Update atómico: push respuesta y ajustar contadores
+  // Update atómico: push respuesta y ajustar contadores con DELTA
   const incObject = {
-    puntuacionTotal: puntosGanados,
-    aciertos: esCorrecta ? 1 : 0,
-    fallos: esCorrecta ? 0 : 1
+    puntuacionTotal: puntosGanados - anteriores.puntos,
+    aciertos: (esCorrecta ? 1 : 0) - anteriores.acierto,
+    fallos: (esCorrecta ? 0 : 1) - anteriores.fallo
   };
 
   // Ejecutar update
@@ -144,13 +152,14 @@ async function enviarRespuesta(payload, io) {
     if (partida) {
       const jugadorIndex = partida.jugadores.findIndex(j => j.idAlumno === idAlumno);
       if (jugadorIndex !== -1) {
-        // Actualizar contadores del jugador
-        if (esCorrecta) {
-          partida.jugadores[jugadorIndex].aciertos = (partida.jugadores[jugadorIndex].aciertos || 0) + 1;
-        } else {
-          partida.jugadores[jugadorIndex].fallos = (partida.jugadores[jugadorIndex].fallos || 0) + 1;
-        }
-        partida.jugadores[jugadorIndex].puntuacionTotal = (partida.jugadores[jugadorIndex].puntuacionTotal || 0) + puntosGanados;
+
+        const currentAciertos = partida.jugadores[jugadorIndex].aciertos || 0;
+        const currentFallos = partida.jugadores[jugadorIndex].fallos || 0;
+        const currentPuntos = partida.jugadores[jugadorIndex].puntuacionTotal || 0;
+
+        partida.jugadores[jugadorIndex].aciertos = currentAciertos + incObject.aciertos;
+        partida.jugadores[jugadorIndex].fallos = currentFallos + incObject.fallos;
+        partida.jugadores[jugadorIndex].puntuacionTotal = currentPuntos + incObject.puntuacionTotal;
 
         // Marcar el subdocumento como modificado para que MongoDB lo guarde
         partida.markModified('jugadores');
@@ -194,7 +203,11 @@ async function enviarRespuesta(payload, io) {
 async function obtenerMiProgreso(idPartida, idAlumno) {
   if (!idPartida || !idAlumno) throw httpError(400, 'idPartida e idAlumno son requeridos.');
 
-  const participacion = await Participacion.findOne({ idPartida, idAlumno });
+  const participacion = await Participacion.findOne({ idPartida, idAlumno })
+    .populate({
+      path: 'respuestas.idPregunta',
+      select: 'textoPregunta opciones' // Select fields we need for the report
+    });
   if (!participacion) throw httpError(404, 'No encontrado');
   return participacion;
 }
@@ -216,8 +229,44 @@ async function obtenerRankingPartida(idPartida, limit = 10) {
   return ranking;
 }
 
+
+/**
+ * 4. Obtener Historial de un Alumno
+ */
+async function obtenerHistorialAlumno(idAlumno) {
+  // Buscamos todas las participaciones de este alumno
+  // y populamos la partida -> y luego el cuestionario de esa partida
+  const participaciones = await Participacion.find({ idAlumno })
+    .populate({
+      path: 'idPartida',
+      populate: { path: 'idCuestionario' }
+    })
+    .sort({ finEn: -1 }); // Las más recientes primero
+
+  return participaciones.map(p => {
+    const partida = p.idPartida;
+    const cuestionario = partida ? partida.idCuestionario : null;
+
+    return {
+      idPartida: partida ? partida._id : null,
+      fecha: p.fechaInicio,
+      finalizadoEn: p.finEn,
+      puntuacionTotal: p.puntuacionTotal,
+      aciertos: p.aciertos,
+      fallos: p.fallos,
+      tituloCuestionario: cuestionario ? cuestionario.titulo : 'Desconocido',
+      asignatura: cuestionario ? cuestionario.asignatura : 'General',
+      curso: cuestionario ? cuestionario.curso : '',
+      pinPartida: partida ? partida.pin : '---',
+      totalPreguntas: cuestionario ? cuestionario.numPreguntas : 0,
+      tipoPartida: partida ? partida.tipoPartida : 'en_vivo'
+    };
+  });
+}
+
 module.exports = {
   enviarRespuesta,
   obtenerMiProgreso,
-  obtenerRankingPartida
+  obtenerRankingPartida,
+  obtenerHistorialAlumno
 };

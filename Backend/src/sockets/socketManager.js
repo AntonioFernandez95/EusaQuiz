@@ -3,19 +3,19 @@ const Participacion = require('../models/participacion');
 const tipos = require('../utils/constants');
 
 module.exports = (io) => {
-    
+
     io.on('connection', (socket) => {
         console.log(`⚡ Conexión entrante: ${socket.id}`);
 
         // UNIRSE A SALA
-        socket.on('join_room', (data) => {
+        socket.on('join_room', async (data) => {
             // data trae: { pin, idPartida, idAlumno } o solo { pin } si es profe
             const sala = data.pin;
-            socket.join(sala); 
-            
+            socket.join(sala);
+
             // Guardamos datos en el socket para saber quién es si se desconecta
             socket.data.sala = sala;
-            
+
             if (data.idAlumno) {
                 socket.data.idAlumno = data.idAlumno;
                 socket.data.idPartida = data.idPartida;
@@ -23,6 +23,21 @@ module.exports = (io) => {
                 console.log(`✅ Alumno ${data.idAlumno} unido a sala ${sala}`);
             } else {
                 console.log(`👨‍🏫 Profesor/Monitor unido a sala ${sala}`);
+                // Recuperar estado actual si es lobby
+                try {
+                    const partida = await Partida.findOne({ pin: sala });
+                    if (partida && partida.estadoPartida === tipos.ESTADOS_PARTIDA.ESPERA) {
+                        const currentPlayers = partida.jugadores.map(j => ({
+                            idAlumno: j.idAlumno,
+                            nombre: j.nombreAlumno
+                        }));
+
+                        socket.emit('estado_lobby', {
+                            jugadores: currentPlayers,
+                            total: currentPlayers.length
+                        });
+                    }
+                } catch (e) { console.error("Error enviando estado_lobby:", e); }
             }
         });
 
@@ -48,14 +63,14 @@ module.exports = (io) => {
                         await partida.save();
 
                         console.log(`📉 (Juego) Jugador ${idAlumno} abandonó.`);
-                        
+
                         io.to(sala).emit('usuario_desconectado', {
                             modo: 'juego',
                             idAlumno,
                             totalParticipantes: activos
                         });
                     }
-                    
+
                     // CASO 2: PARTIDA EN LOBBY (ESPERA) -> Borrar totalmente
                     else if (partida.estadoPartida === tipos.ESTADOS_PARTIDA.ESPERA) {
                         // Borrar del array de jugadores
@@ -67,7 +82,7 @@ module.exports = (io) => {
                         await Participacion.deleteOne({ idPartida, idAlumno });
 
                         console.log(`👋 (Lobby) Jugador ${idAlumno} salió de la sala.`);
-                        
+
                         io.to(sala).emit('usuario_desconectado', {
                             modo: 'lobby',
                             idAlumno,

@@ -114,7 +114,8 @@ exports.obtenerPreguntasExamen = async (req, res) => {
 exports.finalizarExamenAlumno = async (req, res) => {
   try {
     const { idPartida, idAlumno } = req.body;
-    const resultado = await partidaService.finalizarExamenAlumno(idPartida, idAlumno);
+    const io = req.app.get('socketio');
+    const resultado = await partidaService.finalizarExamenAlumno(idPartida, idAlumno, io);
     res.json({ ok: true, data: resultado });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
@@ -144,9 +145,16 @@ exports.generarReporte = async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Formato debe ser "xml", "html" o "pdf"' });
     }
 
-    const { contenido, contentType } = await reporteService.generarReporteCompleto(id, formato);
+    const idAlumno = req.query.idAlumno;
+    const { contenido, contentType, filename } = await reporteService.generarReporteCompleto(id, formato, idAlumno);
 
-    res.setHeader('Content-Type', contentType + '; charset=utf-8');
+    if (formato === 'pdf') {
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    } else {
+      res.setHeader('Content-Type', contentType + '; charset=utf-8');
+    }
+
     res.send(contenido);
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
@@ -157,6 +165,27 @@ exports.obtenerOpcionesConfiguracion = async (req, res) => {
   try {
     const opciones = await partidaService.obtenerOpcionesConfiguracion();
     res.json({ ok: true, data: opciones });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+};
+
+exports.obtenerPartidasPendientesAlumno = async (req, res) => {
+  try {
+    const partidas = await partidaService.obtenerPartidasPendientesAlumno(req.params.idAlumno);
+    res.json({ ok: true, data: partidas });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+};
+
+exports.finalizarExamenAlumno = async (req, res) => {
+  try {
+    const { idAlumno } = req.body;
+    const { idPartida } = req.params;
+    const io = req.app.get('socketio');
+    await partidaService.finalizarExamenAlumno(idPartida, idAlumno, io);
+    res.json({ ok: true });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }

@@ -1,6 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/participacionController');
+
+console.log("--> Loaded participacionRoutes.js");
+
+router.use((req, res, next) => {
+    console.log(`[ParticipacionRoutes] Request: ${req.method} ${req.path}`);
+    next();
+});
+
 /**
  * @swagger
  * /api/participaciones/responder:
@@ -50,5 +58,8 @@ router.get('/progreso/:idPartida/:idAlumno', controller.obtenerMiProgreso);
 
 // GET /api/participaciones/ranking/:idPartida -> Profesor consulta ranking en vivo
 router.get('/ranking/:idPartida', controller.obtenerRankingPartida);
+
+// GET /api/participaciones/historial/:idAlumno -> Historial completo del alumno
+router.get('/historial/:idAlumno', controller.obtenerHistorialAlumno);
 
 module.exports = router;
