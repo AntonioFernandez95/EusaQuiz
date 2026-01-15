@@ -37,6 +37,13 @@ async function enviarRespuesta(payload, io) {
 
       console.log(`[Auto-Avance] ${respuestasCount}/${totalEsperados} respondieron.`);
 
+      if (io) {
+        io.to(partida.pin).emit('voto_recibido', {
+          respondidos: respuestasCount,
+          total: totalEsperados
+        });
+      }
+
       if (respuestasCount >= totalEsperados) {
         console.log('[Auto-Avance] Todos han respondido. Avanzando pregunta...');
         // Forzamos la conclusión de la pregunta actual
@@ -75,6 +82,7 @@ function obtenerRanking(jugadores) {
     .sort((a, b) => b.puntuacionTotal - a.puntuacionTotal)
     .slice(0, 5)
     .map(j => ({
+      idAlumno: j.idAlumno,
       nombre: j.nombreAlumno,
       puntos: j.puntuacionTotal || 0
     }));
@@ -250,8 +258,8 @@ async function gestionarCicloPregunta(partidaDoc, indicePregunta, io) {
     puntos: preguntaActual.puntuacionMax,
     numeroPregunta: indicePregunta + 1,
     totalPreguntas: preguntas.length,
-    opciones: preguntaActual.opciones.map(op => ({
-      idOpcion: op._id,
+    opciones: preguntaActual.opciones.map((op, idx) => ({
+      idOpcion: op._id ? String(op._id) : String(idx),
       textoOpcion: op.textoOpcion
     }))
   };
@@ -361,7 +369,7 @@ async function cerrarPartidaLogic(partida, io) {
  * Verifica que el profesor exista en la BD mediante su idPortal
  */
 async function crearPartida(data) {
-  const { idCuestionario, idProfesor, modoAcceso, participantesPermitidos, tipoPartida, configuracionEnvivo, configuracionExamen, fechas } = data;
+  const { nombrePartida, asignatura, curso, idCuestionario, idProfesor, modoAcceso, participantesPermitidos, tipoPartida, configuracionEnvivo, configuracionExamen, fechas } = data;
 
   // Verificar que el profesor existe en la BD
   const profesor = await Usuario.findOne({ idPortal: idProfesor });
@@ -372,6 +380,9 @@ async function crearPartida(data) {
   if (!cuestionarioPadre) throw new Error('Cuestionario no encontrado');
 
   const nuevaPartida = new Partida({
+    nombrePartida,
+    asignatura,
+    curso,
     idCuestionario,
     idProfesor,
     pin: generarPinUnico(),
@@ -385,7 +396,7 @@ async function crearPartida(data) {
   });
 
   await nuevaPartida.save();
-  return { id: nuevaPartida._id, pin: nuevaPartida.pin };
+  return { id: nuevaPartida._id, pin: nuevaPartida.pin, _id: nuevaPartida._id };
 }
 
 /**
@@ -413,7 +424,7 @@ async function unirseAPartida(pin, idAlumno, nombreAlumnoParam, io) {
 
   const jugadorExiste = partida.jugadores.some(j => j.idAlumno === idAlumno);
   if (!jugadorExiste) {
-    partida.jugadores.push({ idAlumno, nombreAlumno, estado: tipos.ESTADO_USER.ACTIVO });
+    partida.jugadores.push({ idAlumno, nombreAlumno, estado: tipos.ESTADOS_PARTIDA.ACTIVA });
     partida.numParticipantes = partida.jugadores.length;
     await partida.save();
 
@@ -449,10 +460,29 @@ async function iniciarPartida(id, io) {
   await partida.save();
 
   if (partida.tipoPartida === tipos.MODOS_JUEGO.EN_VIVO) {
+    // Buscar la primera pregunta para devolverla al monitor
+    const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
+    const tiempo = partida.configuracionEnvivo?.tiempoPorPreguntaSeg || preguntas[0]?.tiempoLimiteSeg || 20;
+
+    const primeraPregunta = preguntas[0] ? {
+      idPregunta: preguntas[0]._id,
+      textoPregunta: preguntas[0].textoPregunta,
+      tipoPregunta: preguntas[0].tipoPregunta,
+      tiempoLimite: tiempo,
+      puntos: preguntas[0].puntuacionMax,
+      numeroPregunta: 1,
+      totalPreguntas: preguntas.length,
+      opciones: preguntas[0].opciones.map((op, idx) => ({
+        idOpcion: op._id ? String(op._id) : String(idx),
+        textoOpcion: op.textoOpcion
+      }))
+    } : null;
+
     // lanzar ciclo
     gestionarCicloPregunta(partida, 0, io).catch(e => console.error(e));
-    return { mensaje: 'Iniciada' };
-  } else {
+    return { mensaje: 'Iniciada', primeraPregunta };
+  }
+  else {
     // MODO EXAMEN: Notificar inicio
     const duracionMin = partida.configuracionExamen?.tiempoTotalMin || 20;
     io.to(partida.pin).emit('inicio_examen', {
@@ -485,12 +515,35 @@ async function iniciarPartida(id, io) {
 /* --------------------- CRUD Y CONSULTAS --------------------- */
 
 async function obtenerTodasPartidas(filtro = {}) {
-  const partidas = await Partida.find(filtro).populate('idCuestionario', 'titulo').sort({ inicioEn: -1 });
+  const partidas = await Partida.find(filtro).populate('idCuestionario', 'titulo asignatura curso').sort({ inicioEn: -1 });
   return partidas;
 }
 
 async function obtenerDetallePartida(id) {
-  return await Partida.findById(id).populate('idCuestionario');
+  const partida = await Partida.findById(id).populate('idCuestionario').lean();
+  if (!partida) return null;
+
+  // Obtener las preguntas asociadas al cuestionario
+  const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario._id })
+    .sort({ ordenPregunta: 1 }) // Importante mantener el orden
+    .lean();
+
+  // Obtener las participaciones para enriquecer los jugadores con sus respuestas
+  // Usar partida._id que es un ObjectId válido
+  const participaciones = await Participacion.find({ idPartida: partida._id }).lean();
+
+  // Enriquecer los jugadores con las respuestas de las participaciones
+  const jugadoresEnriquecidos = partida.jugadores.map(jugador => {
+    const participacion = participaciones.find(p => p.idAlumno === jugador.idAlumno);
+    return {
+      ...jugador,
+      respuestas: participacion?.respuestas || [],
+      aciertos: participacion?.aciertos || 0,
+      puntuacionTotal: participacion?.puntuacionTotal || jugador.puntuacionTotal || 0
+    };
+  });
+
+  return { ...partida, jugadores: jugadoresEnriquecidos, preguntas };
 }
 
 async function actualizarPartida(id, payload) {
@@ -613,9 +666,19 @@ async function finalizarExamenAlumno(idPartida, idAlumno, io) {
   const jugador = partida.jugadores.find(j => j.idAlumno === idAlumno);
   if (jugador) {
     jugador.puntuacionTotal = notaRedondeada;
-    // jugador.estado = 'finalizado'; // NO VALIDO EN ENUM
+    jugador.estado = tipos.ESTADOS_PARTIDA.FINALIZADA;
+    jugador.finEn = Date.now();
     partida.markModified('jugadores');
     await partida.save();
+  }
+
+  // Emitir evento de que el alumno finalizó (para el monitor del profe)
+  if (io) {
+    io.to(partida.pin).emit('alumno_finalizado', {
+      idAlumno: idAlumno,
+      nota: notaRedondeada,
+      nombre: jugador ? jugador.nombreAlumno : 'Alumno'
+    });
   }
 
   // Verificar si TODOS los alumnos han finalizado
@@ -651,7 +714,8 @@ async function obtenerOpcionesConfiguracion() {
     defaults: {
       enVivo: tipos.DEFAULTS.EN_VIVO,
       programada: tipos.DEFAULTS.PROGRAMADA
-    }
+    },
+    asignaturas: tipos.ASIGNATURAS
   };
 }
 
@@ -695,11 +759,19 @@ async function obtenerPartidasPendientesAlumno(idAlumno) {
     }
 
     return {
-      idPartida: p._id,
-      titulo: p.idCuestionario.titulo,
-      asignatura: p.idCuestionario.asignatura,
-      fecha: fechaMostrar,
+      _id: String(p._id),
+      nombrePartida: p.nombrePartida,
       pin: p.pin,
+      idCuestionario: {
+        _id: String(p.idCuestionario._id),
+        titulo: p.idCuestionario.titulo,
+        descripcion: p.idCuestionario.descripcion || '',
+        curso: p.idCuestionario.curso || '',
+        asignatura: p.idCuestionario.asignatura || ''
+      },
+      curso: p.curso || p.idCuestionario?.curso || '',
+      asignatura: p.asignatura || p.idCuestionario?.asignatura || '',
+      fechaProgramada: fechaMostrar,
       estado: p.estadoPartida,
       tipo: p.tipoPartida
     };

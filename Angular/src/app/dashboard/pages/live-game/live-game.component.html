@@ -1,0 +1,106 @@
+<div class="game-container">
+  <!-- Header -->
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo">
+      <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
+    </div>
+
+    <div class="page-title-center">Pregunta en Vivo - ALUMNO</div>
+
+    <div class="user-profile">
+      <div class="user-avatar-wrapper">
+        <div class="user-avatar">
+          <span>{{ userInitials }}</span>
+        </div>
+      </div>
+      <span class="user-name">{{ userName }}</span>
+    </div>
+  </header>
+
+  <main
+    class="game-content animate-slide-up"
+    *ngIf="preguntaActual; else waiting"
+  >
+    <!-- Info Bar -->
+    <div class="game-info-bar">
+      <span>Pregunta {{ numPregunta }} de {{ totalPreguntas }}</span>
+      <span class="dot">·</span>
+      <span
+        >{{ userName }}: <strong>{{ userPoints }} pts</strong></span
+      >
+    </div>
+
+    <!-- Timer Box -->
+    <div class="timer-box" [class.low-time]="timeLeft <= 5">
+      {{ timeLeft }} segundos
+    </div>
+
+    <!-- Question Box -->
+    <div class="question-card">
+      <p class="question-text">{{ preguntaActual.textoPregunta }}</p>
+    </div>
+
+    <!-- Options Grid -->
+    <div class="options-grid" [class.already-responded]="respondido">
+      <button
+        *ngFor="let option of preguntaActual.opciones; let i = index"
+        class="option-card"
+        [style.border-color]="getOptionColor(i)"
+        [class.selected]="opcionSeleccionada === i"
+        [class.correct]="
+          resultadoFeedback && resultadoFeedback.indiceCorrecto === i
+        "
+        [class.incorrect]="
+          resultadoFeedback &&
+          resultadoFeedback.indiceCorrecto !== i &&
+          opcionSeleccionada === i
+        "
+        [disabled]="respondido || timeLeft === 0"
+        (click)="seleccionarOpcion(i)"
+      >
+        <span class="option-text">{{ option.textoOpcion }}</span>
+
+        <div class="status-icon" *ngIf="resultadoFeedback">
+          <svg
+            *ngIf="resultadoFeedback.indiceCorrecto === i"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+          >
+            <path d="M20 6L9 17L4 12" />
+          </svg>
+          <svg
+            *ngIf="
+              resultadoFeedback.indiceCorrecto !== i &&
+              opcionSeleccionada === option.idOpcion
+            "
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+          >
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </div>
+      </button>
+    </div>
+
+    <!-- Feedback Message -->
+    <div
+      class="feedback-overlay animate-fade-in"
+      *ngIf="respondido && !resultadoFeedback"
+    >
+      <div class="waiting-icon"></div>
+      <p>¡Respuesta enviada! Esperando al resto...</p>
+    </div>
+  </main>
+
+  <ng-template #waiting>
+    <div class="waiting-screen animate-fade-in">
+      <div class="pulse-ring"></div>
+      <h2 *ngIf="numPregunta === 0">Esperando a que el profesor inicie...</h2>
+      <h2 *ngIf="numPregunta > 0">Preparando siguiente pregunta...</h2>
+    </div>
+  </ng-template>
+</div>

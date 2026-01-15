@@ -1,0 +1,536 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo">
+      <img
+        src="assets/img/logo-camera.png"
+        alt="Escuela de Negocios Campus Cámara"
+        class="logo-img"
+      />
+    </div>
+    <div class="page-title-center">Dashboard Profesor</div>
+    <div class="user-profile">
+      <div
+        class="user-avatar-wrapper"
+        (click)="triggerProfileUpload()"
+        title="Cambiar foto de perfil"
+      >
+        <div class="user-avatar">
+          <img
+            *ngIf="userProfileImg"
+            [src]="userProfileImg"
+            alt="Perfil"
+            class="profile-img-avatar"
+          />
+          <span *ngIf="!userProfileImg">{{ userInitials }}</span>
+          <div class="avatar-overlay">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+              />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </div>
+        </div>
+        <input
+          type="file"
+          id="profileInput"
+          style="display: none"
+          (change)="onProfileFileSelected($event)"
+          accept="image/*"
+        />
+      </div>
+      <span class="user-name">{{ userName }}</span>
+      <button class="btn-logout" (click)="logout()" title="Cerrar sesión">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+          />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Botones de Acción Principales -->
+  <div class="actions-grid animate-slide-up">
+    <button class="action-card btn--create" (click)="createGame()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      Crear Partida
+    </button>
+    <button class="action-card btn--import" (click)="importQuestions()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path
+          d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+        />
+      </svg>
+      Importar Preguntas
+    </button>
+    <button class="action-card btn--analysis" (click)="viewReports()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z" />
+      </svg>
+      Análisis y reporte
+    </button>
+    <button class="action-card btn--subjects" (click)="assignSubjects()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path
+          d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+        />
+      </svg>
+      Asignar Módulos
+    </button>
+    <button class="action-card btn--template" (click)="downloadJSONTemplate()">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path
+          d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+        />
+      </svg>
+      Modelo Exam IA
+    </button>
+  </div>
+
+  <!-- Partidas Recientes -->
+  <section
+    class="dashboard-section animate-slide-up"
+    style="animation-delay: 0.1s"
+  >
+    <h2 class="section-title">Partidas recientes</h2>
+
+    <div class="card-list" *ngIf="filteredRecentGames.length > 0">
+      <div *ngFor="let game of filteredRecentGames" class="card-item recent">
+        <div class="info">
+          <div class="title-row">
+            <span
+              class="type-badge"
+              [class.live]="game.tipoPartida === 'en_vivo'"
+            >
+              {{ game.tipoPartida === "en_vivo" ? "En Vivo" : "Examen" }}
+            </span>
+            <span class="title">
+              {{ game.nombrePartida || game.idCuestionario.titulo }}
+              <span
+                class="meta-tag"
+                *ngIf="game.curso || game.idCuestionario?.curso"
+                >/ {{ game.curso || game.idCuestionario?.curso }}</span
+              >
+              <span
+                class="meta-tag"
+                *ngIf="game.asignatura || game.idCuestionario?.asignatura"
+                >/
+                {{ game.asignatura || game.idCuestionario?.asignatura }}</span
+              >
+            </span>
+          </div>
+          <span class="subtitle"
+            >{{ game.numAlumnos }} alumnos · {{ game.aciertosPorcentaje }}%
+            aciertos</span
+          >
+        </div>
+        <div class="metrics-actions">
+          <div class="metrics" [class.low]="game.aciertosPorcentaje < 50">
+            {{ game.aciertosPorcentaje }}%
+          </div>
+          <button
+            class="btn-report-small"
+            (click)="viewGameReport(game)"
+            title="Ver Reporte"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+              />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+          </button>
+          <button
+            class="btn-report-small btn-delete-red"
+            (click)="deleteGame(game._id)"
+            title="Eliminar"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+              ></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="empty-state"
+      *ngIf="filteredRecentGames.length === 0 && !isLoading"
+    >
+      <p>No se encontraron partidas recientes.</p>
+    </div>
+  </section>
+
+  <!-- Partidas Programadas -->
+  <section
+    class="dashboard-section animate-slide-up"
+    style="animation-delay: 0.15s"
+  >
+    <h2 class="section-title">Partidas programadas</h2>
+
+    <div class="card-list" *ngIf="filteredScheduledGames.length > 0">
+      <div
+        class="card-item scheduled"
+        *ngFor="let game of filteredScheduledGames"
+      >
+        <div class="info">
+          <span class="title">
+            {{ game.nombrePartida || game.idCuestionario.titulo }}
+            <span
+              class="meta-tag"
+              *ngIf="game.curso || game.idCuestionario?.curso"
+              >/ {{ game.curso || game.idCuestionario?.curso }}</span
+            >
+            <span
+              class="meta-tag"
+              *ngIf="game.asignatura || game.idCuestionario?.asignatura"
+              >/ {{ game.asignatura || game.idCuestionario?.asignatura }}</span
+            >
+          </span>
+          <span class="subtitle">{{ game.numAlumnos }} alumnos</span>
+        </div>
+
+        <div class="date-center">
+          {{ game.fechaProgramada | date : "dd/MM/yyyy HH:mm" }}
+        </div>
+
+        <div class="actions-buttons">
+          <button
+            class="btn-action edit"
+            (click)="editGame(game._id)"
+            title="Editar"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+              />
+            </svg>
+          </button>
+          <button
+            class="btn-action delete"
+            (click)="deleteGame(game._id)"
+            title="Eliminar"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+              />
+              <line x1="10" y1="11" x2="10" y2="17" />
+              <line x1="14" y1="11" x2="14" y2="17" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="empty-state"
+      *ngIf="filteredScheduledGames.length === 0 && !isLoading"
+    >
+      <p>No se encontraron partidas programadas.</p>
+    </div>
+  </section>
+
+  <!-- Búsqueda -->
+  <section
+    class="dashboard-section search-section animate-slide-up"
+    style="animation-delay: 0.2s"
+  >
+    <h2 class="section-title">Busqueda</h2>
+
+    <div class="search-box">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Buscar por curso/asignatura"
+        [(ngModel)]="searchQuery"
+        (input)="onSearch()"
+      />
+    </div>
+
+    <div class="course-filters">
+      <button
+        class="course-btn"
+        [class.active]="searchQuery === 'Curso 1'"
+        (click)="filterByCourse('Curso 1')"
+      >
+        Curso 1
+      </button>
+      <button
+        class="course-btn"
+        [class.active]="searchQuery === 'Curso 2'"
+        (click)="filterByCourse('Curso 2')"
+      >
+        Curso 2
+      </button>
+    </div>
+  </section>
+
+  <!-- Estadística -->
+  <section
+    class="dashboard-section animate-slide-up"
+    style="animation-delay: 0.25s"
+  >
+    <h2 class="section-title">Estadística</h2>
+
+    <div class="stats-grid">
+      <div class="stat-card participation">
+        <div class="stat-info">
+          <span class="stat-label">Participación</span>
+          <span class="stat-value">{{ stats.participationRate || 0 }}%</span>
+        </div>
+        <div class="progress-bar-container">
+          <div
+            class="progress-bar-fill"
+            [style.width.%]="stats.participationRate || 0"
+          ></div>
+        </div>
+      </div>
+
+      <div class="stat-card accuracy">
+        <div class="stat-info">
+          <span class="stat-label">Aciertos promedio</span>
+          <span class="stat-value">{{ stats.averageAccuracy || 0 }}%</span>
+        </div>
+        <div class="progress-bar-container">
+          <div
+            class="progress-bar-fill"
+            [style.width.%]="stats.averageAccuracy || 0"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal de Reporte -->
+  <div class="modal-overlay animate-fade-in" *ngIf="showReportModal">
+    <div class="modal-content animate-slide-up">
+      <div class="modal-header">
+        <h3>Reporte: {{ selectedGameName }}</h3>
+        <button class="close-btn" (click)="closeReport()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="loading-spinner" *ngIf="isLoadingReport">
+          <p>Cargando reporte...</p>
+        </div>
+
+        <table
+          class="report-table"
+          *ngIf="!isLoadingReport && reportData.length > 0"
+        >
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Alumno</th>
+              <th>Puntuación</th>
+              <th>Aciertos</th>
+              <th>% Acierto</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let row of reportData; let i = index">
+              <tr>
+                <td class="col-rank">{{ i + 1 }}</td>
+                <td class="col-name">{{ row.nombre }}</td>
+                <td class="col-score">{{ row.puntos }}</td>
+                <td class="col-hits">{{ row.aciertos }}/{{ row.total }}</td>
+                <td class="col-pct">
+                  <span
+                    class="pct-badge"
+                    [class.high]="row.percentage >= 70"
+                    [class.low]="row.percentage < 50"
+                  >
+                    {{ row.percentage | number : "1.0-1" }}%
+                  </span>
+                </td>
+                <td class="col-action">
+                  <button class="btn-sm-details" (click)="toggleDetails(i)">
+                    {{ expandedIndex === i ? "Ocultar" : "Ver detalles" }}
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="expandedIndex === i" class="details-row">
+                <td colspan="6">
+                  <div class="inner-details animate-slide-down">
+                    <table class="details-table">
+                      <thead>
+                        <tr>
+                          <th>Pregunta</th>
+                          <th>Respuesta Alumno</th>
+                          <th>Respuesta Correcta</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr
+                          *ngFor="let ans of row.detailedAnswers"
+                          [class.correct-row]="ans.isCorrect"
+                          [class.incorrect-row]="!ans.isCorrect"
+                        >
+                          <td>{{ ans.questionText }}</td>
+                          <td
+                            [class.txt-correct]="ans.isCorrect"
+                            [class.txt-incorrect]="!ans.isCorrect"
+                          >
+                            {{ ans.selectedText }}
+                            <span *ngIf="ans.isCorrect">✅</span>
+                            <span *ngIf="!ans.isCorrect">❌</span>
+                          </td>
+                          <td class="txt-muted">{{ ans.correctText }}</td>
+                        </tr>
+                        <tr
+                          *ngIf="
+                            !row.detailedAnswers ||
+                            row.detailedAnswers.length === 0
+                          "
+                        >
+                          <td
+                            colspan="3"
+                            style="
+                              text-align: center;
+                              color: #94a3b8;
+                              padding: 2rem;
+                            "
+                          >
+                            No hay detalles de respuestas disponibles.
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+
+        <div
+          class="empty-state"
+          *ngIf="!isLoadingReport && reportData.length === 0"
+        >
+          <p>No hay datos de reporte disponibles.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          class="btn-secondary"
+          (click)="downloadPDF()"
+          [disabled]="
+            isDownloadingPDF || isLoadingReport || reportData.length === 0
+          "
+        >
+          <svg
+            *ngIf="!isDownloadingPDF"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+            />
+          </svg>
+          {{ isDownloadingPDF ? "Generando PDF..." : "Descargar PDF" }}
+        </button>
+        <button class="btn-primary" (click)="closeReport()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
