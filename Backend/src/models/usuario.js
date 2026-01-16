@@ -41,7 +41,9 @@ const UsuarioSchema = new mongoose.Schema({
         type: String,
         enum: Object.values(tipos.CURSOS),
         default: null,
-        required: true
+        required: function () {
+            return this.rol !== tipos.ROLES.ADMIN;
+        }
     },
     centro: {
         type: String,
@@ -65,6 +67,15 @@ const UsuarioSchema = new mongoose.Schema({
 
     fotoPerfil: {
         type: String,
+        default: null
+    },
+
+    resetPasswordToken: {
+        type: String,
+        default: null
+    },
+    resetPasswordExpires: {
+        type: Date,
         default: null
     }
 });

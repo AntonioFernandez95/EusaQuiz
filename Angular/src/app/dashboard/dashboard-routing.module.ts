@@ -14,6 +14,7 @@ import { GameMonitorComponent } from './pages/game-monitor/game-monitor.componen
 import { GameExamComponent } from './pages/game-exam/game-exam.component';
 import { ProfessorReportsComponent } from './pages/professor-reports/professor-reports.component';
 import { StudentReportsComponent } from './pages/student-reports/student-reports.component';
+import { AdminDashboardComponent } from './pages/admin/admin-dashboard.component';
 
 const routes: Routes = [
   {
@@ -79,6 +80,10 @@ const routes: Routes = [
   {
     path: 'professor/reports',
     component: ProfessorReportsComponent
+  },
+  {
+    path: 'admin',
+    component: AdminDashboardComponent
   },
   {
     path: '',

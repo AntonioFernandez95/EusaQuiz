@@ -1,0 +1,337 @@
+.games-container {
+    min-height: 400px;
+
+    .header {
+        margin-bottom: 20px;
+
+        h2 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #1e293b;
+        }
+
+        .total {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 5px;
+        }
+    }
+}
+
+.filters-bar {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid #f1f5f9;
+
+    .filter-group {
+        position: relative;
+        flex: 1;
+
+        i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px 12px 8px 35px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.2s;
+
+            &:focus {
+                border-color: #4361ee;
+                box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+            }
+        }
+
+        &.select select,
+        &.date input {
+            padding-left: 12px;
+        }
+
+        &.select {
+            max-width: 180px;
+        }
+
+        &.date {
+            max-width: 160px;
+        }
+    }
+
+    .total-badge {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #4361ee;
+        background: #e0e7ff;
+        padding: 5px 12px;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
+}
+
+.styled-table {
+    font-size: 0.9rem;
+
+    th {
+        padding: 12px 15px;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+    }
+
+    td {
+        padding: 15px;
+
+        .text-muted {
+            color: #94a3b8;
+        }
+
+        .small {
+            font-size: 0.8rem;
+        }
+    }
+
+    .actions-cell {
+        display: flex;
+        gap: 8px;
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f1f5f9;
+            color: #64748b;
+
+            &:hover {
+                transform: translateY(-2px);
+            }
+
+            &.edit:hover {
+                background: #e0e7ff;
+                color: #4361ee;
+            }
+
+            &.delete:hover {
+                background: #fee2e2;
+                color: #ef4444;
+            }
+        }
+    }
+}
+
+// Modal Styles
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #1e293b;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #94a3b8;
+        cursor: pointer;
+
+        &:hover {
+            color: #1e293b;
+        }
+    }
+}
+
+.modal-body {
+    padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+
+    .config-section {
+        margin-bottom: 25px;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+
+        h4 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #475569;
+            margin-bottom: 5px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+
+            &:focus {
+                border-color: #4361ee;
+                outline: none;
+            }
+        }
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .form-group-checkbox {
+        margin-bottom: 10px;
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #334155;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+    }
+}
+
+.modal-footer {
+    padding: 20px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+
+        &.btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+
+            &:hover {
+                background: #cbd5e1;
+            }
+        }
+
+        &.btn-primary {
+            background: #4361ee;
+            color: white;
+
+            &:hover {
+                background: #3730a3;
+            }
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+        }
+    }
+}
+
+.badge {
+    padding: 6px 12px;
+    font-weight: 600;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: white;
+
+    &.bg-success {
+        background: #22c55e;
+    }
+
+    &.bg-warning {
+        background: #f59e0b;
+    }
+
+    &.bg-secondary {
+        background: #64748b;
+    }
+
+    &.bg-info {
+        background: #3b82f6;
+    }
+}
