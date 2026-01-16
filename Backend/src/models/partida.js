@@ -48,7 +48,6 @@ const RespuestaAlumnoSchema = new mongoose.Schema({
 const JugadorSchema = new mongoose.Schema({
     idAlumno: {
         type: String,
-        ref: 'usuarios',
         required: true
     },
 
@@ -124,7 +123,6 @@ const PartidaSchema = new mongoose.Schema({
 
     idProfesor: {
         type: String,
-        ref: 'usuarios',
         required: true
     },
 
@@ -166,7 +164,24 @@ const PartidaSchema = new mongoose.Schema({
     jugadores: [JugadorSchema], // ARRAY DE JUGADORES EMBEBIDOS
 
 }, {
-    collection: 'partida'
+    collection: 'partida',
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+// Virtuales para población
+PartidaSchema.virtual('profesor', {
+    ref: 'Usuario',
+    localField: 'idProfesor',
+    foreignField: 'idPortal',
+    justOne: true
+});
+
+PartidaSchema.virtual('alumno', {
+    ref: 'Usuario',
+    localField: 'idAlumno',
+    foreignField: 'idPortal',
+    justOne: true
 });
 
 module.exports = mongoose.models.Partida || mongoose.model('Partida', PartidaSchema, 'partidas');

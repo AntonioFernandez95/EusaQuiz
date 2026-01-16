@@ -21,7 +21,7 @@ export class LoginComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private alertService: AlertService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initForm();
@@ -117,7 +117,9 @@ export class LoginComponent implements OnInit {
    * Redirige al usuario según su rol
    */
   private redirectBasedOnRole(rol: string): void {
-    if (rol === 'profesor') {
+    if (rol === 'admin') {
+      this.router.navigate(['/dashboard/admin']);
+    } else if (rol === 'profesor') {
       this.router.navigate(['/dashboard/professor']);
     } else {
       this.router.navigate(['/dashboard/student']);

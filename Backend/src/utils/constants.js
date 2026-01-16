@@ -2,6 +2,7 @@ module.exports = {
     ROLES: {
         PROFESOR: 'profesor',
         ALUMNO: 'alumno',
+        ADMIN: 'admin',
     },
     ESTADOS_PARTIDA: {
         ESPERA: 'espera',
@@ -39,6 +40,11 @@ module.exports = {
     CURSOS: {//!METER MAS CURSOS (TODOS XD)
         DAM1: '1 DAM',
         DAM2: '2 DAM',
+        DAW1: '1 DAW',
+        DAW2: '2 DAW',
+        ASIR1: '1 ASIR',
+        ASIR2: '2 ASIR',
+
         NULL: null,
     },
     ASIGNATURAS: {
@@ -48,7 +54,10 @@ module.exports = {
             'Programación',
             'Lenguajes de Marcas',
             'Entornos de Desarrollo',
-            'Formación y Orientación Laboral'
+            'Formación y Orientación Laboral',
+            'Digitalización Aplicada',
+            'Sostenibilidad Aplicada'
+
         ],
         DAM2: [
             'Acceso a Datos',

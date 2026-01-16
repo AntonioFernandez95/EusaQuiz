@@ -1,0 +1,104 @@
+<div class="admin-container">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <img src="assets/img/logo-camera.png" alt="Logo" class="logo">
+      <h2>EusaQuiz Admin</h2>
+    </div>
+    <nav class="sidebar-nav">
+      <button [class.active]="activeView === 'overview'" (click)="setTab('overview')">
+        <i class="fas fa-chart-line"></i> Resumen
+      </button>
+      <button [class.active]="activeView === 'users'" (click)="setTab('users')">
+        <i class="fas fa-users"></i> Usuarios
+      </button>
+      <button [class.active]="activeView === 'games'" (click)="setTab('games')">
+        <i class="fas fa-gamepad"></i> Partidas
+      </button>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <header class="top-bar">
+      <h1>Panel de Control</h1>
+      <div class="user-info">
+        <span>Admin Mode</span>
+        <div class="badge">LIVE</div>
+      </div>
+    </header>
+
+    <div *ngIf="loading" class="loader-container">
+      <div class="spinner"></div>
+    </div>
+
+    <div *ngIf="!loading && activeView === 'overview'" class="overview-grid animate__animated animate__fadeIn">
+      <!-- Stats Cards -->
+      <div class="stat-card blue">
+        <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+        <div class="stat-info">
+          <h3>Total Usuarios</h3>
+          <p class="value">{{ stats.totalUsuarios }}</p>
+        </div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+        <div class="stat-info">
+          <h3>Partidas Totales</h3>
+          <p class="value">{{ stats.totalPartidas }}</p>
+        </div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon"><i class="fas fa-signal"></i></div>
+        <div class="stat-info">
+          <h3>En Vivo</h3>
+          <p class="value">{{ stats.partidasActivas }}</p>
+        </div>
+      </div>
+
+      <!-- Recent Users Table -->
+      <div class="data-section full-width">
+        <div class="section-header">
+          <h2>Usuarios Recientes</h2>
+          <button class="btn-link" (click)="setTab('users')">Ver todos</button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Centro</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let u of usuariosRecientes">
+                <td>
+                  <div class="user-cell">
+                    <img [src]="u.fotoPerfil ? serverUrl + '/' + u.fotoPerfil : 'assets/img/default-avatar.png'"
+                      class="avatar-small">
+                    {{ u.nombre }}
+                  </div>
+                </td>
+                <td>{{ u.email }}</td>
+                <td><span class="role-badge" [ngClass]="u.rol">{{ u.rol }}</span></td>
+                <td>{{ u.centro }}</td>
+                <td>{{ u.creadoEn | date:'shortDate' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Placeholder for other views -->
+    <div *ngIf="activeView === 'users'" class="users-view animate__animated animate__fadeIn">
+      <app-admin-users></app-admin-users>
+    </div>
+
+    <div *ngIf="activeView === 'games'" class="games-view animate__animated animate__fadeIn">
+      <app-admin-games></app-admin-games>
+    </div>
+
+  </main>
+</div>
