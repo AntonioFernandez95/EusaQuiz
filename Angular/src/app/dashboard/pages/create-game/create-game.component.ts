@@ -3,6 +3,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { DashboardService } from '../../services/dashboard.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { AlertService } from '../../../shared/services/alert.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-create-game',
@@ -12,6 +13,8 @@ import { AlertService } from '../../../shared/services/alert.service';
 export class CreateGameComponent implements OnInit {
   userName: string = '';
   userInitials: string = '';
+  userProfileImg: string = '';
+  private serverUrl = environment.serverUrl;
   userId: string = '';
 
   // Form data
@@ -59,10 +62,12 @@ export class CreateGameComponent implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.userName = user.nombre;
+        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         this.userId = user.idPortal;
         
         this.loadQuizzes();
+        // Cargamos todos inicialmente o según lo que haya
         this.loadStudents();
 
         // Modo Edición
@@ -108,6 +113,8 @@ export class CreateGameComponent implements OnInit {
           const cfg = game.configuracionExamen;
           if (cfg) {
             this.totalExamTime = cfg.tiempoTotalMin;
+            this.shuffleQuestions = cfg.mezclarPreguntas;
+            this.shuffleAnswers = cfg.mezclarRespuestas;
             if (cfg.programadaPara) {
               const date = new Date(cfg.programadaPara);
               this.scheduledDate = date.toISOString().split('T')[0];
@@ -125,10 +132,22 @@ export class CreateGameComponent implements OnInit {
     });
   }
 
-  loadStudents(): void {
-    this.dashboardService.getStudents().subscribe(students => {
+  loadStudents(curso?: string): void {
+    this.dashboardService.getStudents(curso).subscribe(students => {
       this.allStudents = students;
     });
+  }
+
+  onSubjectChange(): void {
+    // Buscar el curso correspondiente a la asignatura seleccionada
+    const subjectInfo = this.availableSubjects.find(s => s.name === this.selectedSubject);
+    const selectedCourse = subjectInfo ? subjectInfo.course : undefined;
+    
+    // Al cambiar la asignatura/curso, limpiamos la selección previa para evitar inconsistencias
+    this.selectedStudentIds = [];
+    
+    // Recargar la lista de alumnos filtrada por el curso de la asignatura
+    this.loadStudents(selectedCourse);
   }
 
   toggleStudent(id: string): void {
@@ -187,17 +206,30 @@ export class CreateGameComponent implements OnInit {
         };
         gameData.estadoPartida = 'espera';
     } else { // examen
-        gameData.configuracionExamen = {
-            tiempoTotalMin: this.totalExamTime,
-            programadaPara: this.instantAccess ? new Date() : new Date(`${this.scheduledDate}T${this.scheduledTime}`)
-        };
-        
         if (!this.instantAccess && (!this.scheduledDate || !this.scheduledTime)) {
             this.alertService.warning('Fecha requerida', 'Por favor, selecciona una fecha y hora o marca la opción de acceso instantáneo.');
             return;
         }
-        gameData.estadoPartida = 'espera';
+
+        const scheduledDateTime = this.instantAccess ? new Date() : new Date(`${this.scheduledDate}T${this.scheduledTime}`);
+        if (scheduledDateTime < new Date()) {
+            this.alertService.warning('Fecha inválida', 'La fecha y hora programada no pueden ser en el pasado.');
+            return;
+        }
+
+        gameData.configuracionExamen = {
+            tiempoTotalMin: this.totalExamTime,
+            programadaPara: scheduledDateTime,
+            mezclarPreguntas: this.shuffleQuestions,
+            mezclarRespuestas: this.shuffleAnswers
+        };
+        
+        // Si es acceso inmediato, la marcamos como activa para que aparezca como iniciada
+        gameData.estadoPartida = this.instantAccess ? 'activa' : 'espera';
         gameData.fechas.programadaPara = gameData.configuracionExamen.programadaPara;
+        if (this.instantAccess) {
+            gameData.inicioEn = scheduledDateTime;
+        }
     }
 
     const action = this.isEditing 
@@ -210,7 +242,7 @@ export class CreateGameComponent implements OnInit {
           const msg = this.isEditing ? '¡Partida actualizada con éxito!' : '¡Partida creada con éxito!';
           this.alertService.success('Completado', msg);
           
-          if (this.gameMode === 'examen' && !this.instantAccess) {
+          if (this.gameMode === 'examen') {
             this.router.navigate(['/dashboard/professor']);
           } else {
             this.router.navigate([`/dashboard/professor/lobby/${res._id || this.editId}`]);

@@ -16,6 +16,9 @@ export class RegisterComponent implements OnInit {
   successMessage = '';
   currentStep = 1;
 
+  centros: string[] = [];
+  cursos: { id: string, nombre: string | null }[] = [];
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
@@ -24,6 +27,31 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
+    this.loadConstants();
+  }
+
+  private loadConstants(): void {
+    this.authService.getConstants().subscribe({
+      next: (res) => {
+        if (res.ok && res.constants) {
+          // Transformar Centros (objeto a array de valores)
+          this.centros = Object.values(res.constants.CENTROS);
+          
+          // Transformar Cursos (objeto a array de {id, nombre})
+          this.cursos = Object.entries(res.constants.CURSOS).map(([key, value]) => ({
+            id: value as string, // Usamos el valor (ej: "1 DAM") como ID para que coincida con lo que espera el back
+            nombre: (value as string) || 'Sin curso asignado'
+          })).filter(c => c.id !== null); // El valor null lo manejamos aparte o lo incluimos
+          
+          // Si hay un valor null, lo ponemos al principio con el nombre adecuado
+          const hasNull = Object.values(res.constants.CURSOS).some(v => v === null);
+          if (hasNull) {
+            this.cursos.unshift({ id: null as any, nombre: 'Sin curso asignado' });
+          }
+        }
+      },
+      error: (err) => console.error('Error cargando constantes:', err)
+    });
   }
 
   private initForm(): void {

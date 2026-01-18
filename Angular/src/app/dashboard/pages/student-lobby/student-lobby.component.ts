@@ -4,6 +4,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { SocketService } from '../../../services/socket.service';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-student-lobby',
@@ -13,7 +14,9 @@ import { Subscription } from 'rxjs';
 export class StudentLobbyComponent implements OnInit, OnDestroy {
   userName: string = '';
   userInitials: string = '';
+  userProfileImg: string = '';
   userId: string = '';
+  private serverUrl = environment.serverUrl;
   
   partida: any = null;
   partidaId: string = '';
@@ -32,6 +35,7 @@ export class StudentLobbyComponent implements OnInit, OnDestroy {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.userName = user.nombre;
+        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
       }
     });
@@ -55,7 +59,7 @@ export class StudentLobbyComponent implements OnInit, OnDestroy {
       if (p) {
         this.partida = p;
         
-        // Si la partida ya está activa, redirigir al alumno directamente
+        // Redirigir si ya está activa
         if (p.estadoPartida === 'activa') {
             if (p.tipoPartida === 'examen') {
                 this.router.navigate(['/dashboard/student/game-exam', this.partidaId]);
@@ -64,6 +68,16 @@ export class StudentLobbyComponent implements OnInit, OnDestroy {
                 this.router.navigate(['/dashboard/student/game-live', this.partidaId]);
                 return;
             }
+        }
+
+        // REDIRECCIÓN DIRECTA: Si es examen programado y ya es la hora, entrar directamente
+        if (p.tipoPartida === 'examen' && p.configuracionExamen?.programadaPara) {
+          const now = new Date().getTime();
+          const gameTime = new Date(p.configuracionExamen.programadaPara).getTime();
+          if (now >= gameTime) {
+            this.router.navigate(['/dashboard/student/game-exam', this.partidaId]);
+            return;
+          }
         }
         
         // REGISTRO AUTOMÁTICO: Forzar unión al entrar al lobby (necesario si entra desde dashboard)

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from 'src/app/services/admin.service';
+import { AuthService } from 'src/app/auth/services/auth.service';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -17,11 +18,33 @@ export class AdminDashboardComponent implements OnInit {
     loading: boolean = true;
     activeView: 'overview' | 'users' | 'games' = 'overview';
     serverUrl = environment.serverUrl;
+    
+    userName: string = '';
+    userInitials: string = '';
+    userProfileImg: string = '';
 
-    constructor(private adminService: AdminService) { }
+    constructor(
+        private adminService: AdminService,
+        private authService: AuthService
+    ) { }
 
     ngOnInit(): void {
         this.loadStats();
+        this.loadUserInfo();
+    }
+
+    loadUserInfo(): void {
+        const user = this.authService.getCurrentUser();
+        if (user) {
+            this.userName = user.nombre;
+            this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
+            this.userInitials = this.userName
+                .split(' ')
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()
+                .substring(0, 2);
+        }
     }
 
     loadStats(): void {

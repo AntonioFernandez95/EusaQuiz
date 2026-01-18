@@ -11,7 +11,11 @@
     <!-- Header -->
     <div class="auth-header">
       <div class="logo">
-        <img src="assets/img/logo-camera.png" alt="Escuela de Negocios Campus Cámara" class="logo-img">
+        <img
+          src="assets/img/logo-camera.png"
+          alt="Escuela de Negocios Campus Cámara"
+          class="logo-img"
+        />
       </div>
       <h1 class="auth-title">Crear cuenta</h1>
       <p class="auth-subtitle">Únete a la plataforma de quiz interactivos</p>
@@ -19,30 +23,52 @@
 
     <!-- Alerta de error/éxito -->
     <div *ngIf="errorMessage" class="alert alert--error">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
       {{ errorMessage }}
     </div>
 
     <div *ngIf="successMessage" class="alert alert--success">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
       </svg>
       {{ successMessage }}
     </div>
 
     <!-- Indicador de pasos -->
     <div class="steps-indicator">
-      <div class="step" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">
+      <div
+        class="step"
+        [class.active]="currentStep === 1"
+        [class.completed]="currentStep > 1"
+      >
         <span class="step-number">1</span>
         <span class="step-label">Datos personales</span>
       </div>
       <div class="step-connector" [class.completed]="currentStep > 1"></div>
-      <div class="step" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">
+      <div
+        class="step"
+        [class.active]="currentStep === 2"
+        [class.completed]="currentStep > 2"
+      >
         <span class="step-number">2</span>
         <span class="step-label">Credenciales</span>
       </div>
@@ -62,15 +88,26 @@
             placeholder="Tu nombre completo"
             autocomplete="name"
           />
-          <div *ngIf="registerForm.get('nombre')?.invalid && registerForm.get('nombre')?.touched" class="error-message">
+          <div
+            *ngIf="
+              registerForm.get('nombre')?.invalid &&
+              registerForm.get('nombre')?.touched
+            "
+            class="error-message"
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+              />
             </svg>
-            <span *ngIf="registerForm.get('nombre')?.errors?.['required']">El nombre es obligatorio</span>
-            <span *ngIf="registerForm.get('nombre')?.errors?.['minlength']">Mínimo 2 caracteres</span>
+            <span *ngIf="registerForm.get('nombre')?.errors?.['required']"
+              >El nombre es obligatorio</span
+            >
+            <span *ngIf="registerForm.get('nombre')?.errors?.['minlength']"
+              >Mínimo 2 caracteres</span
+            >
           </div>
         </div>
-
 
         <div class="form-row">
           <div class="form-group">
@@ -80,9 +117,22 @@
               <option value="alumno">Alumno</option>
               <option value="profesor">Profesor</option>
             </select>
-            <div *ngIf="registerForm.get('rol')?.invalid && registerForm.get('rol')?.touched" class="error-message">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            <div
+              *ngIf="
+                registerForm.get('rol')?.invalid &&
+                registerForm.get('rol')?.touched
+              "
+              class="error-message"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+                />
               </svg>
               <span>Selecciona un rol</span>
             </div>
@@ -92,12 +142,26 @@
             <label for="centro">Centro</label>
             <select id="centro" formControlName="centro" class="form-select">
               <option value="">Selecciona tu centro</option>
-              <option value="EUSA">EUSA</option>
-              <option value="Campus Camara">Campus Cámara</option>
+              <option *ngFor="let centro of centros" [value]="centro">
+                {{ centro }}
+              </option>
             </select>
-            <div *ngIf="registerForm.get('centro')?.invalid && registerForm.get('centro')?.touched" class="error-message">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            <div
+              *ngIf="
+                registerForm.get('centro')?.invalid &&
+                registerForm.get('centro')?.touched
+              "
+              class="error-message"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+                />
               </svg>
               <span>Selecciona un centro</span>
             </div>
@@ -107,9 +171,9 @@
         <div class="form-group">
           <label for="curso">Curso</label>
           <select id="curso" formControlName="curso" class="form-select">
-            <option [ngValue]="null">Sin curso asignado</option>
-            <option value="1 DAM">1º DAM</option>
-            <option value="2 DAM">2º DAM</option>
+            <option *ngFor="let curso of cursos" [ngValue]="curso.id">
+              {{ curso.nombre }}
+            </option>
           </select>
         </div>
 
@@ -120,9 +184,16 @@
           [disabled]="!isStep1Valid()"
         >
           Continuar
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="5" y1="12" x2="19" y2="12"/>
-            <polyline points="12 5 19 12 12 19"/>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
           </svg>
         </button>
       </div>
@@ -139,12 +210,24 @@
             placeholder="tu@email.com"
             autocomplete="email"
           />
-          <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error-message">
+          <div
+            *ngIf="
+              registerForm.get('email')?.invalid &&
+              registerForm.get('email')?.touched
+            "
+            class="error-message"
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+              />
             </svg>
-            <span *ngIf="registerForm.get('email')?.errors?.['required']">El correo es obligatorio</span>
-            <span *ngIf="registerForm.get('email')?.errors?.['email']">Introduce un correo válido</span>
+            <span *ngIf="registerForm.get('email')?.errors?.['required']"
+              >El correo es obligatorio</span
+            >
+            <span *ngIf="registerForm.get('email')?.errors?.['email']"
+              >Introduce un correo válido</span
+            >
           </div>
         </div>
 
@@ -165,25 +248,60 @@
               (click)="togglePasswordVisibility()"
               tabindex="-1"
             >
-              <svg *ngIf="!showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
+              <svg
+                *ngIf="!showPassword"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
               </svg>
-              <svg *ngIf="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
+              <svg
+                *ngIf="showPassword"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                />
+                <line x1="1" y1="1" x2="23" y2="23" />
               </svg>
             </button>
           </div>
-          <div class="password-strength" *ngIf="registerForm.get('password')?.value">
+          <div
+            class="password-strength"
+            *ngIf="registerForm.get('password')?.value"
+          >
             <div class="strength-bar">
-              <div class="strength-fill" [style.width]="passwordStrength + '%'" [class]="passwordStrengthClass"></div>
+              <div
+                class="strength-fill"
+                [style.width]="passwordStrength + '%'"
+                [class]="passwordStrengthClass"
+              ></div>
             </div>
-            <span class="strength-text" [class]="passwordStrengthClass">{{ passwordStrengthLabel }}</span>
+            <span class="strength-text" [class]="passwordStrengthClass">{{
+              passwordStrengthLabel
+            }}</span>
           </div>
-          <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error-message">
+          <div
+            *ngIf="
+              registerForm.get('password')?.invalid &&
+              registerForm.get('password')?.touched
+            "
+            class="error-message"
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+              />
             </svg>
             <span>La contraseña debe tener al menos 6 caracteres</span>
           </div>
@@ -199,9 +317,14 @@
             placeholder="Repite tu contraseña"
             autocomplete="new-password"
           />
-          <div *ngIf="registerForm.get('confirmPassword')?.touched && registerForm.errors?.['passwordMismatch']" class="error-message">
+          <div
+            *ngIf="registerForm.get('confirmPassword')?.touched && registerForm.errors?.['passwordMismatch']"
+            class="error-message"
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+              />
             </svg>
             <span>Las contraseñas no coinciden</span>
           </div>
@@ -211,19 +334,23 @@
           <label class="checkbox-label">
             <input type="checkbox" formControlName="acceptTerms" />
             <span class="checkbox-custom"></span>
-            Acepto los <a href="#" target="_blank">términos y condiciones</a> y la <a href="#" target="_blank">política de privacidad</a>
+            Acepto los <a href="#" target="_blank">términos y condiciones</a> y
+            la <a href="#" target="_blank">política de privacidad</a>
           </label>
         </div>
 
         <div class="form-actions">
-          <button
-            type="button"
-            class="btn btn--secondary"
-            (click)="prevStep()"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="19" y1="12" x2="5" y2="12"/>
-              <polyline points="12 19 5 12 12 5"/>
+          <button type="button" class="btn btn--secondary" (click)="prevStep()">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
             </svg>
             Atrás
           </button>
@@ -245,7 +372,9 @@
 
     <!-- Footer -->
     <div class="auth-footer">
-      <p>¿Ya tienes una cuenta? <a routerLink="/auth/login">Inicia sesión</a></p>
+      <p>
+        ¿Ya tienes una cuenta? <a routerLink="/auth/login">Inicia sesión</a>
+      </p>
     </div>
   </div>
 </div>

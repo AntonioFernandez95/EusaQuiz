@@ -5,6 +5,8 @@ import { DashboardService } from '../../services/dashboard.service';
 import { forkJoin } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
+import { AlertService } from '../../../shared/services/alert.service';
+
 @Component({
   selector: 'app-professor-reports',
   templateUrl: './professor-reports.component.html',
@@ -52,14 +54,20 @@ export class ProfessorReportsComponent implements OnInit {
     private authService: AuthService,
     private dashboardService: DashboardService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
     const user = this.authService.getCurrentUser();
     if (user) {
       this.professorName = user.nombre;
-      this.professorProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
+      
+      const hasValidPhoto = user.fotoPerfil && user.fotoPerfil !== 'null' && user.fotoPerfil !== 'undefined';
+      this.professorProfileImg = hasValidPhoto 
+        ? `${this.serverUrl}/${user.fotoPerfil}?t=${new Date().getTime()}` 
+        : 'assets/img/default-avatar.png';
+      
       this.professorInitials = this.professorName
         .split(' ')
         .map(n => n[0])
@@ -237,10 +245,6 @@ export class ProfessorReportsComponent implements OnInit {
     return `${student.nombreAlumno} muestra un rendimiento ${this.studentPerformance.status} en la asignatura "${subjectName}". ${this.studentPerformance.accuracy < 60 ? 'Necesita refuerzo en la partida seleccionada.' : 'Sigue así.'}`;
   }
 
-  goBack(): void {
-    this.router.navigate(['/dashboard/professor']);
-  }
-
   exportPDF(): void {
     if (!this.selectedGameId) return;
     
@@ -261,6 +265,42 @@ export class ProfessorReportsComponent implements OnInit {
       error: (err) => {
         console.error('Error descargando PDF:', err);
         this.isDownloadingPDF = false;
+      }
+    });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard/professor']);
+  }
+
+  onImgError(): void {
+    this.professorProfileImg = 'assets/img/default-avatar.png';
+  }
+
+  triggerProfileUpload(): void {
+    const fileInput = document.getElementById('profileInputProfReports') as HTMLInputElement;
+    if (fileInput) fileInput.click();
+  }
+
+  onProfileFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.alertService.loading('Actualizando foto de perfil...');
+    
+    const user = this.authService.getCurrentUser();
+    if (!user) return;
+
+    this.authService.uploadFotoPerfil(user._id, file).subscribe({
+      next: (res) => {
+        if (res.ok) {
+          this.professorProfileImg = `${this.serverUrl}/${res.fotoPerfil}?t=${new Date().getTime()}`;
+          this.alertService.success('¡Listo!', 'Tu foto de perfil ha sido actualizada.');
+        }
+      },
+      error: (err) => {
+        console.error('Error subiendo foto:', err);
+        this.alertService.error('Error', err.error?.mensaje || 'No se pudo subir la imagen.');
       }
     });
   }
