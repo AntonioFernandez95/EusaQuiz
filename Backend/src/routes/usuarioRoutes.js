@@ -10,7 +10,7 @@ const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/usuarioController');
 const upload = require('../middlewares/uploadMiddleware');
-const { isAdmin } = require('../middlewares/authMiddleware');
+const { isAdmin, isProfessorOrAdmin } = require('../middlewares/authMiddleware');
 const { validarCrearUsuario } = require('../middlewares/validators/usuarioValidators');
 
 // wrapper que soporta handlers async y evita repeats en cada ruta
@@ -62,7 +62,7 @@ function wrapHandler(fn) {
  *       500:
  *         description: Error del servidor
  */
-router.get('/', isAdmin, wrapHandler(controller.listarUsuarios));
+router.get('/', isProfessorOrAdmin, wrapHandler(controller.listarUsuarios));
 /**
  * @swagger
  * /api/usuarios/{id}:

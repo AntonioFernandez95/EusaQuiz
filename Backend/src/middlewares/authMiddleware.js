@@ -25,4 +25,17 @@ const isAdmin = (req, res, next) => {
     }
 };
 
-module.exports = { isAdmin };
+const isProfessorOrAdmin = (req, res, next) => {
+    const userRole = req.user?.rol || req.headers['x-user-role'];
+
+    if (userRole === ROLES.ADMIN || userRole === ROLES.PROFESOR) {
+        next();
+    } else {
+        return res.status(403).json({
+            ok: false,
+            mensaje: 'Acceso denegado: Se requieren permisos de profesor o administrador'
+        });
+    }
+};
+
+module.exports = { isAdmin, isProfessorOrAdmin };

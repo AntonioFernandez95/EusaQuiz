@@ -21,7 +21,9 @@
             [src]="userProfileImg"
             alt="Perfil"
             class="profile-img-avatar"
+            (error)="onImgError()"
           />
+          <!-- Span is now only used if userProfileImg ends up empty even after error, which shouldn't happen with default avatar logic, but kept as severe fallback -->
           <span *ngIf="!userProfileImg">{{ userInitials }}</span>
           <div class="avatar-overlay">
             <svg
@@ -45,6 +47,32 @@
           accept="image/*"
         />
       </div>
+      <button
+        class="btn-change-course"
+        (click)="openCourseModal()"
+        title="Cambiar mi curso"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="icon icon-tabler icons-tabler-outline icon-tabler-users-group"
+        >
+          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+          <path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+          <path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" />
+          <path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+          <path d="M17 10h2a2 2 0 0 1 2 2v1" />
+          <path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+          <path d="M3 13v-1a2 2 0 0 1 2 -2h2" />
+        </svg>
+      </button>
       <span class="user-name">{{ userName }}</span>
       <button class="btn-logout" (click)="logout()" title="Cerrar sesión">
         <svg
@@ -96,7 +124,29 @@
     class="dashboard-section animate-slide-up"
     style="animation-delay: 0.1s"
   >
-    <h2 class="section-title">Partidas programadas</h2>
+    <div class="section-header-row">
+      <h2 class="section-title">Partidas programadas</h2>
+      <button
+        class="btn-icon-refresh"
+        (click)="refreshDashboard()"
+        title="Actualizar"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+          <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+        </svg>
+      </button>
+    </div>
 
     <div class="game-list" *ngIf="scheduledGames.length > 0">
       <div *ngFor="let game of scheduledGames" class="card-item scheduled">
@@ -151,7 +201,29 @@
     class="dashboard-section animate-slide-up"
     style="animation-delay: 0.2s"
   >
-    <h2 class="section-title">Historial de resultados</h2>
+    <div class="section-header-row">
+      <h2 class="section-title">Historial de resultados</h2>
+      <button
+        class="btn-icon-refresh"
+        (click)="refreshDashboard()"
+        title="Actualizar"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+          <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+        </svg>
+      </button>
+    </div>
 
     <div class="history-list" *ngIf="resultsHistory.length > 0">
       <div *ngFor="let result of resultsHistory" class="card-item result">
@@ -391,6 +463,50 @@
           {{ isDownloadingPDF ? "Generando PDF..." : "Descargar PDF" }}
         </button>
         <button class="btn-primary" (click)="closeReport()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Cambio de Curso -->
+  <div class="modal-overlay animate-fade-in" *ngIf="showCourseModal">
+    <div class="modal-content animate-slide-up small-modal">
+      <div class="modal-header">
+        <h3>Cambiar de Curso</h3>
+        <button
+          class="close-btn"
+          (click)="closeCourseModal()"
+          [disabled]="isUpdatingCourse"
+        >
+          &times;
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Selecciona el curso actual</p>
+
+        <div class="form-group">
+          <label>Curso:</label>
+          <select [(ngModel)]="selectedCourse" class="form-select">
+            <option value="" disabled>Selecciona un curso</option>
+            <option *ngFor="let curso of availableCourses" [value]="curso">
+              {{ curso }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button
+          class="btn-danger-soft"
+          (click)="closeCourseModal()"
+          [disabled]="isUpdatingCourse"
+        >
+          Cancelar
+        </button>
+        <button
+          class="btn-primary"
+          (click)="saveCourse()"
+          [disabled]="isUpdatingCourse || !selectedCourse"
+        >
+          {{ isUpdatingCourse ? "Guardando..." : "Guardar Cambios" }}
+        </button>
       </div>
     </div>
   </div>

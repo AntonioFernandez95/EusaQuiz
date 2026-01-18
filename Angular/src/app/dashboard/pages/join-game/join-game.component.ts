@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { AlertService } from '../../../shared/services/alert.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-join-game',
@@ -12,6 +13,8 @@ import { AlertService } from '../../../shared/services/alert.service';
 export class JoinGameComponent implements OnInit {
   userName: string = '';
   userInitials: string = '';
+  userProfileImg: string = '';
+  private serverUrl = environment.serverUrl;
   gamePin: string = '';
 
   constructor(
@@ -25,6 +28,7 @@ export class JoinGameComponent implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.userName = user.nombre;
+        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
       }
     });

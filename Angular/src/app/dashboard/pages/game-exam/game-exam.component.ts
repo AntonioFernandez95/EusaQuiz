@@ -6,6 +6,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { SocketService } from '../../../services/socket.service';
 import { Subscription, interval } from 'rxjs';
 import { takeWhile } from 'rxjs/operators';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-game-exam',
@@ -15,6 +16,8 @@ import { takeWhile } from 'rxjs/operators';
 export class GameExamComponent implements OnInit, OnDestroy {
   userName: string = '';
   userInitials: string = '';
+  userProfileImg: string = '';
+  private serverUrl = environment.serverUrl;
   userId: string = '';
 
   partidaId: string = '';
@@ -46,6 +49,7 @@ export class GameExamComponent implements OnInit, OnDestroy {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.userName = user.nombre;
+        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         this.userId = user.idPortal;
       }
@@ -64,43 +68,82 @@ export class GameExamComponent implements OnInit, OnDestroy {
 
   loadInitialData(): void {
     this.isLoading = true;
-    this.dashboardService.getDetallePartida(this.partidaId).subscribe(p => {
-      if (p) {
+    this.dashboardService.getDetallePartida(this.partidaId).subscribe({
+      next: (p) => {
+        if (!p) {
+          this.alertService.error('Error', 'No se pudo encontrar la partida.');
+          this.router.navigate(['/dashboard/student']);
+          return;
+        }
+
         this.pin = p.pin;
-        
-        // Calcular tiempo restante basado en programadaPara + tiempoTotalMin
-        const programadaPara = new Date(p.configuracionExamen.programadaPara).getTime();
-        const tiempoTotalMs = p.configuracionExamen.tiempoTotalMin * 60 * 1000;
-        const now = Date.now();
-        const finExamen = programadaPara + tiempoTotalMs;
-        
-        this.timeLeftSeconds = Math.max(0, Math.floor((finExamen - now) / 1000));
-        
-        if (this.timeLeftSeconds > 0) {
+
+        // REGISTRO AUTOMÁTICO: Asegurar que el alumno está unido a la partida
+        this.dashboardService.unirseAPartida(this.pin, this.userId).subscribe({
+          next: () => this.loadExamContent(p),
+          error: (err) => {
+            console.error('Error uniéndose a la partida:', err);
+            // Si ya estaba unido o hay otro error, intentamos cargar igual
+            this.loadExamContent(p);
+          }
+        });
+      },
+      error: (err) => {
+          console.error('Error cargando detalle de partida:', err);
+          this.alertService.error('Error', 'No se pudo cargar la información del examen.');
+          this.router.navigate(['/dashboard/student']);
+      }
+    });
+  }
+
+  private loadExamContent(p: any): void {
+    // Cargar preguntas
+    this.dashboardService.getExamQuestions(this.partidaId, this.userId).subscribe({
+      next: (preguntas) => {
+        this.preguntas = preguntas;
+
+        // Configurar timer
+        if (p.configuracionExamen) {
+          const programadaPara = new Date(p.configuracionExamen.programadaPara).getTime();
+          const tiempoTotalMs = (p.configuracionExamen.tiempoTotalMin || 60) * 60 * 1000;
+          const now = Date.now();
+          const finExamen = programadaPara + tiempoTotalMs;
+          this.timeLeftSeconds = Math.max(0, Math.floor((finExamen - now) / 1000));
+
+          if (this.timeLeftSeconds > 0) {
             this.startTimer();
-        } else {
-            // Tiempo agotado antes de empezar? 
+          } else {
             this.alertService.error('Examen expirado', 'El tiempo para realizar este examen ha terminado.');
             this.router.navigate(['/dashboard/student']);
             return;
+          }
         }
 
-        // Cargar preguntas
-        this.dashboardService.getExamQuestions(this.partidaId).subscribe(preguntas => {
-            this.preguntas = preguntas;
-            
-            // Cargar progreso previo si existe
-            this.dashboardService.getMiProgreso(this.partidaId, this.userId).subscribe(prog => {
-                if (prog && prog.respuestas) {
-                    prog.respuestas.forEach((r: any) => {
-                        this.respuestasLocales[r.idPregunta._id || r.idPregunta] = r.opcionesMarcadas;
-                    });
-                }
-                this.isLoading = false;
-            });
+        // Cargar progreso previo si existe
+        this.dashboardService.getMiProgreso(this.partidaId, this.userId).subscribe({
+          next: (prog) => {
+            if (prog && prog.respuestas) {
+              prog.respuestas.forEach((r: any) => {
+                // Asegurar que el ID de pregunta sea string
+                const qId = String(r.idPregunta._id || r.idPregunta);
+                // Guardamos los IDs de opción con el prefijo 'idx_'
+                this.respuestasLocales[qId] = (r.opcionesMarcadas || []).map((idx: any) => `idx_${idx}`);
+              });
+            }
+            this.isLoading = false;
+          },
+          error: (err) => {
+            console.warn('No se pudo cargar el progreso previo:', err);
+            this.isLoading = false; // Igual permitimos entrar aunque no cargue progreso previo
+          }
         });
 
         this.connectSocket();
+      },
+      error: (err) => {
+        console.error('Error cargando preguntas:', err);
+        this.alertService.error('Error', 'No se pudieron cargar las preguntas del examen.');
+        this.isLoading = false;
       }
     });
   }
@@ -149,12 +192,14 @@ export class GameExamComponent implements OnInit, OnDestroy {
     return this.preguntas[this.currentIndex];
   }
 
-  seleccionarOpcion(index: number): void {
+  seleccionarOpcion(option: any): void {
     if (!this.timerActive || this.isSaving) return;
 
-    const qId = this.currentQuestion._id;
-    // Para simplificar, asumimos selección única por ahora o adaptamos a multiple si fuera necesario
-    this.respuestasLocales[qId] = [index];
+    const qId = String(this.currentQuestion._id);
+    const optId = String(option.idOpcion); // "idx_N"
+    
+    // Guardamos la selección localmente usando el idOpcion como string
+    this.respuestasLocales[qId] = [optId];
 
     // Envío automático al servidor para guardar progreso
     this.isSaving = true;
@@ -162,7 +207,7 @@ export class GameExamComponent implements OnInit, OnDestroy {
         idPartida: this.partidaId,
         idAlumno: this.userId,
         idPregunta: qId,
-        opcionesMarcadas: [index],
+        opcionesMarcadas: [optId], // Enviamos "idx_N", el backend lo convertirá
         tiempoEmpleado: 0 // En examen libre no calculamos tiempo por pregunta
     };
 
@@ -223,5 +268,17 @@ export class GameExamComponent implements OnInit, OnDestroy {
   getOptionColor(index: number): string {
     const colors = ['#f59e0b', '#ec4899', '#3b82f6', '#10b981']; // Orange, Pink, Blue, Green
     return colors[index % colors.length];
+  }
+
+  isOptionSelected(optionId: any): boolean {
+    if (!this.currentQuestion || !this.respuestasLocales) return false;
+    const qId = String(this.currentQuestion._id);
+    const selected = this.respuestasLocales[qId];
+    if (!selected || !Array.isArray(selected)) return false;
+    return selected.includes(String(optionId));
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard/student']);
   }
 }

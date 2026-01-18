@@ -12,6 +12,7 @@ export interface ScheduledGame {
   curso?: string;
   asignatura?: string;
   fechaProgramada?: string;
+  tipoPartida?: string;
   estado: 'espera' | 'jugando' | 'finalizada';
 }
 

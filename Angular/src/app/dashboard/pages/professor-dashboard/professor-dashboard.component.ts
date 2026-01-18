@@ -52,7 +52,13 @@ export class ProfessorDashboardComponent implements OnInit {
       if (user) {
         this.userName = user.nombre;
         this.currentUserId = user.idPortal;
-        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
+        // Check strictly against string 'null' or 'undefined'
+        const hasValidPhoto = user.fotoPerfil && user.fotoPerfil !== 'null' && user.fotoPerfil !== 'undefined';
+        
+        this.userProfileImg = hasValidPhoto 
+          ? `${this.serverUrl}/${user.fotoPerfil}?t=${new Date().getTime()}` 
+          : 'assets/img/default-avatar.png';
+        
         this.userInitials = this.userName
           .split(' ')
           .map(n => n[0])
@@ -115,6 +121,10 @@ export class ProfessorDashboardComponent implements OnInit {
 
   editGame(id: string): void {
     this.router.navigate(['/dashboard/professor/edit-game', id]);
+  }
+
+  viewGameRanking(id: string): void {
+    this.router.navigate(['/dashboard/professor/game-ranking', id]);
   }
 
   async deleteGame(id: string): Promise<void> {
@@ -295,5 +305,11 @@ export class ProfessorDashboardComponent implements OnInit {
         this.alertService.error('Error', err.error?.mensaje || 'No se pudo subir la imagen.');
       }
     });
+  }
+
+  refreshDashboard(): void {
+    if (this.currentUserId) {
+      this.loadDashboardData(this.currentUserId);
+    }
   }
 }

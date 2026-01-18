@@ -7,49 +7,7 @@
   font-family: 'Inter', sans-serif;
 }
 
-.reports-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-
-  .logo-img {
-    height: 50px;
-    width: auto;
-  }
-
-  h2 {
-    color: #0f172a;
-    font-size: 1.1rem;
-    font-weight: 500;
-  }
-
-  .user-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-weight: 600;
-    color: #334155;
-
-    .user-avatar {
-      width: 36px;
-      height: 36px;
-      background: var(--primary-color, #1e3a8a);
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.85rem;
-    }
-
-    .user-name {
-      font-weight: 600;
-      color: #334155;
-    }
-  }
-}
+// .dashboard-header centralizado en styles.scss
 
 .filters-grid {
   display: grid;

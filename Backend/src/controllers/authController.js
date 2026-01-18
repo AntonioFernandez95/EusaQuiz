@@ -58,7 +58,10 @@ const authController = {
                     idPortal: nuevoUsuario.idPortal,
                     nombre: nuevoUsuario.nombre,
                     email: nuevoUsuario.email,
-                    rol: nuevoUsuario.rol
+                    rol: nuevoUsuario.rol,
+                    curso: nuevoUsuario.curso,
+                    centro: nuevoUsuario.centro,
+                    fotoPerfil: nuevoUsuario.fotoPerfil
                 }
             });
 
@@ -102,7 +105,10 @@ const authController = {
                     idPortal: user.idPortal,
                     nombre: user.nombre,
                     email: user.email,
-                    rol: user.rol
+                    rol: user.rol,
+                    curso: user.curso,
+                    centro: user.centro,
+                    fotoPerfil: user.fotoPerfil
                 }
             });
 
@@ -154,7 +160,10 @@ const authController = {
                     idPortal: user.idPortal,
                     nombre: user.nombre,
                     email: user.email,
-                    rol: user.rol
+                    rol: user.rol,
+                    curso: user.curso,
+                    centro: user.centro,
+                    fotoPerfil: user.fotoPerfil
                 }
             });
 
@@ -231,6 +240,25 @@ const authController = {
         } catch (error) {
             console.error('Error en resetPassword:', error);
             res.status(500).json({ ok: false, mensaje: 'Error interno al restablecer la contraseña' });
+        }
+    },
+
+    /**
+     * Obtener constantes (Centros, Cursos, etc.)
+     */
+    getConstants: (req, res) => {
+        try {
+            const constants = require('../utils/constants');
+            res.json({
+                ok: true,
+                constants: {
+                    CENTROS: constants.CENTROS,
+                    CURSOS: constants.CURSOS
+                }
+            });
+        } catch (error) {
+            console.error('Error en getConstants:', error);
+            res.status(500).json({ ok: false, mensaje: 'Error al obtener constantes' });
         }
     }
 };

@@ -62,9 +62,20 @@ async function enviarRespuesta(payload, io) {
   if (!preguntaDoc) throw httpError(404, 'Pregunta no encontrada');
 
   // Normalizar opciones marcadas: array de índices (números)
-  if (!Array.isArray(opcionesMarcadas)) opcionesMarcadas = [];
+  if (!Array.isArray(opcionesMarcadas)) {
+    console.log(`[Respuesta] WARN: opcionesMarcadas no es array:`, typeof opcionesMarcadas);
+    opcionesMarcadas = [];
+  }
+
   // Aseguramos que sean números y ordenamos para comparar
-  const marcadasSorted = opcionesMarcadas.map(n => Number(n)).sort((a, b) => a - b);
+  const marcadasSorted = opcionesMarcadas.map(n => {
+    if (typeof n === 'string' && n.startsWith('idx_')) {
+      const val = Number(n.replace('idx_', ''));
+      return isNaN(val) ? null : val;
+    }
+    const val = Number(n);
+    return isNaN(val) ? null : val;
+  }).filter(n => n !== null).sort((a, b) => a - b);
 
   // Calcular índices correctos desde la pregunta en BD
   const indicesCorrectos = preguntaDoc.opciones
@@ -73,9 +84,9 @@ async function enviarRespuesta(payload, io) {
     .sort((a, b) => a - b);
 
   // Comparar arrays para saber si es correcta
-  let esCorrecta = true;
-  if (indicesCorrectos.length !== marcadasSorted.length) esCorrecta = false;
-  else {
+  let esCorrecta = false;
+  if (indicesCorrectos.length > 0 && indicesCorrectos.length === marcadasSorted.length) {
+    esCorrecta = true;
     for (let i = 0; i < indicesCorrectos.length; i++) {
       if (indicesCorrectos[i] !== marcadasSorted[i]) {
         esCorrecta = false;

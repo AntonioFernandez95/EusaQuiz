@@ -4,6 +4,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { SocketService } from '../../../services/socket.service';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-game-monitor',
@@ -13,6 +14,8 @@ import { Subscription } from 'rxjs';
 export class GameMonitorComponent implements OnInit, OnDestroy {
   userName: string = '';
   userInitials: string = '';
+  userProfileImg: string = '';
+  private serverUrl = environment.serverUrl;
 
   partidaId: string = '';
   partida: any = null;
@@ -40,6 +43,7 @@ export class GameMonitorComponent implements OnInit, OnDestroy {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.userName = user.nombre;
+        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
       }
     });
@@ -167,5 +171,9 @@ export class GameMonitorComponent implements OnInit, OnDestroy {
 
   pausar(): void {
     console.log('Pausar');
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard/professor']);
   }
 }

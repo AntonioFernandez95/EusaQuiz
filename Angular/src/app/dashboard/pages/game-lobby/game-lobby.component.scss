@@ -6,19 +6,7 @@
   padding: 2rem;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  .logo-img { height: 60px; }
-  .user-profile { display: flex; align-items: center; gap: 0.75rem; }
-  .user-avatar {
-    width: 32px; height: 32px; border-radius: 50%; background: #ccc;
-    display: flex; align-items: center; justify-content: center;
-    span { font-size: 0.75rem; font-weight: 700; color: white; }
-  }
-}
+// .dashboard-header centralizado en styles.scss
 
 .lobby-content {
   max-width: 1000px;

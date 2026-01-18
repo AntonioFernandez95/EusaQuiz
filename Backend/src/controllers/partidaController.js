@@ -104,7 +104,8 @@ exports.obtenerPartidaPorPin = async (req, res) => {
 
 exports.obtenerPreguntasExamen = async (req, res) => {
   try {
-    const preguntas = await partidaService.obtenerPreguntasExamen(req.params.idPartida);
+    const { idAlumno } = req.query;
+    const preguntas = await partidaService.obtenerPreguntasExamen(req.params.idPartida, idAlumno);
     res.json({ ok: true, data: preguntas });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });

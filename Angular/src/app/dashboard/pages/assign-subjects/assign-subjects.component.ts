@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { environment } from '../../../../environments/environment';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
@@ -15,7 +16,10 @@ interface SubjectGroup {
 })
 export class AssignSubjectsComponent implements OnInit {
   userName: string = '';
+  userInitials: string = '';
+  userProfileImg: string = '';
   userId: string = '';
+  private serverUrl = environment.serverUrl;
   
   availableSubjects: SubjectGroup[] = [];
   selectedSubjects: Set<string> = new Set();
@@ -34,6 +38,13 @@ export class AssignSubjectsComponent implements OnInit {
       if (user) {
         this.userName = user.nombre;
         this.userId = user._id;
+        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
+        this.userInitials = this.userName
+          .split(' ')
+          .map(n => n[0])
+          .join('')
+          .toUpperCase()
+          .substring(0, 2);
         
         // Cargar asignaturas seleccionadas si existen
         if (user.asignaturas) {
