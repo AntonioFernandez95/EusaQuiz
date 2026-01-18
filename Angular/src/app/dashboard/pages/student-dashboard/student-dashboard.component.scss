@@ -6,93 +6,26 @@
   padding: 2rem;
 }
 
-.dashboard-header {
+// .dashboard-header centralizado en styles.scss
+
+.btn-change-course {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 3rem;
-  
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 0.5rem;
 
-    .logo-img {
-      height: 60px;
-      width: auto;
-      object-fit: contain;
-    }
-  }
-
-  .user-profile {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.5rem 1rem;
-    background: white;
-    border-radius: 50px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-color);
-
-    .user-name {
-      font-weight: 600;
-      color: var(--text-main);
-      font-size: 0.9rem;
-      text-transform: uppercase;
-    }
-
-    .user-avatar-wrapper {
-      position: relative;
-      width: 40px;
-      height: 40px;
-      cursor: pointer;
-
-      &:hover {
-        .avatar-overlay {
-          opacity: 1;
-        }
-      }
-
-      .user-avatar {
-        width: 100%;
-        height: 100%;
-        background: var(--primary-color);
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.9rem;
-        overflow: hidden;
-        position: relative;
-        border: 2px solid white;
-        box-shadow: 0 0 0 1px var(--border-color);
-
-        .profile-img-avatar {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .avatar-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          opacity: 0;
-          transition: opacity 0.2s ease;
-          
-          svg {
-            width: 18px;
-            height: 18px;
-            color: white;
-          }
-        }
-      }
-    }
+  &:hover {
+    background: #f1f5f9;
+    color: #0077b6;
+    border-color: #cbd5e1;
   }
 }
 
@@ -375,6 +308,58 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  &.small-modal {
+    max-width: 500px;
+    max-height: 70vh;
+    overflow: visible;
+
+    .modal-desc {
+        color: #64748b;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        
+        label {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .form-select {
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+
+            &:focus {
+                border-color: #0077b6;
+                box-shadow: 0 0 0 3px rgba(0,119,182,0.1);
+            }
+        }
+    }
+    
+    .btn-danger-soft {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        background: #fef2f2;
+        color: #ef4444;
+        font-weight: 600;
+        border: 1px solid #fee2e2;
+        cursor: pointer;
+        transition: all 0.2s;
+        
+        &:hover {
+            background: #fee2e2;
+            border-color: #fecaca;
+        }
+    }
+  }
 }
 
 .modal-header {
@@ -620,4 +605,39 @@
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Refresh Button Styles */
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  
+  .section-title {
+    margin-bottom: 0 !important; /* Override default margin */
+  }
+}
+
+.btn-icon-refresh {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s ease;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background-color: #f1f5f9;
+    color: #2563eb;
+    transform: rotate(180deg);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
 }

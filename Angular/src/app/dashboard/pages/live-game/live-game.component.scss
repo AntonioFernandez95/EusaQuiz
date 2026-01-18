@@ -8,19 +8,7 @@
   flex-direction: column;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  .logo-img { height: 50px; }
-  .page-title-center { font-weight: 600; color: #64748b; }
-  .user-avatar {
-    width: 32px; height: 32px; border-radius: 50%; background: #0077b6;
-    display: flex; align-items: center; justify-content: center;
-    span { font-size: 0.75rem; font-weight: 700; color: white; }
-  }
-}
+// .dashboard-header centralizado en styles.scss
 
 .game-content {
   max-width: 1200px;

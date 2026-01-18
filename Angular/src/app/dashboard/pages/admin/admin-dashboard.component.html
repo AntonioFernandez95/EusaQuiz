@@ -1,11 +1,14 @@
 <div class="admin-container">
   <aside class="sidebar">
     <div class="sidebar-header">
-      <img src="assets/img/logo-camera.png" alt="Logo" class="logo">
+      <img src="assets/img/logo-camera.png" alt="Logo" class="logo" />
       <h2>EusaQuiz Admin</h2>
     </div>
     <nav class="sidebar-nav">
-      <button [class.active]="activeView === 'overview'" (click)="setTab('overview')">
+      <button
+        [class.active]="activeView === 'overview'"
+        (click)="setTab('overview')"
+      >
         <i class="fas fa-chart-line"></i> Resumen
       </button>
       <button [class.active]="activeView === 'users'" (click)="setTab('users')">
@@ -18,11 +21,23 @@
   </aside>
 
   <main class="content">
-    <header class="top-bar">
-      <h1>Panel de Control</h1>
-      <div class="user-info">
-        <span>Admin Mode</span>
-        <div class="badge">LIVE</div>
+    <header class="dashboard-header top-bar animate-fade-in">
+      <div class="page-title-center">Panel de Control</div>
+
+      <div class="user-profile">
+        <div class="user-avatar-wrapper">
+          <div class="user-avatar">
+            <img
+              *ngIf="userProfileImg"
+              [src]="userProfileImg"
+              alt="Perfil"
+              class="profile-img-avatar"
+            />
+            <span *ngIf="!userProfileImg">{{ userInitials }}</span>
+          </div>
+        </div>
+        <span class="user-name">{{ userName }}</span>
+        <div class="badge ml-2">ADMIN</div>
       </div>
     </header>
 
@@ -30,7 +45,10 @@
       <div class="spinner"></div>
     </div>
 
-    <div *ngIf="!loading && activeView === 'overview'" class="overview-grid animate__animated animate__fadeIn">
+    <div
+      *ngIf="!loading && activeView === 'overview'"
+      class="overview-grid animate__animated animate__fadeIn"
+    >
       <!-- Stats Cards -->
       <div class="stat-card blue">
         <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
@@ -75,15 +93,23 @@
               <tr *ngFor="let u of usuariosRecientes">
                 <td>
                   <div class="user-cell">
-                    <img [src]="u.fotoPerfil ? serverUrl + '/' + u.fotoPerfil : 'assets/img/default-avatar.png'"
-                      class="avatar-small">
+                    <img
+                      [src]="
+                        u.fotoPerfil
+                          ? serverUrl + '/' + u.fotoPerfil
+                          : 'assets/img/default-avatar.png'
+                      "
+                      class="avatar-small"
+                    />
                     {{ u.nombre }}
                   </div>
                 </td>
                 <td>{{ u.email }}</td>
-                <td><span class="role-badge" [ngClass]="u.rol">{{ u.rol }}</span></td>
+                <td>
+                  <span class="role-badge" [ngClass]="u.rol">{{ u.rol }}</span>
+                </td>
                 <td>{{ u.centro }}</td>
-                <td>{{ u.creadoEn | date:'shortDate' }}</td>
+                <td>{{ u.creadoEn | date : "shortDate" }}</td>
               </tr>
             </tbody>
           </table>
@@ -92,13 +118,18 @@
     </div>
 
     <!-- Placeholder for other views -->
-    <div *ngIf="activeView === 'users'" class="users-view animate__animated animate__fadeIn">
+    <div
+      *ngIf="activeView === 'users'"
+      class="users-view animate__animated animate__fadeIn"
+    >
       <app-admin-users></app-admin-users>
     </div>
 
-    <div *ngIf="activeView === 'games'" class="games-view animate__animated animate__fadeIn">
+    <div
+      *ngIf="activeView === 'games'"
+      class="games-view animate__animated animate__fadeIn"
+    >
       <app-admin-games></app-admin-games>
     </div>
-
   </main>
 </div>

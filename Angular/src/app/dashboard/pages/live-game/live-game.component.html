@@ -10,7 +10,13 @@
     <div class="user-profile">
       <div class="user-avatar-wrapper">
         <div class="user-avatar">
-          <span>{{ userInitials }}</span>
+          <img
+            *ngIf="userProfileImg"
+            [src]="userProfileImg"
+            alt="Perfil"
+            class="profile-img-avatar"
+          />
+          <span *ngIf="!userProfileImg">{{ userInitials }}</span>
         </div>
       </div>
       <span class="user-name">{{ userName }}</span>
@@ -46,23 +52,24 @@
         *ngFor="let option of preguntaActual.opciones; let i = index"
         class="option-card"
         [style.border-color]="getOptionColor(i)"
-        [class.selected]="opcionSeleccionada === i"
+        [class.selected]="opcionSeleccionada === option.idOpcion"
         [class.correct]="
-          resultadoFeedback && resultadoFeedback.indiceCorrecto === i
+          resultadoFeedback &&
+          resultadoFeedback.indiceCorrecto === option.idOpcion
         "
         [class.incorrect]="
           resultadoFeedback &&
-          resultadoFeedback.indiceCorrecto !== i &&
-          opcionSeleccionada === i
+          resultadoFeedback.indiceCorrecto !== option.idOpcion &&
+          opcionSeleccionada === option.idOpcion
         "
         [disabled]="respondido || timeLeft === 0"
-        (click)="seleccionarOpcion(i)"
+        (click)="seleccionarOpcion(option)"
       >
         <span class="option-text">{{ option.textoOpcion }}</span>
 
         <div class="status-icon" *ngIf="resultadoFeedback">
           <svg
-            *ngIf="resultadoFeedback.indiceCorrecto === i"
+            *ngIf="resultadoFeedback.indiceCorrecto === option.idOpcion"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -72,7 +79,7 @@
           </svg>
           <svg
             *ngIf="
-              resultadoFeedback.indiceCorrecto !== i &&
+              resultadoFeedback.indiceCorrecto !== option.idOpcion &&
               opcionSeleccionada === option.idOpcion
             "
             viewBox="0 0 24 24"

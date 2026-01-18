@@ -5,6 +5,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { SocketService } from '../../../services/socket.service';
 import { Subscription, interval } from 'rxjs';
 import { takeWhile } from 'rxjs/operators';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-live-game',
@@ -14,6 +15,8 @@ import { takeWhile } from 'rxjs/operators';
 export class LiveGameComponent implements OnInit, OnDestroy {
   userName: string = '';
   userInitials: string = '';
+  userProfileImg: string = '';
+  private serverUrl = environment.serverUrl;
   userId: string = '';
   userPoints: number = 0;
 
@@ -46,6 +49,7 @@ export class LiveGameComponent implements OnInit, OnDestroy {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.userName = user.nombre;
+        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         this.userId = user.idPortal;
       }
@@ -144,25 +148,23 @@ export class LiveGameComponent implements OnInit, OnDestroy {
     this.timerActive = false;
   }
 
-  seleccionarOpcion(index: number): void {
+  seleccionarOpcion(option: any): void {
     if (this.respondido || !this.timerActive) return;
 
     this.respondido = true;
-    this.opcionSeleccionada = index;
+    this.opcionSeleccionada = option.idOpcion; // ID de la opción (p.ej. "idx_0")
     
     const payload = {
         idPartida: this.partidaId,
         idAlumno: this.userId,
         idPregunta: this.preguntaActual.idPregunta,
-        opcionesMarcadas: [index],
+        opcionesMarcadas: [option.idOpcion], // Enviamos el string con prefijo
         tiempoEmpleado: this.preguntaActual.tiempoLimite - this.timeLeft
     };
 
     this.dashboardService.enviarRespuesta(payload).subscribe({
         next: (res) => {
             console.log('Respuesta enviada:', res);
-            // El servidor responderá si es correcta o no si el modo es inmediato, 
-            // pero normalmente se espera al evento 'tiempo_agotado'
         },
         error: (err) => {
             console.error('Error enviando respuesta:', err);
@@ -174,7 +176,6 @@ export class LiveGameComponent implements OnInit, OnDestroy {
     this.stopTimer();
     this.timeLeft = 0;
     
-    // Actualizar puntos si el backend los envía en el ranking o feedback
     if (data.rankingParcial) {
         const myScore = data.rankingParcial.find((r: any) => r.idAlumno === this.userId);
         if (myScore) {
@@ -182,14 +183,18 @@ export class LiveGameComponent implements OnInit, OnDestroy {
         }
     }
 
-    // Feedback visual de la correcta
+    // Feedback visual: data.correcta trae el índice original. Lo convertimos a nuestro ID prefijado.
     this.resultadoFeedback = {
-        indiceCorrecto: data.correcta
+        indiceCorrecto: `idx_${data.correcta}`
     };
   }
 
   getOptionColor(index: number): string {
     const colors = ['#f59e0b', '#ec4899', '#3b82f6', '#10b981']; // Orange, Pink, Blue, Green
     return colors[index % colors.length];
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard/student']);
   }
 }

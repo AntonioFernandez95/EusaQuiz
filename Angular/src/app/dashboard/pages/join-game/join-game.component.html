@@ -1,16 +1,22 @@
 <div class="join-container">
   <!-- Header con logo y perfil -->
   <header class="dashboard-header animate-fade-in">
-    <div class="logo">
+    <div class="logo" (click)="goBack()">
       <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
     </div>
 
-    <div class="page-title-center">Sala Partida en VIVO - ALUMNO</div>
+    <div class="page-title-center">Unirse a Partida</div>
 
     <div class="user-profile">
       <div class="user-avatar-wrapper">
         <div class="user-avatar">
-          <span>{{ userInitials }}</span>
+          <img
+            *ngIf="userProfileImg"
+            [src]="userProfileImg"
+            alt="Perfil"
+            class="profile-img-avatar"
+          />
+          <span *ngIf="!userProfileImg">{{ userInitials }}</span>
         </div>
       </div>
       <span class="user-name">{{ userName }}</span>

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { AlertService } from '../../../shared/services/alert.service';
+import { environment } from '../../../../environments/environment';
 
 interface QuestionImport {
   enunciado: string;
@@ -25,7 +26,9 @@ interface FileMetadata {
 export class ImportQuestionsComponent implements OnInit {
   userName: string = '';
   userInitials: string = '';
+  userProfileImg: string = '';
   userId: string = '';
+  private serverUrl = environment.serverUrl;
   userCentro: string = '';
   
   fileLoaded: boolean = false;
@@ -50,6 +53,7 @@ export class ImportQuestionsComponent implements OnInit {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.userName = user.nombre;
+        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName
           .split(' ')
           .map(n => n[0])

@@ -5,6 +5,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { AlertService } from '../../../shared/services/alert.service';
 import { SocketService } from '../../../services/socket.service';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 interface PlayerLobby {
     idAlumno: string;
@@ -21,7 +22,9 @@ interface PlayerLobby {
 export class GameLobbyComponent implements OnInit, OnDestroy {
   userName: string = '';
   userInitials: string = '';
+  userProfileImg: string = '';
   userId: string = '';
+  private serverUrl = environment.serverUrl;
 
   partidaId: string = '';
   partida: any = null;
@@ -47,6 +50,7 @@ export class GameLobbyComponent implements OnInit, OnDestroy {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.userName = user.nombre;
+        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         this.userId = user.idPortal;
       }
@@ -106,13 +110,13 @@ export class GameLobbyComponent implements OnInit, OnDestroy {
             };
         });
     } else {
-        // En modo público, los esperados son los que ya están o un número arbitrario
+        // En modo público, los esperados son los que ya están o el total del curso
         this.players = (this.partida.jugadores || []).map((j: any) => ({
             idAlumno: j.idAlumno,
             nombre: j.nombreAlumno,
             status: 'conectado'
         }));
-        this.totalExpected = Math.max(this.players.length, 1);
+        this.totalExpected = this.partida.totalAlumnosCurso || Math.max(this.players.length, 1);
     }
     
     this.updateStats();
@@ -206,7 +210,7 @@ export class GameLobbyComponent implements OnInit, OnDestroy {
     const connected = this.players.filter(p => p.status === 'conectado');
     this.connectedCount = connected.length;
     if (this.partida.modoAcceso === 'publica') {
-        this.totalExpected = this.connectedCount; // En pública, el total es el que hay
+        this.totalExpected = this.partida.totalAlumnosCurso || this.connectedCount; // En pública, el total es el del curso o el que hay conectado
     }
     this.percentage = this.totalExpected > 0 ? Math.round((this.connectedCount / this.totalExpected) * 100) : 0;
   }
@@ -238,6 +242,10 @@ export class GameLobbyComponent implements OnInit, OnDestroy {
             this.alertService.error('Error', 'No se pudo iniciar la partida. Inténtalo de nuevo.');
         }
     });
+  }
+
+  cancel(): void {
+    this.cancelar();
   }
 
   cancelar(): void {

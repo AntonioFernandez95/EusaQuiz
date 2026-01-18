@@ -73,6 +73,38 @@ async function enviarRespuesta(payload, io) {
 const temporizadoresPartidas = {};
 
 /* --------------------- UTILIDADES --------------------- */
+
+/**
+ * simpleShuffle: Baraja un array de forma determinista si se provee un seed.
+ * Usa un hash Jenkins-style para el seed y Mulberry32 para el PRNG.
+ */
+function simpleShuffle(array, seed) {
+  if (array.length <= 1) return array;
+
+  // 1. Obtener hash de 32 bits a partir del seed
+  let h = 0x811c9dc5;
+  const s = seed ? String(seed) : String(Math.random());
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+
+  // 2. Generador Mulberry32
+  const rng = () => {
+    h |= 0; h = h + 0x6D2B79F5 | 0;
+    let t = Math.imul(h ^ h >>> 15, 1 | h);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+
+  // 3. Fisher-Yates
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
 function generarPinUnico() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -138,7 +170,13 @@ async function concluirPregunta(partidaId, indicePregunta, io) {
       return;
     }
 
-    const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
+    let preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
+
+    // Aplicar la misma mezcla que en el ciclo de preguntas para obtener la pregunta correcta
+    if (partida.configuracionEnvivo?.mezclarPreguntas) {
+      preguntas = simpleShuffle([...preguntas], String(partida._id));
+    }
+
     if (!preguntas[indicePregunta]) {
       return;
     }
@@ -232,7 +270,12 @@ async function gestionarCicloPregunta(partidaDoc, indicePregunta, io) {
     delete temporizadoresPartidas[pId];
   }
 
-  const preguntas = await Pregunta.find({ idCuestionario: partidaDoc.idCuestionario }).sort({ ordenPregunta: 1 });
+  let preguntas = await Pregunta.find({ idCuestionario: partidaDoc.idCuestionario }).sort({ ordenPregunta: 1 });
+
+  // Mezclar preguntas si está configurado
+  if (partidaDoc.configuracionEnvivo?.mezclarPreguntas) {
+    preguntas = simpleShuffle([...preguntas], String(partidaDoc._id));
+  }
 
   // fin del juego
   if (indicePregunta >= preguntas.length) {
@@ -250,6 +293,18 @@ async function gestionarCicloPregunta(partidaDoc, indicePregunta, io) {
   const preguntaActual = preguntas[indicePregunta];
   const tiempo = partidaDoc.configuracionEnvivo?.tiempoPorPreguntaSeg || preguntaActual.tiempoLimiteSeg || 20;
 
+  // Preparar opciones (con su índice original como ID para que el backend valide correctamente)
+  let opciones = preguntaActual.opciones.map((op, idx) => ({
+    idOpcion: `idx_${idx}`,
+    textoOpcion: op.textoOpcion
+  }));
+
+  // Mezclar respuestas si está configurado
+  if (partidaDoc.configuracionEnvivo?.mezclarRespuestas) {
+    // Usamos el ID de la partida + ID de pregunta como seed para que sea consistente para todos los alumnos en esta pregunta
+    opciones = simpleShuffle([...opciones], String(partidaDoc._id) + String(preguntaActual._id));
+  }
+
   const datosPregunta = {
     idPregunta: preguntaActual._id,
     textoPregunta: preguntaActual.textoPregunta,
@@ -258,10 +313,7 @@ async function gestionarCicloPregunta(partidaDoc, indicePregunta, io) {
     puntos: preguntaActual.puntuacionMax,
     numeroPregunta: indicePregunta + 1,
     totalPreguntas: preguntas.length,
-    opciones: preguntaActual.opciones.map((op, idx) => ({
-      idOpcion: op._id ? String(op._id) : String(idx),
-      textoOpcion: op.textoOpcion
-    }))
+    opciones: opciones
   };
 
   if (io) {
@@ -335,10 +387,12 @@ async function cerrarPartidaLogic(partida, io) {
     reporteGlobal = preguntas.map(pregunta => {
       const stats = [0, 0, 0, 0];
       participaciones.forEach(p => {
-        const r = p.respuestas.find(resp => resp.idPregunta.toString() === pregunta._id.toString());
-        if (r && r.opcionesMarcadas.length > 0) {
-          const idx = r.opcionesMarcadas[0];
-          if (stats[idx] !== undefined) stats[idx]++;
+        const r = (p.respuestas || []).find(resp => resp.idPregunta && resp.idPregunta.toString() === pregunta._id.toString());
+        if (r && Array.isArray(r.opcionesMarcadas) && r.opcionesMarcadas.length > 0) {
+          const idx = Number(r.opcionesMarcadas[0]);
+          if (!isNaN(idx) && stats[idx] !== undefined) {
+            stats[idx]++;
+          }
         }
       });
       return {
@@ -415,6 +469,24 @@ async function unirseAPartida(pin, idAlumno, nombreAlumnoParam, io) {
   const partida = await Partida.findOne({ pin, estadoPartida: { $ne: tipos.ESTADOS_PARTIDA.FINALIZADA } });
   if (!partida) throw new Error('Partida no encontrada');
 
+  // Validación de Partida Programada (Acceso Temporal)
+  if (partida.tipoPartida === tipos.MODOS_JUEGO.EXAMEN && partida.configuracionExamen?.programadaPara) {
+    const now = new Date();
+    const startTime = new Date(partida.configuracionExamen.programadaPara);
+
+    // Bloquear si es antes de la hora exacta
+    if (now < startTime) {
+      throw new Error(`El examen aún no ha comenzado. Programado para: ${startTime.toLocaleTimeString()}`);
+    }
+
+    // Opcional: Bloquear si ya pasó demasiado tiempo desde el inicio (ej: duración + 10 min)
+    const duracionMs = (partida.configuracionExamen.tiempoTotalMin || 60) * 60 * 1000;
+    const endTime = new Date(startTime.getTime() + duracionMs);
+    if (now > endTime) {
+      throw new Error('El tiempo para unirse a este examen ha finalizado.');
+    }
+  }
+
   // Validación de Lobby Privado
   if (partida.modoAcceso === tipos.TIPO_LOBBY.PRIVADA) {
     if (!partida.participantesPermitidos || !partida.participantesPermitidos.includes(idAlumno)) {
@@ -424,7 +496,7 @@ async function unirseAPartida(pin, idAlumno, nombreAlumnoParam, io) {
 
   const jugadorExiste = partida.jugadores.some(j => j.idAlumno === idAlumno);
   if (!jugadorExiste) {
-    partida.jugadores.push({ idAlumno, nombreAlumno, estado: tipos.ESTADOS_PARTIDA.ACTIVA });
+    partida.jugadores.push({ idAlumno, nombreAlumno, estado: tipos.ESTADO_USER.ACTIVO });
     partida.numParticipantes = partida.jugadores.length;
     await partida.save();
 
@@ -461,8 +533,26 @@ async function iniciarPartida(id, io) {
 
   if (partida.tipoPartida === tipos.MODOS_JUEGO.EN_VIVO) {
     // Buscar la primera pregunta para devolverla al monitor
-    const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
+    let preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
+
+    // Aplicar mezcla si está configurada
+    if (partida.configuracionEnvivo?.mezclarPreguntas) {
+      preguntas = simpleShuffle([...preguntas], String(partida._id));
+    }
+
     const tiempo = partida.configuracionEnvivo?.tiempoPorPreguntaSeg || preguntas[0]?.tiempoLimiteSeg || 20;
+
+    // Preparar opciones de la primera pregunta
+    let primerasOpciones = [];
+    if (preguntas[0]) {
+      primerasOpciones = preguntas[0].opciones.map((op, idx) => ({
+        idOpcion: `idx_${idx}`,
+        textoOpcion: op.textoOpcion
+      }));
+      if (partida.configuracionEnvivo?.mezclarRespuestas) {
+        primerasOpciones = simpleShuffle([...primerasOpciones], String(partida._id) + String(preguntas[0]._id));
+      }
+    }
 
     const primeraPregunta = preguntas[0] ? {
       idPregunta: preguntas[0]._id,
@@ -472,10 +562,7 @@ async function iniciarPartida(id, io) {
       puntos: preguntas[0].puntuacionMax,
       numeroPregunta: 1,
       totalPreguntas: preguntas.length,
-      opciones: preguntas[0].opciones.map((op, idx) => ({
-        idOpcion: op._id ? String(op._id) : String(idx),
-        textoOpcion: op.textoOpcion
-      }))
+      opciones: primerasOpciones
     } : null;
 
     // lanzar ciclo
@@ -515,8 +602,90 @@ async function iniciarPartida(id, io) {
 /* --------------------- CRUD Y CONSULTAS --------------------- */
 
 async function obtenerTodasPartidas(filtro = {}) {
-  const partidas = await Partida.find(filtro).populate('idCuestionario', 'titulo asignatura curso').sort({ inicioEn: -1 });
-  return partidas;
+  const requestedState = filtro.estadoPartida;
+  const now = new Date();
+
+  // 1. Si buscamos las programadas (espera), quitamos las que ya caducaron
+  if (requestedState === tipos.ESTADOS_PARTIDA.ESPERA) {
+    const query = {
+      ...filtro,
+      estadoPartida: { $in: [tipos.ESTADOS_PARTIDA.ESPERA, tipos.ESTADOS_PARTIDA.ACTIVA] }
+    };
+    const partidas = await Partida.find(query)
+      .populate('idCuestionario', 'titulo asignatura curso')
+      .sort({ 'fechas.creadaEn': -1 });
+
+    return partidas.filter(p => {
+      if (p.tipoPartida === tipos.MODOS_JUEGO.EXAMEN && p.configuracionExamen?.programadaPara) {
+        const startTime = new Date(p.configuracionExamen.programadaPara);
+        const duracionMs = (p.configuracionExamen.tiempoTotalMin || 60) * 60 * 1000;
+        const endTime = new Date(startTime.getTime() + duracionMs);
+        return now <= endTime; // Solo mostramos si aún está vigente
+      }
+      return true;
+    });
+  }
+
+  // 2. Si buscamos las recientes (finalizadas), incluimos las que han caducado aunque sigan en 'espera'
+  if (requestedState === tipos.ESTADOS_PARTIDA.FINALIZADA) {
+    // A. Las que están marcadas explícitamente como finalizadas
+    const finalizadas = await Partida.find(filtro)
+      .populate('idCuestionario', 'titulo asignatura curso')
+      .sort({ 'fechas.finalizadaEn': -1 });
+
+    // B. Las que están en 'espera' pero ya terminó su tiempo de examen
+    const filtroNoFin = { ...filtro, estadoPartida: { $ne: tipos.ESTADOS_PARTIDA.FINALIZADA } };
+    const candidatas = await Partida.find(filtroNoFin)
+      .populate('idCuestionario', 'titulo asignatura curso');
+
+    const caducadas = candidatas.filter(p => {
+      if (p.tipoPartida === tipos.MODOS_JUEGO.EXAMEN && p.configuracionExamen?.programadaPara) {
+        const startTime = new Date(p.configuracionExamen.programadaPara);
+        const duracionMs = (p.configuracionExamen.tiempoTotalMin || 60) * 60 * 1000;
+        const endTime = new Date(startTime.getTime() + duracionMs);
+        return now > endTime; // Se consideran finalizadas por tiempo
+      }
+      return false;
+    });
+
+    const todas = [...finalizadas, ...caducadas];
+
+    // Enriquecer con número de alumnos antes de devolver para que el frontend lo use
+    const enriquecidas = todas.map(p => {
+      const pObj = p.toObject ? p.toObject() : p;
+      return {
+        ...pObj,
+        numAlumnos: p.jugadores?.length || 0,
+        aciertosPorcentaje: p.stats?.respuestasTotales > 0
+          ? Math.round((p.stats.aciertosGlobales / p.stats.respuestasTotales) * 100)
+          : 0
+      };
+    });
+
+    // Ordenar: primero las que tienen fecha de finalización real, luego por fin estimado
+    return enriquecidas.sort((a, b) => {
+      const getFecha = (pa) => {
+        if (pa.fechas?.finalizadaEn) return new Date(pa.fechas.finalizadaEn);
+        if (pa.configuracionExamen?.programadaPara) {
+          const s = new Date(pa.configuracionExamen.programadaPara);
+          const d = (pa.configuracionExamen.tiempoTotalMin || 60) * 60 * 1000;
+          return new Date(s.getTime() + d);
+        }
+        return new Date(0);
+      };
+      return getFecha(b) - getFecha(a);
+    });
+  }
+
+  // Caso por defecto para otros filtros
+  const resultado = await Partida.find(filtro)
+    .populate('idCuestionario', 'titulo asignatura curso')
+    .sort({ 'fechas.creadaEn': -1 });
+
+  return resultado.map(p => ({
+    ...(p.toObject ? p.toObject() : p),
+    numAlumnos: p.jugadores?.length || 0
+  }));
 }
 
 async function obtenerDetallePartida(id) {
@@ -543,7 +712,16 @@ async function obtenerDetallePartida(id) {
     };
   });
 
-  return { ...partida, jugadores: jugadoresEnriquecidos, preguntas };
+  // Calcular el total de alumnos en el curso para el contador de capacidad
+  let totalAlumnosCurso = 0;
+  if (partida.curso) {
+    totalAlumnosCurso = await Usuario.countDocuments({
+      rol: tipos.ROLES.ALUMNO,
+      curso: partida.curso
+    });
+  }
+
+  return { ...partida, jugadores: jugadoresEnriquecidos, preguntas, totalAlumnosCurso };
 }
 
 async function actualizarPartida(id, payload) {
@@ -610,21 +788,44 @@ async function obtenerPartidaPorPin(pin) {
   return await Partida.findOne({ pin });
 }
 
-async function obtenerPreguntasExamen(idPartida) {
+async function obtenerPreguntasExamen(idPartida, idAlumno) {
   const partida = await Partida.findById(idPartida);
   if (!partida) throw new Error('Partida no encontrada');
-  const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 }).lean();
 
-  // Sanitizar para no enviar respuestas correctas al cliente
-  return preguntas.map(p => ({
-    _id: p._id,
-    textoPregunta: p.textoPregunta,
-    tipoPregunta: p.tipoPregunta,
-    opciones: p.opciones.map(o => ({
+  let preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 }).lean();
+
+  const cfg = partida.configuracionExamen;
+  const mezclarP = cfg?.mezclarPreguntas;
+  const mezclarR = cfg?.mezclarRespuestas;
+
+  if (mezclarP) {
+    // Si tenemos idAlumno, cada alumno tiene su propio orden. Si no, orden fijo para la partida.
+    const seed = idAlumno ? (String(idPartida) + String(idAlumno)) : String(idPartida);
+    preguntas = simpleShuffle([...preguntas], seed);
+  }
+
+  // Sanitizar y mezclar opciones
+  return preguntas.map(p => {
+    // Aseguramos que tenemos opciones
+    const originalOptions = p.opciones || [];
+    let opciones = originalOptions.map((o, idx) => ({
       textoOpcion: o.textoOpcion,
-      _id: o._id
-    }))
-  }));
+      idOpcion: `idx_${idx}` // Prefijar para evitar bugs de selección y tipos
+    }));
+
+    if (mezclarR) {
+      // Seed consistente por pregunta y alumno (o partida)
+      const seedR = idAlumno ? (String(p._id) + String(idAlumno)) : (String(p._id) + String(idPartida));
+      opciones = simpleShuffle([...opciones], seedR);
+    }
+
+    return {
+      _id: p._id.toString(),
+      textoPregunta: p.textoPregunta,
+      tipoPregunta: p.tipoPregunta || 'unica',
+      opciones: opciones
+    };
+  });
 }
 
 async function finalizarExamenAlumno(idPartida, idAlumno, io) {
@@ -666,7 +867,7 @@ async function finalizarExamenAlumno(idPartida, idAlumno, io) {
   const jugador = partida.jugadores.find(j => j.idAlumno === idAlumno);
   if (jugador) {
     jugador.puntuacionTotal = notaRedondeada;
-    jugador.estado = tipos.ESTADOS_PARTIDA.FINALIZADA;
+    jugador.estado = tipos.ESTADO_USER.INACTIVO; // Or FINALIZADA if we decide to add it, but stay within enum
     jugador.finEn = Date.now();
     partida.markModified('jugadores');
     await partida.save();
@@ -693,7 +894,10 @@ async function finalizarExamenAlumno(idPartida, idAlumno, io) {
   // Si todos han finalizado, cerrar la partida automáticamente
   if (participacionesFinalizadas >= totalJugadores && partida.estadoPartida !== tipos.ESTADOS_PARTIDA.FINALIZADA) {
     console.log(`[Examen] Todos los alumnos han finalizado. Cerrando partida automáticamente.`);
-    await cerrarPartidaLogic(partida, io);
+    // Lo hacemos sin await o capturando error para que el alumno no reciba error si falla el cierre global
+    cerrarPartidaLogic(partida, io).catch(err => {
+      console.error('[Examen] Error en cierre automático de partida:', err);
+    });
   }
 
   return { nota: notaRedondeada, aciertos, total: totalPreguntas };
@@ -749,6 +953,18 @@ async function obtenerPartidasPendientesAlumno(idAlumno) {
     }
 
     if (!cursoQ) return true; // Cuestionario sin curso específico -> visible
+
+    // Filtro de Limpieza: Ocultar partidas programadas pasadas
+    if (p.tipoPartida === 'examen' && p.configuracionExamen?.programadaPara) {
+      const startTime = new Date(p.configuracionExamen.programadaPara);
+      const duracionMs = (p.configuracionExamen.tiempoTotalMin || 60) * 60 * 1000;
+      const endTime = new Date(startTime.getTime() + duracionMs);
+      const now = new Date();
+
+      // Si hoy es un día diferente y la partida ya terminó, u ocultar si pasaron 2 horas del fin
+      if (now > endTime) return false;
+    }
+
     return cursoQ === cursoAlumno;
   });
 

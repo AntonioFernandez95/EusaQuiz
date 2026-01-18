@@ -4,6 +4,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { AlertService } from '../../../shared/services/alert.service';
 
 @Component({
   selector: 'app-student-reports',
@@ -44,7 +45,8 @@ export class StudentReportsComponent implements OnInit {
     private authService: AuthService,
     private dashboardService: DashboardService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private alertService: AlertService // Injected
   ) {}
 
   ngOnInit(): void {
@@ -52,7 +54,13 @@ export class StudentReportsComponent implements OnInit {
     if (user) {
       this.userName = user.nombre;
       this.currentUserId = user.idPortal;
-      this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
+      // Check strictly against string 'null' or 'undefined'
+      const hasValidPhoto = user.fotoPerfil && user.fotoPerfil !== 'null' && user.fotoPerfil !== 'undefined';
+
+      this.userProfileImg = hasValidPhoto 
+        ? `${this.serverUrl}/${user.fotoPerfil}?t=${new Date().getTime()}` 
+        : 'assets/img/default-avatar.png';
+      
       this.userInitials = this.userName
         .split(' ')
         .map(n => n[0])
@@ -76,7 +84,7 @@ export class StudentReportsComponent implements OnInit {
           const gameId = params['idPartida'];
           const gameFound = this.history.find(h => h.idPartida._id === gameId);
           if (gameFound) {
-            const subject = gameFound.idPartida.idCuestionario.categoria || gameFound.idPartida.idCuestionario.asignatura;
+            const subject = gameFound.idPartida.asignatura || gameFound.idPartida.idCuestionario.categoria || gameFound.idPartida.idCuestionario.asignatura;
             const curso = gameFound.idPartida.curso || gameFound.idPartida.idCuestionario.curso;
             this.selectedSubject = curso ? `${subject}/${curso}` : subject;
             this.onSubjectChange();
@@ -93,7 +101,7 @@ export class StudentReportsComponent implements OnInit {
   extractSubjects(): void {
     const subjectsSet = new Set<string>();
     this.history.forEach(h => {
-      const subject = h.idPartida.idCuestionario.categoria || h.idPartida.idCuestionario.asignatura;
+      const subject = h.idPartida.asignatura || h.idPartida.idCuestionario.categoria || h.idPartida.idCuestionario.asignatura;
       const curso = h.idPartida.curso || h.idPartida.idCuestionario.curso;
       if (subject) {
         subjectsSet.add(curso ? `${subject}/${curso}` : subject);
@@ -114,7 +122,7 @@ export class StudentReportsComponent implements OnInit {
     }
 
     this.filteredGames = this.history.filter(h => {
-      const subject = h.idPartida.idCuestionario.categoria || h.idPartida.idCuestionario.asignatura;
+      const subject = h.idPartida.asignatura || h.idPartida.idCuestionario.categoria || h.idPartida.idCuestionario.asignatura;
       const curso = h.idPartida.curso || h.idPartida.idCuestionario.curso;
       const key = curso ? `${subject}/${curso}` : subject;
       return key === this.selectedSubject;
@@ -182,10 +190,6 @@ export class StudentReportsComponent implements OnInit {
     return `${this.userName} ${trend} en la asignatura "${subjectName}". ${this.performance.accuracy < 60 ? `Necesita refuerzo en la partida de ${gameName}.` : 'Buen trabajo sigue así.'}`;
   }
 
-  goBack(): void {
-    this.router.navigate(['/dashboard/student']);
-  }
-
   exportPDF(): void {
     if (!this.selectedGameId) return;
     
@@ -202,10 +206,42 @@ export class StudentReportsComponent implements OnInit {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
         this.isDownloadingPDF = false;
+      }
+    });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard/student']);
+  }
+
+  onImgError(): void {
+    this.userProfileImg = 'assets/img/default-avatar.png';
+  }
+
+  triggerProfileUpload(): void {
+    const fileInput = document.getElementById('profileInputReports') as HTMLInputElement;
+    if (fileInput) fileInput.click();
+  }
+
+  onProfileFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.alertService.loading('Actualizando foto de perfil...');
+    
+    const user = this.authService.getCurrentUser();
+    if (!user) return;
+
+    this.authService.uploadFotoPerfil(user._id, file).subscribe({
+      next: (res) => {
+        if (res.ok) {
+          this.userProfileImg = `${this.serverUrl}/${res.fotoPerfil}?t=${new Date().getTime()}`;
+          this.alertService.success('¡Listo!', 'Tu foto de perfil ha sido actualizada.');
+        }
       },
       error: (err) => {
-        console.error('Error descargando PDF:', err);
-        this.isDownloadingPDF = false;
+        console.error('Error subiendo foto:', err);
+        this.alertService.error('Error', err.error?.mensaje || 'No se pudo subir la imagen.');
       }
     });
   }

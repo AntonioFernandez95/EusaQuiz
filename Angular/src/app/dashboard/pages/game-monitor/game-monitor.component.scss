@@ -8,23 +8,7 @@
   flex-direction: column;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  .logo-img { height: 60px; }
-  .page-title-center { font-weight: 500; color: #475569; font-size: 1.1rem; }
-  .user-profile {
-    display: flex; align-items: center; gap: 1rem;
-    .user-name { font-weight: 600; color: #1e293b; }
-    .user-avatar {
-        width: 36px; height: 36px; border-radius: 50%; background: #eee; overflow: hidden;
-        display: flex; align-items: center; justify-content: center;
-        span { font-weight: 700; color: #1e3a8a; }
-    }
-  }
-}
+// .dashboard-header centralizado en styles.scss
 
 .monitor-content {
   max-width: 1200px;
