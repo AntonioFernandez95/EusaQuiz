@@ -135,6 +135,13 @@ export class AuthService {
   }
 
   /**
+   * Obtiene constantes (Centros, Cursos, etc.)
+   */
+  getConstants(): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/auth/get-constants`);
+  }
+
+  /**
    * Cerrar sesión
    */
   logout(): void {
@@ -213,6 +220,25 @@ export class AuthService {
           if (user) {
             user.fotoPerfil = response.fotoPerfil;
             this.updateUserInSession(user);
+          }
+        }
+      })
+    );
+  }
+  /**
+   * Actualiza datos del usuario (curso, nombre, etc.)
+   */
+  updateUsuario(userId: string, data: any): Observable<any> {
+    return this.http.put<any>(`${this.API_URL}/usuarios/${userId}`, data).pipe(
+      tap(response => {
+        if (response.ok && response.data) {
+          // Si es el usuario actual, actualizamos la sesión local
+          const currentUser = this.getCurrentUser();
+          if (currentUser && currentUser._id === userId) {
+            // Fusionar datos nuevos
+            console.log('AuthService: Updating user. Current:', currentUser, 'New data:', response.data);
+            const updatedUser = { ...currentUser, ...response.data };
+            this.updateUserInSession(updatedUser);
           }
         }
       })

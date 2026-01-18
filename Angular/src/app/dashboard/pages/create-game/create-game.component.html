@@ -1,7 +1,7 @@
 <div class="create-game-container">
   <!-- Header -->
   <header class="dashboard-header animate-fade-in">
-    <div class="logo" (click)="cancel()" style="cursor: pointer">
+    <div class="logo" (click)="cancel()">
       <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
     </div>
 
@@ -10,7 +10,13 @@
     <div class="user-profile">
       <div class="user-avatar-wrapper">
         <div class="user-avatar">
-          <span>{{ userInitials }}</span>
+          <img
+            *ngIf="userProfileImg"
+            [src]="userProfileImg"
+            alt="Perfil"
+            class="profile-img-avatar"
+          />
+          <span *ngIf="!userProfileImg">{{ userInitials }}</span>
         </div>
       </div>
       <span class="user-name">{{ userName }}</span>
@@ -31,7 +37,11 @@
       </div>
 
       <div class="input-group">
-        <select [(ngModel)]="selectedSubject" class="main-select">
+        <select
+          [(ngModel)]="selectedSubject"
+          (change)="onSubjectChange()"
+          class="main-select"
+        >
           <option value="" disabled selected>
             Seleccionar asignatura y curso
           </option>
@@ -111,10 +121,10 @@
         </label>
       </div>
 
-      <!-- Opciones Extra según modo -->
-      <div class="extra-options animate-fade-in" *ngIf="gameMode === 'en_vivo'">
+      <!-- Opciones Extra comunes (Mezclar) -->
+      <div class="extra-options animate-fade-in">
         <div class="toggle-group">
-          <label class="toggle-item">
+          <label class="toggle-item" *ngIf="gameMode === 'en_vivo'">
             <input type="checkbox" [(ngModel)]="showRanking" />
             <span>Mostrar Ranking</span>
           </label>

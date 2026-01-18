@@ -55,7 +55,7 @@ const JugadorSchema = new mongoose.Schema({
 
     estado: {
         type: String,
-        enum: [...Object.values(tipos.ESTADOS_PARTIDA), tipos.ESTADO_USER.ABANDONADO],
+        enum: [...Object.values(tipos.ESTADOS_PARTIDA), tipos.ESTADO_USER.ACTIVO, tipos.ESTADO_USER.INACTIVO, tipos.ESTADO_USER.ABANDONADO],
         default: tipos.ESTADOS_PARTIDA.ACTIVA,
     },
 
@@ -94,7 +94,9 @@ const ConfiguracionExamenSchema = new mongoose.Schema({
     finEn: { type: Date },
     tiempoTotalMin: { type: Number },
     permitirNavegacion: { type: Boolean, default: true },
-    envioAutomatico: { type: Boolean, default: true }
+    envioAutomatico: { type: Boolean, default: true },
+    mezclarPreguntas: { type: Boolean, default: true },
+    mezclarRespuestas: { type: Boolean, default: true }
 }, { _id: false });
 
 // --- 3. Sub-esquema para Stats de Apoyo en Tiempo Real ---

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map, forkJoin, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ScheduledGame, QuizResult, SubjectProgress } from '../models/dashboard.models';
@@ -43,7 +43,7 @@ export class DashboardService {
     const subjects: Record<string, { total: number, count: number }> = {};
     
     history.forEach(res => {
-      const subject = res.idPartida.idCuestionario.categoria || 'General';
+      const subject = res.idPartida.asignatura || res.idPartida.idCuestionario.categoria || 'General';
       if (!subjects[subject]) {
         subjects[subject] = { total: 0, count: 0 };
       }
@@ -185,8 +185,18 @@ export class DashboardService {
   /**
    * Obtiene la lista de todos los alumnos
    */
-  getStudents(): Observable<any[]> {
-    return this.http.get<{ok: boolean, data: any[]}>(`${this.apiUrl}/usuarios?rol=alumno`)
+  getStudents(curso?: string): Observable<any[]> {
+    const token = localStorage.getItem('eusaquiz_token');
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+    
+    let url = `${this.apiUrl}/usuarios?rol=alumno`;
+    if (curso) {
+      url += `&curso=${encodeURIComponent(curso)}`;
+    }
+
+    return this.http.get<{ok: boolean, data: any[]}>(url, { headers })
       .pipe(map(res => res.ok ? res.data : []));
   }
 
@@ -204,8 +214,10 @@ export class DashboardService {
   /**
    * Obtiene las preguntas de un examen (modo programado/examen)
    */
-  getExamQuestions(idPartida: string): Observable<any[]> {
-    return this.http.get<{ok: boolean, data: any[]}>(`${this.apiUrl}/partidas/examen/${idPartida}/preguntas`)
+  getExamQuestions(idPartida: string, idAlumno?: string): Observable<any[]> {
+    let url = `${this.apiUrl}/partidas/examen/${idPartida}/preguntas`;
+    if (idAlumno) url += `?idAlumno=${idAlumno}`;
+    return this.http.get<{ok: boolean, data: any[]}>(url)
       .pipe(map(res => res.ok ? res.data : []));
   }
 

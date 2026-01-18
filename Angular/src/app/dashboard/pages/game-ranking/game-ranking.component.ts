@@ -4,6 +4,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { AlertService } from '../../../shared/services/alert.service';
 import { SocketService } from '../../../services/socket.service';
 import { Subscription } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 import { DashboardService } from '../../services/dashboard.service';
 
@@ -15,6 +16,8 @@ import { DashboardService } from '../../services/dashboard.service';
 export class GameRankingComponent implements OnInit, OnDestroy {
   userName: string = '';
   userInitials: string = '';
+  userProfileImg: string = '';
+  private serverUrl = environment.serverUrl;
   
   partidaId: string = '';
   ranking: any[] = [];
@@ -195,6 +198,7 @@ export class GameRankingComponent implements OnInit, OnDestroy {
     this.authService.currentUser$.subscribe(user => {
       if (user) {
         this.userName = user.nombre;
+        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         this.userRole = user.rol; // 'profesor' o 'alumno'
       }
@@ -281,7 +285,7 @@ export class GameRankingComponent implements OnInit, OnDestroy {
             puntos: j.puntuacionTotal,
             aciertos: j.aciertos,
             fallos: j.fallos,
-            finalizado: j.estado === 'finalizada'
+            finalizado: j.estado === 'inactivo' || j.estado === 'finalizada' || j.estado === 'finalizado'
           })).sort((a: any, b: any) => b.puntos - a.puntos);
           this.procesarRanking();
         }
@@ -300,6 +304,10 @@ export class GameRankingComponent implements OnInit, OnDestroy {
   getPosColor(index: number): string {
     const colors = ['#10b981', '#3b82f6', '#f59e0b', '#1e293b', '#1e293b'];
     return colors[index] || '#1e293b';
+  }
+
+  goBack(): void {
+    this.exit();
   }
 
   exit(): void {

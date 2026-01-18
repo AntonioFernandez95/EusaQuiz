@@ -1,21 +1,49 @@
 <div class="reports-container">
   <!-- Header -->
-  <header class="reports-header">
-    <div class="logo">
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo" (click)="goBack()">
       <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
     </div>
-    <div class="header-center">
-      <h2>Pantalla 12: Análisis y Reportes - ALUMNO</h2>
-    </div>
-    <div class="user-info">
-      <div class="user-avatar">
-        <img
-          *ngIf="userProfileImg"
-          [src]="userProfileImg"
-          alt="Perfil"
-          class="profile-img-avatar"
+    <div class="page-title-center">Análisis y Reportes</div>
+    <div class="user-profile">
+      <div
+        class="user-avatar-wrapper"
+        (click)="triggerProfileUpload()"
+        title="Cambiar foto de perfil"
+        style="cursor: pointer"
+      >
+        <div class="user-avatar">
+          <img
+            *ngIf="userProfileImg"
+            [src]="userProfileImg"
+            alt="Perfil"
+            class="profile-img-avatar"
+            (error)="onImgError()"
+          />
+          <!-- Same fallback logic as dashboard -->
+          <span *ngIf="!userProfileImg">{{ userInitials }}</span>
+          <!-- Overlay icon for better UX -->
+          <div class="avatar-overlay">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+              />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </div>
+        </div>
+        <input
+          type="file"
+          id="profileInputReports"
+          style="display: none"
+          (change)="onProfileFileSelected($event)"
+          accept="image/*"
         />
-        <span *ngIf="!userProfileImg">{{ userInitials }}</span>
       </div>
       <span class="user-name">{{ userName }}</span>
     </div>
