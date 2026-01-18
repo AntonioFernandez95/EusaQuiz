@@ -37,7 +37,7 @@ const CuestionarioSchema = new mongoose.Schema({
     },
     idProfesor: {//!ATENCION
         type: String,
-        ref: 'usuarios',
+        ref: 'Usuario',
         required: true
     },
     origen: {
@@ -54,7 +54,7 @@ const CuestionarioSchema = new mongoose.Schema({
     // --- Subdocumentos ---
     archivoOrigen: { type: ArchivoOrigenSchema },
 
-  // --- Métricas Internas ---
+    // --- Métricas Internas ---
     numPreguntas: { type: Number, default: 0 },
     numVecesJugado: { type: Number, default: 0 },
 

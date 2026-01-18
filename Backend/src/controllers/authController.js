@@ -1,6 +1,8 @@
 const Usuario = require('../models/usuario');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const emailService = require('../services/emailService');
 
 const authController = {
     /**
@@ -9,6 +11,11 @@ const authController = {
     register: async (req, res) => {
         try {
             const { idPortal, nombre, email, password, rol, curso, centro } = req.body;
+
+            // Restricción: No se permite registrar usuarios con rol 'admin' públicamente
+            if (rol === 'admin') {
+                return res.status(403).json({ ok: false, mensaje: 'No está permitido registrar un usuario administrador' });
+            }
 
             // Si no viene idPortal, generamos uno local único
             const finalIdPortal = idPortal || `LOCAL_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
@@ -158,11 +165,73 @@ const authController = {
     },
 
     /**
-     * Recuperación de contraseña (mockup)
+     * Recuperación de contraseña
      */
     forgotPassword: async (req, res) => {
-        // En una implementación real enviaríamos un email con un token
-        res.json({ ok: true, mensaje: 'Si el email existe, se han enviado las instrucciones' });
+        try {
+            const { email } = req.body;
+            const usuario = await Usuario.findOne({ email });
+
+            // Por seguridad, si el usuario no existe, enviamos la misma respuesta
+            if (!usuario) {
+                return res.json({ ok: true, mensaje: 'Si el email existe, se han enviado las instrucciones' });
+            }
+
+            // Generar token aleatorio
+            const token = crypto.randomBytes(20).toString('hex');
+
+            // Guardar token y expiración (1 hora)
+            usuario.resetPasswordToken = token;
+            usuario.resetPasswordExpires = Date.now() + 3600000;
+            await usuario.save();
+
+            // Enviar email
+            const emailSent = await emailService.sendResetPasswordEmail(usuario.email, token, usuario.nombre);
+
+            if (!emailSent) {
+                return res.status(500).json({ ok: false, mensaje: 'Error al enviar el correo de recuperación' });
+            }
+
+            res.json({ ok: true, mensaje: 'Si el email existe, se han enviado las instrucciones' });
+
+        } catch (error) {
+            console.error('Error en forgotPassword:', error);
+            res.status(500).json({ ok: false, mensaje: 'Error interno al procesar la solicitud' });
+        }
+    },
+
+    /**
+     * Restablecer contraseña con token
+     */
+    resetPassword: async (req, res) => {
+        try {
+            const { token, password } = req.body;
+
+            const usuario = await Usuario.findOne({
+                resetPasswordToken: token,
+                resetPasswordExpires: { $gt: Date.now() }
+            });
+
+            if (!usuario) {
+                return res.status(400).json({ ok: false, mensaje: 'El token es inválido o ha expirado' });
+            }
+
+            // Haishear nueva password
+            const salt = await bcrypt.genSalt(10);
+            usuario.password = await bcrypt.hash(password, salt);
+
+            // Limpiar campos de reset
+            usuario.resetPasswordToken = null;
+            usuario.resetPasswordExpires = null;
+
+            await usuario.save();
+
+            res.json({ ok: true, mensaje: 'Contraseña actualizada correctamente' });
+
+        } catch (error) {
+            console.error('Error en resetPassword:', error);
+            res.status(500).json({ ok: false, mensaje: 'Error interno al restablecer la contraseña' });
+        }
     }
 };
 

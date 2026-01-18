@@ -17,6 +17,9 @@ import { GameRankingComponent } from './pages/game-ranking/game-ranking.componen
 import { GameExamComponent } from './pages/game-exam/game-exam.component';
 import { ProfessorReportsComponent } from './pages/professor-reports/professor-reports.component';
 import { StudentReportsComponent } from './pages/student-reports/student-reports.component';
+import { AdminDashboardComponent } from './pages/admin/admin-dashboard.component';
+import { AdminUsersComponent } from './pages/admin/users/admin-users.component';
+import { AdminGamesComponent } from './pages/admin/games/admin-games.component';
 
 @NgModule({
   declarations: [
@@ -33,7 +36,10 @@ import { StudentReportsComponent } from './pages/student-reports/student-reports
     GameRankingComponent,
     GameExamComponent,
     ProfessorReportsComponent,
-    StudentReportsComponent
+    StudentReportsComponent,
+    AdminDashboardComponent,
+    AdminUsersComponent,
+    AdminGamesComponent
   ],
   imports: [
     CommonModule,
