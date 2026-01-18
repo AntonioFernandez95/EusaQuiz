@@ -45,7 +45,6 @@ logs/
 *.sqlite3
 
 # Uploads / temporales
-uploads/
 tmp/
 temp/
 

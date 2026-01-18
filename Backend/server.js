@@ -19,7 +19,10 @@ app.use(corsMiddleware);
 app.use(express.json());
 
 // --- Conexión a Base de Datos ---
-connectDB();
+connectDB().then(() => {
+  const seedAdmin = require('./src/config/seeder');
+  seedAdmin();
+});
 
 // --- Configuración de Socket.io ---
 // Nota: Socket.io necesita su propia config de CORS aparte de Express
@@ -38,6 +41,9 @@ app.set('socketio', io);
 //SWAGGER
 setupSwagger(app);
 
+// --- Middlewares de Autenticación y Carga de Usuario ---
+app.use(authFromParent);
+
 // --- Rutas API REST ---
 app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/cuestionarios', require('./src/routes/cuestionarioRoutes'));
@@ -46,7 +52,7 @@ app.use('/api/partidas', require('./src/routes/partidaRoutes'));
 app.use('/api/usuarios', require('./src/routes/usuarioRoutes'));
 app.use('/api/participaciones', require('./src/routes/participacionRoutes'));
 app.use('/api/import', require('./src/routes/importRoutes'));
-app.use(authFromParent);
+app.use('/api/admin', require('./src/routes/adminRoutes'));
 //Servir archivos estáticos (Imágenes de perfil)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
