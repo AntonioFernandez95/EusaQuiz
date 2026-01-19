@@ -6,9 +6,11 @@ import { AlertService } from '../../../shared/services/alert.service';
 import { environment } from '../../../../environments/environment';
 
 interface QuestionImport {
-  enunciado: string;
+  pregunta: string;
   opciones: string[];
   respuesta_correcta: string;
+  temas?: string[];
+  dificultad?: number;
   isEditing?: boolean;
 }
 
@@ -104,8 +106,14 @@ export class ImportQuestionsComponent implements OnInit {
           return;
         }
 
-        this.examName = content.nombre || file.name.replace('.json', '');
-        this.examSubject = content.asignatura || 'General';
+        // Soporte para nuevo formato con 'meta' o formato antiguo
+        if (content.meta) {
+          this.examName = content.meta.titulo || file.name.replace('.json', '');
+          this.examSubject = content.meta.asignatura || 'General';
+        } else {
+          this.examName = content.nombre || content.titulo || file.name.replace('.json', '');
+          this.examSubject = content.asignatura || 'General';
+        }
 
         this.fileLoaded = true;
         this.fileMetadata = {
@@ -116,9 +124,12 @@ export class ImportQuestionsComponent implements OnInit {
 
         // Mapeamos TODAS las preguntas al formato interno
         this.questions = rawQuestions.map((q: any) => {
-          let enunciado = q.enunciado || q.textoPregunta || q.texto || '';
+          // Soporte para múltiples formatos de campo pregunta
+          let pregunta = q.pregunta || q.enunciado || q.textoPregunta || q.texto || '';
           let opciones = Array.isArray(q.opciones) ? q.opciones : [];
           let respuesta_correcta = q.respuesta_correcta || '';
+          let temas = q.temas || [];
+          let dificultad = q.dificultad || 1;
 
           // Fallback para respuesta correcta si viene en formato objeto antiguo
           if (!respuesta_correcta && opciones.length > 0 && typeof opciones[0] === 'object') {
@@ -128,9 +139,11 @@ export class ImportQuestionsComponent implements OnInit {
           }
 
           return {
-            enunciado,
+            pregunta,
             opciones,
             respuesta_correcta,
+            temas,
+            dificultad,
             isEditing: false
           };
         });
@@ -153,14 +166,29 @@ export class ImportQuestionsComponent implements OnInit {
         return;
     }
 
+    // Validar que tenemos el centro del usuario
+    if (!this.userCentro) {
+        console.error('userCentro no definido. Usuario actual:', this.userName, 'userId:', this.userId);
+        this.alertService.error('Error de sesión', 'No se pudo obtener el centro del usuario. Por favor, cierra sesión y vuelve a entrar.');
+        return;
+    }
+
     this.isSaving = true;
     const importData = {
       nombre: this.examName,
       asignatura: this.examSubject,
       centro: this.userCentro,
       idProfesor: this.userId,
-      preguntas: this.questions
+      preguntas: this.questions.map(q => ({
+        pregunta: q.pregunta,
+        opciones: q.opciones,
+        respuesta_correcta: q.respuesta_correcta,
+        temas: q.temas || [],
+        dificultad: q.dificultad || 1
+      }))
     };
+
+    console.log('Importando examen con datos:', importData);
 
     this.dashboardService.importExamen(importData).subscribe({
       next: (res) => {
@@ -172,7 +200,9 @@ export class ImportQuestionsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error importing exam:', err);
-        this.alertService.error('Error', 'Hubo un problema al importar el examen en la base de datos.');
+        // Mostrar el mensaje de error real del backend si existe
+        const errorMsg = err.error?.error || err.error?.mensaje || 'Hubo un problema al importar el examen en la base de datos.';
+        this.alertService.error('Error', errorMsg);
         this.isSaving = false;
       }
     });

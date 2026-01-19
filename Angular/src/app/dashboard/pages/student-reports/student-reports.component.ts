@@ -35,6 +35,7 @@ export class StudentReportsComponent implements OnInit {
   };
   
   failedQuestions: any[] = [];
+  unansweredQuestions: any[] = [];
   subjectEvolution: any[] = [];
   
   isLoading = false;
@@ -114,6 +115,7 @@ export class StudentReportsComponent implements OnInit {
     this.selectedGameId = '';
     this.selectedGameDetails = null;
     this.failedQuestions = [];
+    this.unansweredQuestions = [];
     this.subjectEvolution = [];
     
     if (!this.selectedSubject) {
@@ -139,6 +141,7 @@ export class StudentReportsComponent implements OnInit {
   onGameChange(): void {
     this.selectedGameDetails = null;
     this.failedQuestions = [];
+    this.unansweredQuestions = [];
     this.performance = { accuracy: 0, status: '' };
 
     if (!this.selectedGameId) return;
@@ -156,12 +159,19 @@ export class StudentReportsComponent implements OnInit {
     this.dashboardService.getDetallePartida(this.selectedGameId).subscribe(data => {
       this.selectedGameDetails = data;
       
-      // Obtener preguntas fallidas para este alumno
+      // Obtener preguntas fallidas y sin responder para este alumno
       const student = data.jugadores.find((j: any) => j.idAlumno === this.currentUserId);
       if (student && data.preguntas) {
-        this.failedQuestions = data.preguntas.filter((q: any) => {
+        // Separate failed questions (answered incorrectly) from unanswered questions
+        (data.preguntas || []).forEach((q: any, idx: number) => {
           const resp = student.respuestas.find((r: any) => String(r.idPregunta) === String(q._id));
-          return resp && !resp.esCorrecta;
+          if (!resp) {
+            // Question was not answered
+            this.unansweredQuestions.push({ ...q, questionIndex: idx + 1 });
+          } else if (!resp.esCorrecta) {
+            // Question was answered incorrectly
+            this.failedQuestions.push({ ...q, questionIndex: idx + 1 });
+          }
         });
       }
       this.isLoading = false;

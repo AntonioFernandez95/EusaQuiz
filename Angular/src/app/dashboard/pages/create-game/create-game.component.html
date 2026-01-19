@@ -82,12 +82,32 @@
 
         <div class="input-group">
           <label class="input-label-top">Cuestionario</label>
-          <select [(ngModel)]="selectedQuizId" class="main-select">
-            <option value="" disabled selected>Seleccionar cuestionario</option>
-            <option *ngFor="let quiz of availableQuizzes" [value]="quiz._id">
-              {{ quiz.titulo }}
-            </option>
-          </select>
+          <div class="quiz-selector">
+            <div class="quiz-select-header" (click)="toggleQuizDropdown()">
+              <span class="quiz-selected-text">
+                {{ getSelectedQuizTitle() || 'Seleccionar cuestionario' }}
+              </span>
+              <span class="quiz-arrow" [class.open]="showQuizDropdown">▼</span>
+            </div>
+            <div class="quiz-dropdown" *ngIf="showQuizDropdown">
+              <div class="quiz-option" *ngFor="let quiz of availableQuizzes">
+                <span class="quiz-title" (click)="selectQuiz(quiz._id)">
+                  {{ quiz.titulo }}
+                </span>
+                <div class="quiz-actions">
+                  <button type="button" class="btn-action btn-edit" (click)="openEditQuizModal(quiz, $event)" title="Editar">
+                    ✏️
+                  </button>
+                  <button type="button" class="btn-action btn-delete" (click)="confirmDeleteQuiz(quiz, $event)" title="Eliminar">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+              <div class="quiz-option empty" *ngIf="availableQuizzes.length === 0">
+                No tienes cuestionarios
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -248,4 +268,19 @@
       <button class="btn-danger" (click)="cancel()">Cancelar</button>
     </div>
   </main>
+
+  <!-- Modal Confirmar Eliminación -->
+  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+    <div class="modal-content modal-delete" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Eliminar Cuestionario</h3>
+      <div class="modal-body">
+        <p>¿Estás seguro de que deseas eliminar el cuestionario <strong>"{{ quizToDelete?.titulo }}"</strong>?</p>
+        <p class="warning-text">Esta acción no se puede deshacer y eliminará todas las preguntas asociadas.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-danger" (click)="deleteQuiz()">Eliminar</button>
+        <button class="btn-secondary" (click)="closeDeleteModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
 </div>

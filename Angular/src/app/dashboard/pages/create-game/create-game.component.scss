@@ -268,3 +268,240 @@
     .grid-2-cols { grid-template-columns: 1fr; gap: 1rem; }
     .action-footer { flex-direction: column; gap: 1rem; }
 }
+
+// ========== Custom Quiz Selector Dropdown ==========
+.quiz-selector {
+    position: relative;
+    width: 100%;
+}
+
+.quiz-select-header {
+    width: 100%;
+    padding: 0.85rem 1.25rem;
+    border: 2px solid #003049;
+    border-radius: 12px;
+    font-size: 1rem;
+    color: var(--text-main);
+    background: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color 0.2s;
+
+    &:hover {
+        border-color: #0077b6;
+    }
+
+    .quiz-selected-text {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .quiz-arrow {
+        font-size: 0.75rem;
+        color: #003049;
+        transition: transform 0.2s;
+        margin-left: 0.5rem;
+
+        &.open {
+            transform: rotate(180deg);
+        }
+    }
+}
+
+.quiz-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #003049;
+    border-radius: 12px;
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+}
+
+.quiz-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    transition: background 0.15s;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &:hover {
+        background: #f0f7ff;
+    }
+
+    &.empty {
+        justify-content: center;
+        color: #94a3b8;
+        font-style: italic;
+    }
+
+    .quiz-title {
+        flex: 1;
+        cursor: pointer;
+        padding: 0.25rem 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--text-main);
+        font-weight: 500;
+    }
+
+    .quiz-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-left: 0.75rem;
+    }
+}
+
+.btn-action {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: transform 0.15s, background 0.15s;
+
+    &:hover {
+        transform: scale(1.1);
+    }
+
+    &.btn-edit {
+        background: #e0f2fe;
+        &:hover { background: #bae6fd; }
+    }
+
+    &.btn-delete {
+        background: #fee2e2;
+        &:hover { background: #fecaca; }
+    }
+}
+
+// ========== Modales ==========
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.25s ease;
+
+    &.modal-delete {
+        max-width: 400px;
+    }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #003049;
+    margin-bottom: 1.25rem;
+    text-align: center;
+}
+
+.modal-body {
+    margin-bottom: 1.5rem;
+
+    p {
+        margin: 0.5rem 0;
+        color: #334155;
+        text-align: center;
+    }
+
+    .warning-text {
+        color: #dc2626;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+    }
+
+    .textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+
+    button {
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: transform 0.15s, opacity 0.15s;
+
+        &:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+    }
+
+    .btn-primary {
+        background: #2d6a4f;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .btn-danger {
+        background: #c1121f;
+        color: white;
+    }
+}

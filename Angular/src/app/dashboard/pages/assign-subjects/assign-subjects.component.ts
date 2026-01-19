@@ -61,8 +61,12 @@ export class AssignSubjectsComponent implements OnInit {
     this.dashboardService.getConfigOptions().subscribe(config => {
       if (config && config.asignaturas) {
         this.availableSubjects = [
-          { name: 'DAM 1', subjects: config.asignaturas.DAM1 },
-          { name: 'DAM 2', subjects: config.asignaturas.DAM2 }
+          { name: '1 DAM', subjects: config.asignaturas.DAM1 || [] },
+          { name: '2 DAM', subjects: config.asignaturas.DAM2 || [] },
+          { name: '1 DAW', subjects: config.asignaturas.DAW1 || [] },
+          { name: '2 DAW', subjects: config.asignaturas.DAW2 || [] },
+          { name: '1 ASIR', subjects: config.asignaturas.ASIR1 || [] },
+          { name: '2 ASIR', subjects: config.asignaturas.ASIR2 || [] }
         ];
       }
       this.isLoading = false;

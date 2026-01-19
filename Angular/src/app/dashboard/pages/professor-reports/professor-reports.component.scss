@@ -82,6 +82,12 @@
     color: #b91c1c;
   }
 
+  &.gray {
+    background-color: #f1f5f9;
+    border-color: #64748b;
+    color: #475569;
+  }
+
   .card-main {
     display: flex;
     flex-direction: column;
@@ -109,6 +115,11 @@
   
   .failed-item {
     font-size: 0.95rem;
+  }
+
+  .unanswered-item {
+    font-size: 0.95rem;
+    font-style: italic;
   }
 }
 

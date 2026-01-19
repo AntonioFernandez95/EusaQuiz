@@ -5,6 +5,7 @@ import { ProfessorDashboardComponent } from './pages/professor-dashboard/profess
 import { AssignSubjectsComponent } from './pages/assign-subjects/assign-subjects.component';
 import { ImportQuestionsComponent } from './pages/import-questions/import-questions.component';
 import { CreateGameComponent } from './pages/create-game/create-game.component';
+import { EditQuizComponent } from './pages/edit-quiz/edit-quiz.component';
 import { GameLobbyComponent } from './pages/game-lobby/game-lobby.component';
 import { JoinGameComponent } from './pages/join-game/join-game.component';
 import { StudentLobbyComponent } from './pages/student-lobby/student-lobby.component';
@@ -64,6 +65,10 @@ const routes: Routes = [
   {
     path: 'professor/edit-game/:id',
     component: CreateGameComponent
+  },
+  {
+    path: 'professor/edit-quiz/:id',
+    component: EditQuizComponent
   },
   {
     path: 'professor/lobby/:id',

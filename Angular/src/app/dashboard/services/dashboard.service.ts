@@ -236,4 +236,62 @@ export class DashboardService {
     return this.http.post<{ok: boolean, data: any}>(`${this.apiUrl}/partidas/finalizar-examen`, { idPartida, idAlumno })
       .pipe(map(res => res.ok ? res.data : null));
   }
+
+  /**
+   * Obtiene un cuestionario por ID
+   */
+  getCuestionario(id: string): Observable<any> {
+    return this.http.get<{ok: boolean, data: any}>(`${this.apiUrl}/cuestionarios/${id}`)
+      .pipe(map(res => res.ok ? res.data : null));
+  }
+
+  /**
+   * Actualiza un cuestionario
+   */
+  updateCuestionario(id: string, data: any): Observable<any> {
+    return this.http.put<{ok: boolean, data: any}>(`${this.apiUrl}/cuestionarios/${id}`, data)
+      .pipe(map(res => res.ok ? res.data : null));
+  }
+
+  /**
+   * Elimina un cuestionario
+   */
+  deleteCuestionario(id: string): Observable<any> {
+    return this.http.delete<{ok: boolean, data: any}>(`${this.apiUrl}/cuestionarios/${id}`)
+      .pipe(map(res => res.ok ? res.data : null));
+  }
+
+  // ========== Métodos para Preguntas ==========
+
+  /**
+   * Obtiene las preguntas de un cuestionario
+   */
+  getQuestionsByCuestionario(idCuestionario: string): Observable<any[]> {
+    return this.http.get<{ok: boolean, data: any[]}>(`${this.apiUrl}/preguntas/cuestionarios/${idCuestionario}`)
+      .pipe(map(res => res.ok ? res.data : []));
+  }
+
+  /**
+   * Crea una nueva pregunta
+   */
+  createQuestion(data: any): Observable<any> {
+    return this.http.post<{ok: boolean, data: any}>(`${this.apiUrl}/preguntas`, data)
+      .pipe(map(res => res.ok ? res.data : null));
+  }
+
+  /**
+   * Actualiza una pregunta existente
+   */
+  updateQuestion(id: string, data: any): Observable<any> {
+    return this.http.put<{ok: boolean, data: any}>(`${this.apiUrl}/preguntas/${id}`, data)
+      .pipe(map(res => res.ok ? res.data : null));
+  }
+
+  /**
+   * Elimina una pregunta
+   */
+  deleteQuestion(id: string): Observable<any> {
+    return this.http.delete<{ok: boolean, data: any}>(`${this.apiUrl}/preguntas/${id}`)
+      .pipe(map(res => res.ok ? res.data : null));
+  }
 }

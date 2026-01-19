@@ -48,7 +48,11 @@ const PreguntaSchema = new mongoose.Schema({
         type: String,
         enum: tipos.ESTADO_PREGUNTA,
         default: tipos.ESTADO_PREGUNTA.VISIBLE,
-    }, // Permite deshabilitar  
+    }, // Permite deshabilitar
+
+    // --- Atributos adicionales de importación ---
+    temas: { type: [String], default: [] }, // Temas relacionados con la pregunta
+    dificultad: { type: Number, default: 1, min: 1, max: 5 }, // Nivel de dificultad (1-5)
 
     // --- Fechas de Control ---
     creadoEn: { type: Date, default: Date.now },

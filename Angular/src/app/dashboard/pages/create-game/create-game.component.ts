@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { DashboardService } from '../../services/dashboard.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -50,12 +50,33 @@ export class CreateGameComponent implements OnInit {
   availableQuizzes: any[] = [];
   qualificationModes: string[] = [];
 
+  // Control de asignaturas del profesor
+  userAssignedSubjects: string[] = [];
+  hasNoSubjectsAssigned: boolean = false;
+
+  // Control del dropdown de cuestionarios y modales
+  showQuizDropdown: boolean = false;
+  showDeleteModal: boolean = false;
+  quizToDelete: any = null;
+
+  // HostListener para cerrar dropdown al hacer clic fuera
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    if (this.showQuizDropdown) {
+      const quizSelector = this.elementRef.nativeElement.querySelector('.quiz-selector');
+      if (quizSelector && !quizSelector.contains(event.target)) {
+        this.showQuizDropdown = false;
+      }
+    }
+  }
+
   constructor(
     private dashboardService: DashboardService,
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private elementRef: ElementRef
   ) {}
 
   ngOnInit(): void {
@@ -65,6 +86,18 @@ export class CreateGameComponent implements OnInit {
         this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         this.userId = user.idPortal;
+        
+        // Guardar asignaturas asignadas del profesor
+        this.userAssignedSubjects = user.asignaturas || [];
+        this.hasNoSubjectsAssigned = this.userAssignedSubjects.length === 0;
+
+        // Mostrar notificacion si no tiene asignaturas asignadas
+        if (this.hasNoSubjectsAssigned) {
+          this.alertService.warning(
+            'Sin asignaturas asignadas',
+            'Debes asignarte asignaturas antes de crear una partida. Ve a "Asignar Módulos" en tu dashboard.'
+          );
+        }
         
         this.loadQuizzes();
         // Cargamos todos inicialmente o según lo que haya
@@ -84,7 +117,19 @@ export class CreateGameComponent implements OnInit {
       if (config && config.asignaturas) {
         const dam1 = (config.asignaturas.DAM1 || []).map((s: string) => ({ name: s, course: '1 DAM' }));
         const dam2 = (config.asignaturas.DAM2 || []).map((s: string) => ({ name: s, course: '2 DAM' }));
-        this.availableSubjects = [...dam1, ...dam2];
+        const daw1 = (config.asignaturas.DAW1 || []).map((s: string) => ({ name: s, course: '1 DAW' }));
+        const daw2 = (config.asignaturas.DAW2 || []).map((s: string) => ({ name: s, course: '2 DAW' }));
+        const asir1 = (config.asignaturas.ASIR1 || []).map((s: string) => ({ name: s, course: '1 ASIR' }));
+        const asir2 = (config.asignaturas.ASIR2 || []).map((s: string) => ({ name: s, course: '2 ASIR' }));
+        const allSubjects = [...dam1, ...dam2, ...daw1, ...daw2, ...asir1, ...asir2];
+        
+        // Filtrar solo las asignaturas que el profesor tiene asignadas
+        if (this.userAssignedSubjects.length > 0) {
+          this.availableSubjects = allSubjects.filter(s => this.userAssignedSubjects.includes(s.name));
+        } else {
+          this.availableSubjects = []; // Sin asignaturas si no tiene ninguna asignada
+        }
+        
         this.qualificationModes = config.modosCalificacion || ['velocidad_precision'];
       }
     });
@@ -168,6 +213,15 @@ export class CreateGameComponent implements OnInit {
   }
 
   createGame(): void {
+    // Validar que el profesor tenga asignaturas asignadas
+    if (this.hasNoSubjectsAssigned) {
+      this.alertService.warning(
+        'Sin asignaturas asignadas',
+        'Debes asignarte asignaturas antes de crear una partida. Ve a "Asignar Módulos" en tu dashboard.'
+      );
+      return;
+    }
+
     if (!this.gameName || !this.selectedQuizId || !this.selectedSubject) {
       this.alertService.warning('Datos incompletos', 'Por favor, rellena los campos obligatorios para continuar.');
       return;
@@ -258,5 +312,66 @@ export class CreateGameComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/dashboard/professor']);
+  }
+
+  // ========== Métodos para el dropdown de cuestionarios ==========
+
+  toggleQuizDropdown(): void {
+    this.showQuizDropdown = !this.showQuizDropdown;
+  }
+
+  selectQuiz(quizId: string): void {
+    this.selectedQuizId = quizId;
+    this.showQuizDropdown = false;
+  }
+
+  getSelectedQuizTitle(): string {
+    const quiz = this.availableQuizzes.find(q => q._id === this.selectedQuizId);
+    return quiz ? quiz.titulo : '';
+  }
+
+  // ========== Métodos para editar cuestionario ==========
+
+  openEditQuizModal(quiz: any, event: Event): void {
+    event.stopPropagation();
+    this.showQuizDropdown = false;
+    // Navegar a la página de edición de cuestionario
+    this.router.navigate(['/dashboard/professor/edit-quiz', quiz._id]);
+  }
+
+  // ========== Métodos para eliminar cuestionario ==========
+
+  confirmDeleteQuiz(quiz: any, event: Event): void {
+    event.stopPropagation();
+    this.quizToDelete = quiz;
+    this.showDeleteModal = true;
+    this.showQuizDropdown = false;
+  }
+
+  closeDeleteModal(): void {
+    this.showDeleteModal = false;
+    this.quizToDelete = null;
+  }
+
+  deleteQuiz(): void {
+    if (!this.quizToDelete) return;
+
+    this.dashboardService.deleteCuestionario(this.quizToDelete._id).subscribe({
+      next: (res) => {
+        if (res) {
+          this.alertService.success('Eliminado', 'Cuestionario eliminado correctamente.');
+          // Si el cuestionario eliminado era el seleccionado, limpiar selección
+          if (this.selectedQuizId === this.quizToDelete._id) {
+            this.selectedQuizId = '';
+          }
+          this.loadQuizzes(); // Recargar lista
+          this.closeDeleteModal();
+        }
+      },
+      error: (err) => {
+        console.error('Error eliminando cuestionario:', err);
+        this.alertService.error('Error', 'No se pudo eliminar el cuestionario.');
+      }
+    });
   }
 }

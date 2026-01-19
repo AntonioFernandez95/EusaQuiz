@@ -53,16 +53,6 @@ async function generarXMLPartida(idPartida, idSolicitante = null) {
   const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
   const participaciones = await Participacion.find({ idPartida: partida._id });
 
-  console.log(`[Reporte] Generando reporte para partida ${idPartida}`);
-  console.log(`[Reporte] Preguntas encontradas: ${preguntas.length}`);
-  console.log(`[Reporte] Participaciones encontradas: ${participaciones.length}`);
-  participaciones.forEach((p, idx) => {
-    console.log(`[Reporte] Participación ${idx}: idAlumno=${p.idAlumno}, respuestas.length=${p.respuestas.length}`);
-    p.respuestas.forEach((r, rIdx) => {
-      console.log(`[Reporte]   Respuesta ${rIdx}: idPregunta=${r.idPregunta}, esCorrecta=${r.esCorrecta}, opciones=${JSON.stringify(r.opcionesMarcadas)}`);
-    });
-  });
-
   // Construir XML
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
   xml += '<reporte>\n';
@@ -90,17 +80,39 @@ async function generarXMLPartida(idPartida, idSolicitante = null) {
 
   xml += '  <jugadores>\n';
   jugadoresOrdenados.forEach((jugador, idx) => {
+    // Calcular aciertos, fallos y sinResponder basándose en las participaciones reales
+    const participacionJugador = participaciones.find(p => p.idAlumno === jugador.idAlumno);
+    let aciertosCalculados = 0;
+    let fallosCalculados = 0;
+    let sinResponderCalculados = 0;
+    
+    if (participacionJugador) {
+      preguntas.forEach(pregunta => {
+        const resp = participacionJugador.respuestas.find(r => r.idPregunta.toString() === pregunta._id.toString());
+        if (!resp || !resp.opcionesMarcadas || resp.opcionesMarcadas.length === 0) {
+          sinResponderCalculados++;
+        } else if (resp.esCorrecta) {
+          aciertosCalculados++;
+        } else {
+          fallosCalculados++;
+        }
+      });
+    } else {
+      // Si no hay participación, todas son sin responder
+      sinResponderCalculados = preguntas.length;
+    }
+    
     xml += '    <jugador>\n';
     xml += `      <posicion>${idx + 1}</posicion>\n`;
     xml += `      <idAlumno>${escapeXml(jugador.idAlumno)}</idAlumno>\n`;
     xml += `      <nombre>${escapeXml(jugador.nombreAlumno || 'Anónimo')}</nombre>\n`;
     const pts = Number(jugador.puntuacionTotal);
     const finalPts = isNaN(pts) ? 0 : pts;
-    console.log(`[ReporteXML] Jugador ${jugador.nombreAlumno} (${jugador.idAlumno}) - Raw: ${jugador.puntuacionTotal}, Parsed: ${pts}, Final: ${finalPts}`);
+    console.log(`[ReporteXML] Jugador ${jugador.nombreAlumno} - Aciertos: ${aciertosCalculados}, Fallos: ${fallosCalculados}, SinResponder: ${sinResponderCalculados}`);
     xml += `      <puntuacion>${finalPts}</puntuacion>\n`;
-    xml += `      <aciertos>${jugador.aciertos || 0}</aciertos>\n`;
-    xml += `      <fallos>${jugador.fallos || 0}</fallos>\n`;
-    xml += `      <sinResponder>${jugador.sinResponder || 0}</sinResponder>\n`;
+    xml += `      <aciertos>${aciertosCalculados}</aciertos>\n`;
+    xml += `      <fallos>${fallosCalculados}</fallos>\n`;
+    xml += `      <sinResponder>${sinResponderCalculados}</sinResponder>\n`;
     xml += `      <estado>${escapeXml(jugador.estado || 'desconocido')}</estado>\n`;
     xml += '    </jugador>\n';
   });
@@ -116,7 +128,6 @@ async function generarXMLPartida(idPartida, idSolicitante = null) {
 
     participaciones.forEach((p, pIdx) => {
       const respuesta = p.respuestas.find(r => r.idPregunta.toString() === pregunta._id.toString());
-      console.log(`[Reporte Debug] Participación ${pIdx} (${p.idAlumno}), Pregunta ${idx + 1} (${pregunta._id}): respuesta encontrada=${!!respuesta}, tiene opciones=${respuesta?.opcionesMarcadas?.length > 0}`);
       if (respuesta && respuesta.opcionesMarcadas.length > 0) {
         totalRespuestas++;
         respuesta.opcionesMarcadas.forEach(opIdx => {
@@ -127,8 +138,6 @@ async function generarXMLPartida(idPartida, idSolicitante = null) {
     });
 
     const porcentajeAcierto = totalRespuestas > 0 ? Math.round((aciertosGlobales / totalRespuestas) * 100) : 0;
-
-    console.log(`[Reporte] Pregunta ${idx + 1}: totalRespuestas=${totalRespuestas}, aciertos=${aciertosGlobales}, porcentaje=${porcentajeAcierto}%`);
 
     xml += '    <pregunta>\n';
     xml += `      <numero>${idx + 1}</numero>\n`;
@@ -153,10 +162,12 @@ async function generarXMLPartida(idPartida, idSolicitante = null) {
   // Si hay un solicitante, añadir sus respuestas detalladas
   if (idSolicitante) {
     const participacionSolo = participaciones.find(p => p.idAlumno === idSolicitante);
+    
     if (participacionSolo) {
       xml += '  <respuestasSolicitante>\n';
       preguntas.forEach((pregunta, idx) => {
         const res = participacionSolo.respuestas.find(r => r.idPregunta.toString() === pregunta._id.toString());
+        
         xml += '    <respuesta>\n';
         xml += `      <numero>${idx + 1}</numero>\n`;
         xml += `      <textoPregunta>${escapeXml(pregunta.textoPregunta)}</textoPregunta>\n`;
@@ -201,9 +212,19 @@ async function transformarXSLT(xmlString) {
   const xmlDoc = await xmlParser.xmlParse(xmlString);
   const xsltDoc = await xmlParser.xmlParse(xsltString);
 
-  const htmlResult = await xslt.xsltProcess(xmlDoc, xsltDoc);
+  let htmlResult = await xslt.xsltProcess(xmlDoc, xsltDoc);
+  let htmlString = htmlResult.toString();
+  
+  // Insertar logo en base64
+  const logoPath = path.join(__dirname, '../templates/logo-base64.txt');
+  if (fs.existsSync(logoPath)) {
+    const logoBase64 = fs.readFileSync(logoPath, 'utf-8').trim();
+    if (htmlString.includes('LOGO_BASE64_PLACEHOLDER')) {
+      htmlString = htmlString.replace('LOGO_BASE64_PLACEHOLDER', logoBase64);
+    }
+  }
 
-  return htmlResult.toString();
+  return htmlString;
 }
 
 /**

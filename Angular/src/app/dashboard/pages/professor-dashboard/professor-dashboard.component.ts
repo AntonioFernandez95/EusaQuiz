@@ -40,6 +40,9 @@ export class ProfessorDashboardComponent implements OnInit {
   expandedIndex: number = -1;
   selectedGameName: string = '';
 
+  // Notificacion de asignaturas pendientes
+  showSubjectsWarning: boolean = false;
+
   constructor(
     private authService: AuthService,
     private dashboardService: DashboardService,
@@ -65,6 +68,9 @@ export class ProfessorDashboardComponent implements OnInit {
           .join('')
           .toUpperCase()
           .substring(0, 2);
+        
+        // Verificar si el profesor tiene asignaturas asignadas
+        this.showSubjectsWarning = !user.asignaturas || user.asignaturas.length === 0;
         
         this.loadDashboardData(user.idPortal);
       }
@@ -162,16 +168,16 @@ export class ProfessorDashboardComponent implements OnInit {
 
   downloadJSONTemplate(): void {
     const template = {
-      nombre: "Nombre_del_Examen",
-      asignatura: "Nombre_de_la_Asignatura",
-      autor: "Nombre_del_Autor",
-      curso: "Opcional_Curso",
-      criterios_abarcados: [
-        "criterio_ejemplo_1"
-      ],
+      meta: {
+        titulo: "Nombre del Examen",
+        asignatura: "Programación",
+        autor: "Nombre del Autor",
+        fecha: new Date().toISOString(),
+        tipo: "PRACTICA"
+      },
       preguntas: [
         {
-          enunciado: "¿Ejemplo de pregunta?",
+          pregunta: "¿Ejemplo de pregunta?",
           opciones: [
             "Respuesta Correcta",
             "Opción Incorrecta 1",
@@ -179,18 +185,28 @@ export class ProfessorDashboardComponent implements OnInit {
             "Opción Incorrecta 3"
           ],
           respuesta_correcta: "Respuesta Correcta",
-          asignatura: "Código_Asignatura",
-          criterios_evaluacion: ["criterio_ejemplo_1"],
+          temas: ["Tema 1"],
           dificultad: 1
+        },
+        {
+          pregunta: "¿Segunda pregunta de ejemplo?",
+          opciones: [
+            "Opción A",
+            "Opción B",
+            "Opción C",
+            "Opción D"
+          ],
+          respuesta_correcta: "Opción A",
+          temas: ["Tema 2"],
+          dificultad: 2
         }
-      ],
-      fecha_creacion: new Date().toISOString()
+      ]
     };
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(template, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "modelo_examen_ia.json");
+    downloadAnchorNode.setAttribute("download", "modelo_examen.json");
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();

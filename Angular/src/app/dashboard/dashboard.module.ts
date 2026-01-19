@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { AssignSubjectsComponent } from './pages/assign-subjects/assign-subjects.component';
 import { ImportQuestionsComponent } from './pages/import-questions/import-questions.component';
 import { CreateGameComponent } from './pages/create-game/create-game.component';
+import { EditQuizComponent } from './pages/edit-quiz/edit-quiz.component';
 import { GameLobbyComponent } from './pages/game-lobby/game-lobby.component';
 import { JoinGameComponent } from './pages/join-game/join-game.component';
 import { StudentLobbyComponent } from './pages/student-lobby/student-lobby.component';
@@ -28,6 +29,7 @@ import { AdminGamesComponent } from './pages/admin/games/admin-games.component';
     AssignSubjectsComponent,
     ImportQuestionsComponent,
     CreateGameComponent,
+    EditQuizComponent,
     GameLobbyComponent,
     JoinGameComponent,
     StudentLobbyComponent,
