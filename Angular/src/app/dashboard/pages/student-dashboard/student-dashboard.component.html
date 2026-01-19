@@ -156,12 +156,12 @@
             <span
               class="meta-tag"
               *ngIf="game.curso || game.idCuestionario?.curso"
-              >/ {{ game.curso || game.idCuestionario?.curso }}</span
+              >/ {{ game.curso || game.idCuestionario.curso }}</span
             >
             <span
               class="meta-tag"
               *ngIf="game.asignatura || game.idCuestionario?.asignatura"
-              >/ {{ game.asignatura || game.idCuestionario?.asignatura }}</span
+              >/ {{ game.asignatura || game.idCuestionario.asignatura }}</span
             >
           </span>
         </div>
@@ -240,7 +240,7 @@
               "
               >/
               {{
-                result.idPartida.curso || result.idPartida.idCuestionario?.curso
+                result.idPartida.curso || result.idPartida.idCuestionario.curso
               }}</span
             >
             <span
@@ -252,7 +252,7 @@
               >/
               {{
                 result.idPartida.asignatura ||
-                  result.idPartida.idCuestionario?.asignatura
+                  result.idPartida.idCuestionario.asignatura
               }}</span
             >
           </span>

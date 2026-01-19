@@ -96,6 +96,25 @@
     border-radius: 4px;
     animation: pulse 2s infinite;
   }
+
+  .btn-logout {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    margin-left: 12px;
+
+    &:hover {
+      background: #fee2e2;
+      color: #ef4444;
+    }
+  }
 }
 
 .overview-grid {

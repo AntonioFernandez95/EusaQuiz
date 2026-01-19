@@ -65,4 +65,8 @@ export class AdminDashboardComponent implements OnInit {
     setTab(tab: 'overview' | 'users' | 'games'): void {
         this.activeView = tab;
     }
+
+    logout(): void {
+        this.authService.logout();
+    }
 }
