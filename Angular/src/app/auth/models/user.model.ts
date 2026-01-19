@@ -4,7 +4,7 @@ export interface User {
   nombre: string;
   email: string;
   rol: 'profesor' | 'alumno';
-  curso: '1 DAM' | '2 DAM' | null;
+  curso: '1 DAM' | '2 DAM' | '1 DAW' | '2 DAW' | '1 ASIR' | '2 ASIR' | null;
   centro: 'Campus Camara' | 'EUSA';
   asignaturas?: string[];
   activo?: boolean;
@@ -25,7 +25,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   rol: 'profesor' | 'alumno';
-  curso: '1 DAM' | '2 DAM' | null;
+  curso: '1 DAM' | '2 DAM' | '1 DAW' | '2 DAW' | '1 ASIR' | '2 ASIR' | null;
   centro: 'Campus Camara' | 'EUSA';
 }
 

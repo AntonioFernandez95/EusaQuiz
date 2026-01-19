@@ -96,11 +96,11 @@
                 <input
                   *ngIf="isGlobalEditing"
                   type="text"
-                  [(ngModel)]="q.enunciado"
+                  [(ngModel)]="q.pregunta"
                   class="edit-input"
                 />
                 <span *ngIf="!isGlobalEditing" class="q-text">{{
-                  q.enunciado
+                  q.pregunta
                 }}</span>
               </div>
 

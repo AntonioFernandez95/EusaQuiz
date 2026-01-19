@@ -45,6 +45,7 @@ export class ProfessorReportsComponent implements OnInit {
   };
   
   failedQuestions: any[] = [];
+  unansweredQuestions: any[] = [];
   studentEvolution: any[] = [];
   
   isLoading = false;
@@ -141,6 +142,7 @@ export class ProfessorReportsComponent implements OnInit {
     this.players = [];
     this.selectedStudentId = '';
     this.failedQuestions = [];
+    this.unansweredQuestions = [];
     this.studentEvolution = [];
 
     if (!this.selectedGameId) return;
@@ -159,30 +161,36 @@ export class ProfessorReportsComponent implements OnInit {
     const actualStudents = data.jugadores?.length || 0;
     
     let totalAccuracy = 0;
-    const questionStats: Record<number, number> = {}; // index -> failure count
+    const questionFailures: Record<string, number> = {}; // questionId -> failure count (incorrect + unanswered)
+    const preguntas = data.preguntas || [];
 
     data.jugadores.forEach((j: any) => {
-      const totalQ = data.preguntas?.length || data.idCuestionario?.numPreguntas || 0;
+      const totalQ = preguntas.length || data.idCuestionario?.numPreguntas || 0;
       if (totalQ > 0) {
         totalAccuracy += (j.aciertos / totalQ) * 100;
       }
 
-      // Track failed questions
-      (j.respuestas || []).forEach((resp: any, idx: number) => {
-        if (!resp.esCorrecta) {
-          questionStats[idx] = (questionStats[idx] || 0) + 1;
+      // Track failed and unanswered questions by question ID
+      preguntas.forEach((q: any) => {
+        const resp = (j.respuestas || []).find((r: any) => String(r.idPregunta) === String(q._id));
+        // Count both unanswered (!resp) and incorrect (resp && !resp.esCorrecta) as failures
+        if (!resp || !resp.esCorrecta) {
+          questionFailures[q._id] = (questionFailures[q._id] || 0) + 1;
         }
       });
     });
 
     const avgAccuracy = actualStudents > 0 ? Math.round(totalAccuracy / actualStudents) : 0;
     
-    // Most failed questions (top 5)
-    const failedIndices = Object.keys(questionStats)
-      .map(Number)
-      .sort((a, b) => questionStats[b] - questionStats[a])
-      .slice(0, 5)
-      .map(i => i + 1);
+    // Most failed questions (top 5) - get question indices
+    const sortedFailures = Object.entries(questionFailures)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    
+    const failedIndices = sortedFailures.map(([qId]) => {
+      const idx = preguntas.findIndex((q: any) => String(q._id) === String(qId));
+      return idx + 1; // 1-based index
+    }).filter(i => i > 0);
 
     this.classPerformance = {
       subject: this.selectedSubject,
@@ -195,6 +203,7 @@ export class ProfessorReportsComponent implements OnInit {
 
   onStudentChange(): void {
     this.failedQuestions = [];
+    this.unansweredQuestions = [];
     this.studentEvolution = [];
     this.studentPerformance = { accuracy: 0, status: '' };
 
@@ -210,10 +219,16 @@ export class ProfessorReportsComponent implements OnInit {
         status: this.getStatusText(accuracy)
       };
 
-      // Get failed questions text
-      this.failedQuestions = (this.selectedGameDetails.preguntas || []).filter((q: any, idx: number) => {
+      // Separate failed questions (answered incorrectly) from unanswered questions
+      (this.selectedGameDetails.preguntas || []).forEach((q: any, idx: number) => {
         const resp = student.respuestas.find((r: any) => String(r.idPregunta) === String(q._id));
-        return resp && !resp.esCorrecta;
+        if (!resp) {
+          // Question was not answered
+          this.unansweredQuestions.push({ ...q, questionIndex: idx + 1 });
+        } else if (!resp.esCorrecta) {
+          // Question was answered incorrectly
+          this.failedQuestions.push({ ...q, questionIndex: idx + 1 });
+        }
       });
 
       // Load evolution

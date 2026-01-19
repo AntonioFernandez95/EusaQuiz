@@ -430,6 +430,16 @@ async function crearPartida(data) {
   if (!profesor) throw new Error('Profesor no encontrado en el sistema');
   if (profesor.rol !== 'profesor') throw new Error('El usuario no tiene rol de profesor');
 
+  // Validar que el profesor tenga asignaturas asignadas
+  if (!profesor.asignaturas || profesor.asignaturas.length === 0) {
+    throw new Error('Debes asignarte asignaturas antes de crear una partida. Ve a "Asignar Módulos" en tu dashboard.');
+  }
+
+  // Validar que la asignatura seleccionada esté entre las asignaturas del profesor
+  if (!profesor.asignaturas.includes(asignatura)) {
+    throw new Error(`No tienes asignada la asignatura "${asignatura}". Solo puedes crear partidas de tus asignaturas asignadas.`);
+  }
+
   const cuestionarioPadre = await Cuestionario.findById(idCuestionario);
   if (!cuestionarioPadre) throw new Error('Cuestionario no encontrado');
 

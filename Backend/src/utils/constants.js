@@ -57,7 +57,6 @@ module.exports = {
             'Formación y Orientación Laboral',
             'Digitalización Aplicada',
             'Sostenibilidad Aplicada'
-
         ],
         DAM2: [
             'Acceso a Datos',
@@ -65,7 +64,48 @@ module.exports = {
             'Programación Multimedia y Dispositivos Móviles',
             'Programación de Servicios y Procesos',
             'Sistemas de Gestión Empresarial',
-            'Empresa e Iniciativa Emprendedora'
+            'Empresa e Iniciativa Emprendedora',
+            'Proyecto de Desarrollo de Aplicaciones Multiplataforma',
+            'Formación en Centros de Trabajo'
+        ],
+        DAW1: [
+            'Sistemas Informáticos',
+            'Bases de Datos',
+            'Programación',
+            'Lenguajes de Marcas',
+            'Entornos de Desarrollo',
+            'Formación y Orientación Laboral',
+            'Digitalización Aplicada',
+            'Sostenibilidad Aplicada'
+        ],
+        DAW2: [
+            'Desarrollo Web en Entorno Cliente',
+            'Desarrollo Web en Entorno Servidor',
+            'Despliegue de Aplicaciones Web',
+            'Diseño de Interfaces Web',
+            'Empresa e Iniciativa Emprendedora',
+            'Proyecto de Desarrollo de Aplicaciones Web',
+            'Formación en Centros de Trabajo'
+        ],
+        ASIR1: [
+            'Implantación de Sistemas Operativos',
+            'Planificación y Administración de Redes',
+            'Fundamentos de Hardware',
+            'Gestión de Bases de Datos',
+            'Lenguajes de Marcas',
+            'Formación y Orientación Laboral',
+            'Digitalización Aplicada',
+            'Sostenibilidad Aplicada'
+        ],
+        ASIR2: [
+            'Administración de Sistemas Operativos',
+            'Servicios de Red e Internet',
+            'Implantación de Aplicaciones Web',
+            'Administración de Sistemas Gestores de Bases de Datos',
+            'Seguridad y Alta Disponibilidad',
+            'Empresa e Iniciativa Emprendedora',
+            'Proyecto de Administración de Sistemas Informáticos en Red',
+            'Formación en Centros de Trabajo'
         ]
     },
     ORIGEN: {
