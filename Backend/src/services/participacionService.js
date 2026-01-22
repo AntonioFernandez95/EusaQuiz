@@ -242,21 +242,44 @@ async function obtenerRankingPartida(idPartida, limit = 10) {
 
 
 /**
+ * Helper para extraer el nombre de un campo que puede ser un ObjectId poblado o un string
+ * @param {Object|String} value - El valor que puede ser un objeto poblado o un string
+ * @returns {String} El nombre del objeto o el string original
+ */
+function extraerNombre(value) {
+  if (!value) return '';
+  if (typeof value === 'object' && value !== null) {
+    return value.nombre || '';
+  }
+  return String(value);
+}
+
+/**
  * 4. Obtener Historial de un Alumno
  */
 async function obtenerHistorialAlumno(idAlumno) {
   // Buscamos todas las participaciones de este alumno
-  // y populamos la partida -> y luego el cuestionario de esa partida
+  // y populamos la partida -> y luego el cuestionario de esa partida con sus referencias
   const participaciones = await Participacion.find({ idAlumno })
     .populate({
       path: 'idPartida',
-      populate: { path: 'idCuestionario' }
+      populate: {
+        path: 'idCuestionario',
+        populate: [
+          { path: 'asignatura', select: 'nombre' },
+          { path: 'curso', select: 'nombre' }
+        ]
+      }
     })
     .sort({ finEn: -1 }); // Las más recientes primero
 
   return participaciones.map(p => {
     const partida = p.idPartida;
     const cuestionario = partida ? partida.idCuestionario : null;
+    
+    // Extraer nombres de los objetos poblados del cuestionario
+    const cursoNombre = extraerNombre(cuestionario?.curso);
+    const asignaturaNombre = extraerNombre(cuestionario?.asignatura);
 
     return {
       _id: p._id,
@@ -265,12 +288,12 @@ async function obtenerHistorialAlumno(idAlumno) {
         nombrePartida: partida ? partida.nombrePartida : null,
         idCuestionario: {
           titulo: cuestionario ? cuestionario.titulo : 'Desconocido',
-          categoria: cuestionario ? cuestionario.asignatura : 'General',
-          asignatura: cuestionario ? cuestionario.asignatura : 'General',
-          curso: cuestionario ? cuestionario.curso : ''
+          categoria: asignaturaNombre || 'General',
+          asignatura: asignaturaNombre || 'General',
+          curso: cursoNombre
         },
-        curso: (partida && partida.curso) ? partida.curso : (cuestionario ? cuestionario.curso : ''),
-        asignatura: (partida && partida.asignatura) ? partida.asignatura : (cuestionario ? cuestionario.asignatura : ''),
+        curso: (partida && partida.curso) ? partida.curso : cursoNombre,
+        asignatura: (partida && partida.asignatura) ? partida.asignatura : asignaturaNombre,
         finalizadaEn: p.finEn || p.fechaInicio
       },
       puntuacionTotal: p.puntuacionTotal || 0,
@@ -279,10 +302,23 @@ async function obtenerHistorialAlumno(idAlumno) {
       aciertos: p.aciertos || 0,
       fallos: p.fallos || 0,
       fecha: p.fechaInicio,
+      porcentaje: calculatePercentage(p, cuestionario),
       pinPartida: partida ? partida.pin : '---',
       tipoPartida: partida ? partida.tipoPartida : 'en_vivo'
     };
   });
+}
+
+/**
+ * Calcula el porcentaje de aciertos
+ */
+function calculatePercentage(participacion, cuestionario) {
+  const totalPreguntas = (cuestionario && cuestionario.numPreguntas > 0) 
+    ? cuestionario.numPreguntas 
+    : (participacion.respuestas?.length || 0);
+  
+  if (totalPreguntas === 0) return 0;
+  return Math.round((participacion.aciertos || 0) / totalPreguntas * 100);
 }
 
 module.exports = {

@@ -67,25 +67,38 @@ export class GameLobbyComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  loadPartida(): void {
+loadPartida(): void {
+    console.log('[GameLobby] Cargando partida con ID:', this.partidaId);
     // Necesitamos un método en dashboardService para obtener el detalle de una partida
-    this.dashboardService.getDetallePartida(this.partidaId).subscribe(p => {
-      if (p) {
-        this.partida = p;
+    this.dashboardService.getDetallePartida(this.partidaId).subscribe({
+      next: (p) => {
+        console.log('[GameLobby] Partida recibida:', p);
+        if (p) {
+          this.partida = p;
 
-        // Si la partida ya está activa, redirigir al profesor a la pantalla correspondiente
-        if (p.estadoPartida === 'activa' || p.estadoPartida === 'finalizada') {
-            if (p.tipoPartida === 'examen') {
-                this.router.navigate(['/dashboard/professor/game-ranking', this.partidaId]);
-                return;
-            } else {
-                this.router.navigate(['/dashboard/professor/game-monitor', this.partidaId]);
-                return;
-            }
+          // Si la partida ya está activa, redirigir al profesor a la pantalla correspondiente
+          if (p.estadoPartida === 'activa' || p.estadoPartida === 'finalizada') {
+              if (p.tipoPartida === 'examen') {
+                  this.router.navigate(['/dashboard/professor/game-ranking', this.partidaId]);
+                  return;
+              } else {
+                  this.router.navigate(['/dashboard/professor/game-monitor', this.partidaId]);
+                  return;
+              }
+          }
+
+          this.setupLobby();
+          this.connectSocket();
+        } else {
+          console.error('[GameLobby] Partida no encontrada (null)');
+          this.alertService.error('Error', 'No se encontró la partida.');
+          this.router.navigate(['/dashboard/professor']);
         }
-
-        this.setupLobby();
-        this.connectSocket();
+      },
+      error: (err) => {
+        console.error('[GameLobby] Error al cargar partida:', err);
+        this.alertService.error('Error', 'No se pudo cargar la partida.');
+        this.router.navigate(['/dashboard/professor']);
       }
     });
   }

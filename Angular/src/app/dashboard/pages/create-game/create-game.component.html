@@ -85,7 +85,7 @@
           <div class="quiz-selector">
             <div class="quiz-select-header" (click)="toggleQuizDropdown()">
               <span class="quiz-selected-text">
-                {{ getSelectedQuizTitle() || 'Seleccionar cuestionario' }}
+                {{ getSelectedQuizTitle() || "Seleccionar cuestionario" }}
               </span>
               <span class="quiz-arrow" [class.open]="showQuizDropdown">▼</span>
             </div>
@@ -95,15 +95,28 @@
                   {{ quiz.titulo }}
                 </span>
                 <div class="quiz-actions">
-                  <button type="button" class="btn-action btn-edit" (click)="openEditQuizModal(quiz, $event)" title="Editar">
+                  <button
+                    type="button"
+                    class="btn-action btn-edit"
+                    (click)="openEditQuizModal(quiz, $event)"
+                    title="Editar"
+                  >
                     ✏️
                   </button>
-                  <button type="button" class="btn-action btn-delete" (click)="confirmDeleteQuiz(quiz, $event)" title="Eliminar">
+                  <button
+                    type="button"
+                    class="btn-action btn-delete"
+                    (click)="confirmDeleteQuiz(quiz, $event)"
+                    title="Eliminar"
+                  >
                     🗑️
                   </button>
                 </div>
               </div>
-              <div class="quiz-option empty" *ngIf="availableQuizzes.length === 0">
+              <div
+                class="quiz-option empty"
+                *ngIf="availableQuizzes.length === 0"
+              >
                 No tienes cuestionarios
               </div>
             </div>
@@ -146,7 +159,7 @@
         <div class="toggle-group">
           <label class="toggle-item" *ngIf="gameMode === 'en_vivo'">
             <input type="checkbox" [(ngModel)]="showRanking" />
-            <span>Mostrar Ranking</span>
+            <span>Mostrar ranking parcial</span>
           </label>
           <label class="toggle-item">
             <input type="checkbox" [(ngModel)]="shuffleQuestions" />
@@ -249,7 +262,7 @@
     </section>
 
     <!-- Modo de Calificación -->
-    <section class="config-section">
+    <section class="config-section" *ngIf="gameMode === 'en_vivo'">
       <h3 class="section-title">Modo de Calificación</h3>
       <select [(ngModel)]="qualificationMode" class="main-select">
         <option value="velocidad_precision">Velocidad + Precisión</option>
@@ -270,16 +283,28 @@
   </main>
 
   <!-- Modal Confirmar Eliminación -->
-  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+  <div
+    class="modal-overlay"
+    *ngIf="showDeleteModal"
+    (click)="closeDeleteModal()"
+  >
     <div class="modal-content modal-delete" (click)="$event.stopPropagation()">
       <h3 class="modal-title">Eliminar Cuestionario</h3>
       <div class="modal-body">
-        <p>¿Estás seguro de que deseas eliminar el cuestionario <strong>"{{ quizToDelete?.titulo }}"</strong>?</p>
-        <p class="warning-text">Esta acción no se puede deshacer y eliminará todas las preguntas asociadas.</p>
+        <p>
+          ¿Estás seguro de que deseas eliminar el cuestionario
+          <strong>"{{ quizToDelete?.titulo }}"</strong>?
+        </p>
+        <p class="warning-text">
+          Esta acción no se puede deshacer y eliminará todas las preguntas
+          asociadas.
+        </p>
       </div>
       <div class="modal-actions">
         <button class="btn-danger" (click)="deleteQuiz()">Eliminar</button>
-        <button class="btn-secondary" (click)="closeDeleteModal()">Cancelar</button>
+        <button class="btn-secondary" (click)="closeDeleteModal()">
+          Cancelar
+        </button>
       </div>
     </div>
   </div>

@@ -53,6 +53,7 @@ app.use('/api/usuarios', require('./src/routes/usuarioRoutes'));
 app.use('/api/participaciones', require('./src/routes/participacionRoutes'));
 app.use('/api/import', require('./src/routes/importRoutes'));
 app.use('/api/admin', require('./src/routes/adminRoutes'));
+app.use('/api/datos-academicos', require('./src/routes/datosAcademicosRoutes'));
 //Servir archivos estáticos (Imágenes de perfil)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

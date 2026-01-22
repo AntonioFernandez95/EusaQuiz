@@ -43,6 +43,11 @@ const authController = {
 
             await nuevoUsuario.save();
 
+            // Poblar curso y centro para la respuesta
+            const usuarioPoblado = await Usuario.findById(nuevoUsuario._id)
+                .populate('curso', 'nombre codigo')
+                .populate('centro', 'nombre codigo');
+
             // Generar JWT
             const token = jwt.sign(
                 { id: nuevoUsuario._id, email: nuevoUsuario.email, rol: nuevoUsuario.rol },
@@ -54,14 +59,15 @@ const authController = {
                 ok: true,
                 token,
                 user: {
-                    _id: nuevoUsuario._id,
-                    idPortal: nuevoUsuario.idPortal,
-                    nombre: nuevoUsuario.nombre,
-                    email: nuevoUsuario.email,
-                    rol: nuevoUsuario.rol,
-                    curso: nuevoUsuario.curso,
-                    centro: nuevoUsuario.centro,
-                    fotoPerfil: nuevoUsuario.fotoPerfil
+                    _id: usuarioPoblado._id,
+                    idPortal: usuarioPoblado.idPortal,
+                    nombre: usuarioPoblado.nombre,
+                    email: usuarioPoblado.email,
+                    rol: usuarioPoblado.rol,
+                    curso: usuarioPoblado.curso,
+                    centro: usuarioPoblado.centro,
+                    asignaturas: usuarioPoblado.asignaturas || [],
+                    fotoPerfil: usuarioPoblado.fotoPerfil
                 }
             });
 
@@ -78,8 +84,12 @@ const authController = {
         try {
             const { email, password } = req.body;
 
-            // Buscar usuario
-            const user = await Usuario.findOne({ email });
+            // Buscar usuario y poblar curso y centro
+            const user = await Usuario.findOne({ email })
+                .populate('curso', 'nombre codigo')
+                .populate('centro', 'nombre codigo')
+                .populate('asignaturas', 'nombre');
+                
             if (!user || !user.password) {
                 return res.status(401).json({ ok: false, mensaje: 'Credenciales inválidas' });
             }
@@ -108,6 +118,7 @@ const authController = {
                     rol: user.rol,
                     curso: user.curso,
                     centro: user.centro,
+                    asignaturas: user.asignaturas,
                     fotoPerfil: user.fotoPerfil
                 }
             });
@@ -145,6 +156,12 @@ const authController = {
                 await user.save();
             }
 
+            // Poblar curso y centro
+            const userPoblado = await Usuario.findById(user._id)
+                .populate('curso', 'nombre codigo')
+                .populate('centro', 'nombre codigo')
+                .populate('asignaturas', 'nombre');
+
             // Generar nuestro propio token de sesión
             const sessionToken = jwt.sign(
                 { id: user._id, email: user.email, rol: user.rol },
@@ -156,14 +173,15 @@ const authController = {
                 ok: true,
                 token: sessionToken,
                 user: {
-                    _id: user._id,
-                    idPortal: user.idPortal,
-                    nombre: user.nombre,
-                    email: user.email,
-                    rol: user.rol,
-                    curso: user.curso,
-                    centro: user.centro,
-                    fotoPerfil: user.fotoPerfil
+                    _id: userPoblado._id,
+                    idPortal: userPoblado.idPortal,
+                    nombre: userPoblado.nombre,
+                    email: userPoblado.email,
+                    rol: userPoblado.rol,
+                    curso: userPoblado.curso,
+                    centro: userPoblado.centro,
+                    asignaturas: userPoblado.asignaturas || [],
+                    fotoPerfil: userPoblado.fotoPerfil
                 }
             });
 
@@ -244,16 +262,23 @@ const authController = {
     },
 
     /**
-     * Obtener constantes (Centros, Cursos, etc.)
+     * Obtener constantes (Centros, Cursos, etc.) - Ahora desde la base de datos
      */
-    getConstants: (req, res) => {
+    getConstants: async (req, res) => {
         try {
-            const constants = require('../utils/constants');
+            const Centro = require('../models/centro');
+            const Curso = require('../models/curso');
+            
+            const [centros, cursos] = await Promise.all([
+                Centro.find().sort({ nombre: 1 }),
+                Curso.find().populate('centro', 'nombre codigo').sort({ nombre: 1 })
+            ]);
+
             res.json({
                 ok: true,
                 constants: {
-                    CENTROS: constants.CENTROS,
-                    CURSOS: constants.CURSOS
+                    CENTROS: centros,
+                    CURSOS: cursos
                 }
             });
         } catch (error) {
