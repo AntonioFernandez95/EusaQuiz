@@ -14,9 +14,12 @@
       <button [class.active]="activeView === 'users'" (click)="setTab('users')">
         <i class="fas fa-users"></i> Usuarios
       </button>
-      <button [class.active]="activeView === 'games'" (click)="setTab('games')">
-        <i class="fas fa-gamepad"></i> Partidas
-      </button>
+       <button [class.active]="activeView === 'games'" (click)="setTab('games')">
+         <i class="fas fa-gamepad"></i> Partidas
+       </button>
+       <button [class.active]="activeView === 'data'" (click)="setTab('data')">
+         <i class="fas fa-database"></i> Datos
+       </button>
     </nav>
   </aside>
 
@@ -115,8 +118,8 @@
                 <td>
                   <span class="role-badge" [ngClass]="u.rol">{{ u.rol }}</span>
                 </td>
-                <td>{{ u.centro }}</td>
-                <td>{{ u.creadoEn | date : "shortDate" }}</td>
+                 <td>{{ u.centro?.nombre || u.centro || 'N/A' }}</td>
+                 <td>{{ u.creadoEn | date : "short" }}</td>
               </tr>
             </tbody>
           </table>
@@ -137,6 +140,13 @@
       class="games-view animate__animated animate__fadeIn"
     >
       <app-admin-games></app-admin-games>
+    </div>
+
+    <div
+      *ngIf="activeView === 'data'"
+      class="data-view animate__animated animate__fadeIn"
+    >
+      <app-admin-data></app-admin-data>
     </div>
   </main>
 </div>

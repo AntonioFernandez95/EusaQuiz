@@ -4,6 +4,8 @@ const Participacion = require('../models/participacion');
 const Pregunta = require('../models/pregunta');
 const Cuestionario = require('../models/cuestionario');
 const Usuario = require('../models/usuario');
+const Curso = require('../models/curso');
+const Asignatura = require('../models/asignatura');
 const tipos = require('../utils/constants');
 // Importamos enviarRespuesta desde participacionService (donde está la lógica de respuestas)
 const { enviarRespuesta: _enviarRespuestaInternal } = require('./participacionService');
@@ -23,11 +25,24 @@ async function enviarRespuesta(payload, io) {
     const partida = await Partida.findById(idPartida);
 
     if (partida && partida.tipoPartida === tipos.MODOS_JUEGO.EN_VIVO) {
-      // Contar jugadores activos (o totales registrados)
-      // Usamos partida.jugadores.length que es más seguro para consistencia
-      // FIX: Solo contar los que están marcados como ACTIVO. Los ABANDONADO no responderán.
-      const jugadoresActivos = partida.jugadores.filter(j => j.estado === tipos.ESTADO_USER.ACTIVO);
-      const totalEsperados = jugadoresActivos.length;
+      // 2.1 Asegurar que el jugador que responde está marcado como ACTIVO
+      // (Por si hubo micro-desconexiones que lo marcaron como ABANDONADO)
+      const jugadorQueResponde = partida.jugadores.find(j => j.idAlumno === payload.idAlumno);
+      if (jugadorQueResponde && jugadorQueResponde.estado === tipos.ESTADO_USER.ABANDONADO) {
+        jugadorQueResponde.estado = tipos.ESTADO_USER.ACTIVO;
+        partida.markModified('jugadores');
+        await partida.save();
+        console.log(`🔄 [Auto-Avance] Jugador ${payload.idAlumno} restaurado a ACTIVO al responder.`);
+      }
+
+      // FIX: Para en_vivo, contar TODOS los jugadores que se unieron (tienen Participacion)
+      // No filtrar por estado de conexión ya que las desconexiones temporales marcan como ABANDONADO
+      // Usar el total de participaciones como referencia más confiable
+      const totalParticipaciones = await Participacion.countDocuments({ idPartida: partida._id });
+      const totalEsperados = totalParticipaciones;
+
+      console.log(`[Auto-Avance] Total participaciones en BD: ${totalParticipaciones}`);
+      console.log(`[Auto-Avance] Usando ${totalEsperados} como total esperado`);
 
       // Contar cuántos han respondido a ESTA pregunta
       const respuestasCount = await Participacion.countDocuments({
@@ -36,6 +51,12 @@ async function enviarRespuesta(payload, io) {
       });
 
       console.log(`[Auto-Avance] ${respuestasCount}/${totalEsperados} respondieron.`);
+
+      // Validación: si no hay jugadores esperados, no auto-avanzar (evita avance prematuro)
+      if (totalEsperados === 0) {
+        console.warn('[Auto-Avance] No hay jugadores activos. Esperando timer.');
+        return resultado;
+      }
 
       if (io) {
         io.to(partida.pin).emit('voto_recibido', {
@@ -64,6 +85,7 @@ async function enviarRespuesta(payload, io) {
 
   return resultado;
 }
+
 
 /**
  * temporizadoresPartidas: semáforo y timers por partida (clave: partidaId)
@@ -118,6 +140,19 @@ function obtenerRanking(jugadores) {
       nombre: j.nombreAlumno,
       puntos: j.puntuacionTotal || 0
     }));
+}
+
+/**
+ * Helper para extraer el nombre de un campo que puede ser un ObjectId poblado o un string
+ * @param {Object|String} value - El valor que puede ser un objeto poblado o un string
+ * @returns {String} El nombre del objeto o el string original
+ */
+function extraerNombre(value) {
+  if (!value) return '';
+  if (typeof value === 'object' && value !== null) {
+    return value.nombre || '';
+  }
+  return String(value);
 }
 
 /* --------------------- LÓGICA DE JUEGO (INTERNAL) --------------------- */
@@ -227,11 +262,14 @@ async function concluirPregunta(partidaId, indicePregunta, io) {
 
     if (io) {
       console.log(`[concluirPregunta] 📡 Emitiendo 'tiempo_agotado' a sala ${partida.pin}`);
+      console.log(`[concluirPregunta] Config mostrarRanking: ${partida.configuracionEnvivo?.mostrarRanking}`);
+
       io.to(partida.pin).emit('tiempo_agotado', {
         mensaje: 'Resultados',
         stats: statsPregunta,
         correcta: indiceCorrecto,
-        rankingParcial: obtenerRanking(partida.jugadores)
+        rankingParcial: partida.configuracionEnvivo?.mostrarRanking ?
+          obtenerRanking(partida.jugadores) : null
       });
       console.log(`[concluirPregunta] ✅ 'tiempo_agotado' emitido exitosamente`);
     }
@@ -407,11 +445,19 @@ async function cerrarPartidaLogic(partida, io) {
   }
 
   if (io) {
-    io.to(partida.pin).emit('fin_partida', {
-      mensaje: 'Juego terminado',
-      ranking: obtenerRanking(partida.jugadores),
-      reporte: reporteGlobal
-    });
+    const payloadFin = {
+      mensaje: 'Juego terminado'
+    };
+
+    // Si es una partida EN VIVO, enviamos ranking y reporte a todos (como Kahoot)
+    if (partida.tipoPartida === tipos.MODOS_JUEGO.EN_VIVO) {
+      payloadFin.ranking = obtenerRanking(partida.jugadores);
+      payloadFin.reporte = reporteGlobal;
+    }
+    // Si es EXAMEN, no enviamos ranking ni reporte global por broadcast
+    // para que los alumnos no vean las notas de los demás.
+
+    io.to(partida.pin).emit('fin_partida', payloadFin);
   }
 }
 
@@ -425,8 +471,8 @@ async function cerrarPartidaLogic(partida, io) {
 async function crearPartida(data) {
   const { nombrePartida, asignatura, curso, idCuestionario, idProfesor, modoAcceso, participantesPermitidos, tipoPartida, configuracionEnvivo, configuracionExamen, fechas } = data;
 
-  // Verificar que el profesor existe en la BD
-  const profesor = await Usuario.findOne({ idPortal: idProfesor });
+  // Verificar que el profesor existe en la BD (con populate de asignaturas para obtener nombres)
+  const profesor = await Usuario.findOne({ idPortal: idProfesor }).populate('asignaturas', 'nombre');
   if (!profesor) throw new Error('Profesor no encontrado en el sistema');
   if (profesor.rol !== 'profesor') throw new Error('El usuario no tiene rol de profesor');
 
@@ -436,7 +482,9 @@ async function crearPartida(data) {
   }
 
   // Validar que la asignatura seleccionada esté entre las asignaturas del profesor
-  if (!profesor.asignaturas.includes(asignatura)) {
+  // Las asignaturas del profesor son ObjectIds poblados, comparamos por nombre
+  const nombresAsignaturasProfesor = profesor.asignaturas.map(a => a.nombre);
+  if (!nombresAsignaturasProfesor.includes(asignatura)) {
     throw new Error(`No tienes asignada la asignatura "${asignatura}". Solo puedes crear partidas de tus asignaturas asignadas.`);
   }
 
@@ -479,6 +527,12 @@ async function unirseAPartida(pin, idAlumno, nombreAlumnoParam, io) {
   const partida = await Partida.findOne({ pin, estadoPartida: { $ne: tipos.ESTADOS_PARTIDA.FINALIZADA } });
   if (!partida) throw new Error('Partida no encontrada');
 
+  // Bloquear si el alumno ya finalizó este examen
+  const participacionPrevia = await Participacion.findOne({ idPartida: partida._id, idAlumno });
+  if (participacionPrevia && participacionPrevia.estado === 'finalizada') {
+    throw new Error('Ya has completado este examen y no puedes volver a entrar.');
+  }
+
   // Validación de Partida Programada (Acceso Temporal)
   if (partida.tipoPartida === tipos.MODOS_JUEGO.EXAMEN && partida.configuracionExamen?.programadaPara) {
     const now = new Date();
@@ -520,6 +574,14 @@ async function unirseAPartida(pin, idAlumno, nombreAlumnoParam, io) {
         total: partida.numParticipantes
       });
     }
+  } else {
+    // Si ya existe en jugadores, nos aseguramos de que también tenga Participación
+    const existeP = await Participacion.findOne({ idPartida: partida._id, idAlumno });
+    if (!existeP) {
+      const nuevaP = new Participacion({ idPartida: partida._id, idAlumno, tipoPartida: partida.tipoPartida });
+      await nuevaP.save();
+      console.log(`[Unirse] Participación restaurada para alumno ${idAlumno}`);
+    }
   }
 
   return {
@@ -536,6 +598,14 @@ async function unirseAPartida(pin, idAlumno, nombreAlumnoParam, io) {
 async function iniciarPartida(id, io) {
   const partida = await Partida.findById(id);
   if (!partida) throw new Error('Partida no encontrada');
+
+  // Resetear el estado de todos los jugadores a ACTIVO al iniciar la partida
+  // Esto asegura que el conteo de respuestas funcione correctamente
+  partida.jugadores.forEach(j => {
+    j.estado = tipos.ESTADO_USER.ACTIVO;
+  });
+  partida.numParticipantes = partida.jugadores.length;
+  console.log(`[IniciarPartida] Reseteando estado de ${partida.jugadores.length} jugadores a ACTIVO`);
 
   partida.estadoPartida = tipos.ESTADOS_PARTIDA.ACTIVA;
   partida.inicioEn = Date.now();
@@ -622,10 +692,17 @@ async function obtenerTodasPartidas(filtro = {}) {
       estadoPartida: { $in: [tipos.ESTADOS_PARTIDA.ESPERA, tipos.ESTADOS_PARTIDA.ACTIVA] }
     };
     const partidas = await Partida.find(query)
-      .populate('idCuestionario', 'titulo asignatura curso')
+      .populate({
+        path: 'idCuestionario',
+        select: 'titulo asignatura curso',
+        populate: [
+          { path: 'asignatura', select: 'nombre' },
+          { path: 'curso', select: 'nombre' }
+        ]
+      })
       .sort({ 'fechas.creadaEn': -1 });
 
-    return partidas.filter(p => {
+    const filtradas = partidas.filter(p => {
       if (p.tipoPartida === tipos.MODOS_JUEGO.EXAMEN && p.configuracionExamen?.programadaPara) {
         const startTime = new Date(p.configuracionExamen.programadaPara);
         const duracionMs = (p.configuracionExamen.tiempoTotalMin || 60) * 60 * 1000;
@@ -634,19 +711,51 @@ async function obtenerTodasPartidas(filtro = {}) {
       }
       return true;
     });
+
+    // Mapear para resolver nombres de curso y asignatura
+    return filtradas.map(p => {
+      const pObj = p.toObject ? p.toObject() : p;
+      const cuestionario = pObj.idCuestionario;
+
+      const cursoNombre = extraerNombre(cuestionario?.curso);
+      const asignaturaNombre = extraerNombre(cuestionario?.asignatura);
+
+      return {
+        ...pObj,
+        idCuestionario: cuestionario ? {
+          ...cuestionario,
+          curso: cursoNombre,
+          asignatura: asignaturaNombre
+        } : null
+      };
+    });
   }
 
   // 2. Si buscamos las recientes (finalizadas), incluimos las que han caducado aunque sigan en 'espera'
   if (requestedState === tipos.ESTADOS_PARTIDA.FINALIZADA) {
     // A. Las que están marcadas explícitamente como finalizadas
     const finalizadas = await Partida.find(filtro)
-      .populate('idCuestionario', 'titulo asignatura curso')
+      .populate({
+        path: 'idCuestionario',
+        select: 'titulo asignatura curso',
+        populate: [
+          { path: 'asignatura', select: 'nombre' },
+          { path: 'curso', select: 'nombre' }
+        ]
+      })
       .sort({ 'fechas.finalizadaEn': -1 });
 
     // B. Las que están en 'espera' pero ya terminó su tiempo de examen
     const filtroNoFin = { ...filtro, estadoPartida: { $ne: tipos.ESTADOS_PARTIDA.FINALIZADA } };
     const candidatas = await Partida.find(filtroNoFin)
-      .populate('idCuestionario', 'titulo asignatura curso');
+      .populate({
+        path: 'idCuestionario',
+        select: 'titulo asignatura curso',
+        populate: [
+          { path: 'asignatura', select: 'nombre' },
+          { path: 'curso', select: 'nombre' }
+        ]
+      });
 
     const caducadas = candidatas.filter(p => {
       if (p.tipoPartida === tipos.MODOS_JUEGO.EXAMEN && p.configuracionExamen?.programadaPara) {
@@ -660,11 +769,22 @@ async function obtenerTodasPartidas(filtro = {}) {
 
     const todas = [...finalizadas, ...caducadas];
 
-    // Enriquecer con número de alumnos antes de devolver para que el frontend lo use
+    // Enriquecer con número de alumnos y resolver nombres de curso/asignatura
     const enriquecidas = todas.map(p => {
       const pObj = p.toObject ? p.toObject() : p;
+      const cuestionario = pObj.idCuestionario;
+
+      // Resolver nombres de curso y asignatura del cuestionario
+      const cursoNombre = extraerNombre(cuestionario?.curso);
+      const asignaturaNombre = extraerNombre(cuestionario?.asignatura);
+
       return {
         ...pObj,
+        idCuestionario: cuestionario ? {
+          ...cuestionario,
+          curso: cursoNombre,
+          asignatura: asignaturaNombre
+        } : null,
         numAlumnos: p.jugadores?.length || 0,
         aciertosPorcentaje: p.stats?.respuestasTotales > 0
           ? Math.round((p.stats.aciertosGlobales / p.stats.respuestasTotales) * 100)
@@ -689,49 +809,147 @@ async function obtenerTodasPartidas(filtro = {}) {
 
   // Caso por defecto para otros filtros
   const resultado = await Partida.find(filtro)
-    .populate('idCuestionario', 'titulo asignatura curso')
+    .populate({
+      path: 'idCuestionario',
+      select: 'titulo asignatura curso',
+      populate: [
+        { path: 'asignatura', select: 'nombre' },
+        { path: 'curso', select: 'nombre' }
+      ]
+    })
     .sort({ 'fechas.creadaEn': -1 });
 
-  return resultado.map(p => ({
-    ...(p.toObject ? p.toObject() : p),
-    numAlumnos: p.jugadores?.length || 0
-  }));
+  return resultado.map(p => {
+    const pObj = p.toObject ? p.toObject() : p;
+    const cuestionario = pObj.idCuestionario;
+
+    // Resolver nombres de curso y asignatura del cuestionario
+    const cursoNombre = extraerNombre(cuestionario?.curso);
+    const asignaturaNombre = extraerNombre(cuestionario?.asignatura);
+
+    return {
+      ...pObj,
+      idCuestionario: cuestionario ? {
+        ...cuestionario,
+        curso: cursoNombre,
+        asignatura: asignaturaNombre
+      } : null,
+      numAlumnos: p.jugadores?.length || 0
+    };
+  });
 }
 
 async function obtenerDetallePartida(id) {
-  const partida = await Partida.findById(id).populate('idCuestionario').lean();
-  if (!partida) return null;
+  try {
+    console.log('[obtenerDetallePartida] Buscando partida:', id);
 
-  // Obtener las preguntas asociadas al cuestionario
-  const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario._id })
-    .sort({ ordenPregunta: 1 }) // Importante mantener el orden
-    .lean();
+    // Primero obtenemos la partida sin populate para verificar los tipos de datos
+    const partidaRaw = await Partida.findById(id).lean();
+    if (!partidaRaw) {
+      console.log('[obtenerDetallePartida] Partida no encontrada');
+      return null;
+    }
 
-  // Obtener las participaciones para enriquecer los jugadores con sus respuestas
-  // Usar partida._id que es un ObjectId válido
-  const participaciones = await Participacion.find({ idPartida: partida._id }).lean();
+    // Obtener el cuestionario
+    let cuestionario = await Cuestionario.findById(partidaRaw.idCuestionario).lean();
 
-  // Enriquecer los jugadores con las respuestas de las participaciones
-  const jugadoresEnriquecidos = partida.jugadores.map(jugador => {
-    const participacion = participaciones.find(p => p.idAlumno === jugador.idAlumno);
-    return {
-      ...jugador,
-      respuestas: participacion?.respuestas || [],
-      aciertos: participacion?.aciertos || 0,
-      puntuacionTotal: participacion?.puntuacionTotal || jugador.puntuacionTotal || 0
-    };
-  });
+    if (cuestionario) {
+      // Verificar si asignatura y curso son ObjectIds válidos antes de hacer populate
+      const isAsignaturaObjectId = cuestionario.asignatura &&
+        /^[0-9a-fA-F]{24}$/.test(String(cuestionario.asignatura));
+      const isCursoObjectId = cuestionario.curso &&
+        /^[0-9a-fA-F]{24}$/.test(String(cuestionario.curso));
 
-  // Calcular el total de alumnos en el curso para el contador de capacidad
-  let totalAlumnosCurso = 0;
-  if (partida.curso) {
-    totalAlumnosCurso = await Usuario.countDocuments({
-      rol: tipos.ROLES.ALUMNO,
-      curso: partida.curso
+      // Solo hacer populate si son ObjectIds válidos
+      if (isAsignaturaObjectId) {
+        const asigDoc = await Asignatura.findById(cuestionario.asignatura).select('nombre').lean();
+        cuestionario.asignatura = asigDoc || { nombre: '' };
+      } else if (cuestionario.asignatura) {
+        // Es un string, mantenerlo como objeto con nombre
+        cuestionario.asignatura = { nombre: String(cuestionario.asignatura) };
+      }
+
+      if (isCursoObjectId) {
+        const cursoDoc = await Curso.findById(cuestionario.curso).select('nombre codigo').lean();
+        cuestionario.curso = cursoDoc || { nombre: '', codigo: '' };
+      } else if (cuestionario.curso) {
+        // Es un string, mantenerlo como objeto con nombre
+        cuestionario.curso = { nombre: String(cuestionario.curso), codigo: '' };
+      }
+    }
+
+    const partida = { ...partidaRaw, idCuestionario: cuestionario };
+
+    console.log('[obtenerDetallePartida] Partida encontrada:', partida._id);
+    console.log('[obtenerDetallePartida] Cuestionario:', cuestionario?._id || 'null');
+
+    // Obtener las preguntas asociadas al cuestionario (si existe)
+    let preguntas = [];
+    if (cuestionario && cuestionario._id) {
+      preguntas = await Pregunta.find({ idCuestionario: cuestionario._id })
+        .sort({ ordenPregunta: 1 })
+        .lean();
+      console.log('[obtenerDetallePartida] Preguntas encontradas:', preguntas.length);
+    }
+
+    // Obtener las participaciones para enriquecer los jugadores con sus respuestas
+    const participaciones = await Participacion.find({ idPartida: partida._id }).lean();
+    console.log('[obtenerDetallePartida] Participaciones:', participaciones.length);
+
+    // Enriquecer los jugadores con las respuestas de las participaciones
+    const jugadoresEnriquecidos = (partida.jugadores || []).map(jugador => {
+      const participacion = participaciones.find(p => p.idAlumno === jugador.idAlumno);
+      return {
+        ...jugador,
+        respuestas: participacion?.respuestas || [],
+        aciertos: participacion?.aciertos || 0,
+        puntuacionTotal: participacion?.puntuacionTotal || jugador.puntuacionTotal || 0
+      };
     });
-  }
+    console.log('[obtenerDetallePartida] Jugadores enriquecidos:', jugadoresEnriquecidos.length);
 
-  return { ...partida, jugadores: jugadoresEnriquecidos, preguntas, totalAlumnosCurso };
+    // Calcular el total de alumnos en el curso para el contador de capacidad
+    let totalAlumnosCurso = 0;
+    if (partida.curso) {
+      console.log('[obtenerDetallePartida] Buscando curso:', partida.curso);
+      const cursoDoc = await Curso.findOne({
+        $or: [{ codigo: partida.curso }, { nombre: partida.curso }]
+      }).lean();
+      console.log('[obtenerDetallePartida] Curso encontrado:', cursoDoc?._id || 'null');
+      if (cursoDoc) {
+        totalAlumnosCurso = await Usuario.countDocuments({
+          rol: tipos.ROLES.ALUMNO,
+          curso: cursoDoc._id
+        });
+        console.log('[obtenerDetallePartida] Total alumnos curso:', totalAlumnosCurso);
+      }
+    }
+
+    // Extraer nombres de los objetos poblados del cuestionario
+    const cursoNombre = extraerNombre(cuestionario?.curso);
+    const asignaturaNombre = extraerNombre(cuestionario?.asignatura);
+    console.log('[obtenerDetallePartida] Curso/Asignatura nombres:', cursoNombre, asignaturaNombre);
+
+    // Crear objeto de cuestionario con nombres resueltos
+    const cuestionarioConNombres = {
+      ...cuestionario,
+      curso: cursoNombre,
+      asignatura: asignaturaNombre
+    };
+
+    console.log('[obtenerDetallePartida] Completado con éxito');
+    return {
+      ...partida,
+      idCuestionario: cuestionarioConNombres,
+      jugadores: jugadoresEnriquecidos,
+      preguntas,
+      totalAlumnosCurso
+    };
+  } catch (error) {
+    console.error('[obtenerDetallePartida] ERROR:', error.message);
+    console.error('[obtenerDetallePartida] Stack:', error.stack);
+    throw error;
+  }
 }
 
 async function actualizarPartida(id, payload) {
@@ -839,12 +1057,19 @@ async function obtenerPreguntasExamen(idPartida, idAlumno) {
 }
 
 async function finalizarExamenAlumno(idPartida, idAlumno, io) {
+  console.log(`[finalizarExamenAlumno] Iniciando para Alumno: ${idAlumno}, Partida: ${idPartida}`);
   const partida = await Partida.findById(idPartida);
-  if (!partida) throw new Error('Partida no encontrada');
+  if (!partida) {
+    console.error(`[finalizarExamenAlumno] ERROR: Partida no encontrada (${idPartida})`);
+    throw new Error('Partida no encontrada');
+  }
 
   // Recuperamos la participacion
   const participacion = await Participacion.findOne({ idPartida, idAlumno });
-  if (!participacion) throw new Error('Participación no encontrada');
+  if (!participacion) {
+    console.error(`[finalizarExamenAlumno] ERROR: Participación no encontrada para alumno ${idAlumno} en partida ${idPartida}`);
+    throw new Error('Participación no encontrada');
+  }
 
   // Si ya está finalizada, no hacer nada
   if (participacion.estado === 'finalizada') {
@@ -873,21 +1098,32 @@ async function finalizarExamenAlumno(idPartida, idAlumno, io) {
   participacion.finEn = Date.now();
   await participacion.save();
 
-  // Actualizar Partida.jugadores
-  const jugador = partida.jugadores.find(j => j.idAlumno === idAlumno);
-  if (jugador) {
-    jugador.puntuacionTotal = notaRedondeada;
-    jugador.estado = tipos.ESTADO_USER.INACTIVO; // Or FINALIZADA if we decide to add it, but stay within enum
-    jugador.finEn = Date.now();
-    partida.markModified('jugadores');
-    await partida.save();
-  }
+  // Actualizar Partida.jugadores de forma atómica
+  await Partida.updateOne(
+    { _id: idPartida, 'jugadores.idAlumno': idAlumno },
+    {
+      $set: {
+        'jugadores.$.puntuacionTotal': notaRedondeada,
+        'jugadores.$.estado': tipos.ESTADO_USER.INACTIVO,
+        'jugadores.$.finEn': Date.now()
+      }
+    }
+  );
 
-  // Emitir evento de que el alumno finalizó (para el monitor del profe)
+  const jugador = partida.jugadores.find(j => j.idAlumno === idAlumno);
+
+  // Emitir evento de que el alumno finalizó
   if (io) {
+    // 1. Al monitor del profesor le enviamos la NOTA
+    io.to(`monitor_${partida.pin}`).emit('alumno_finalizado', {
+      idAlumno: idAlumno,
+      nombre: jugador ? jugador.nombreAlumno : 'Alumno',
+      nota: notaRedondeada
+    });
+
+    // 2. Al resto de la sala (alumnos) solo les decimos que alguien finalizó (sin nota)
     io.to(partida.pin).emit('alumno_finalizado', {
       idAlumno: idAlumno,
-      nota: notaRedondeada,
       nombre: jugador ? jugador.nombreAlumno : 'Alumno'
     });
   }
@@ -902,9 +1138,15 @@ async function finalizarExamenAlumno(idPartida, idAlumno, io) {
   console.log(`[Examen] Alumno ${idAlumno} finalizó. ${participacionesFinalizadas}/${totalJugadores} han terminado.`);
 
   // Si todos han finalizado, cerrar la partida automáticamente
-  if (participacionesFinalizadas >= totalJugadores && partida.estadoPartida !== tipos.ESTADOS_PARTIDA.FINALIZADA) {
-    console.log(`[Examen] Todos los alumnos han finalizado. Cerrando partida automáticamente.`);
-    // Lo hacemos sin await o capturando error para que el alumno no reciba error si falla el cierre global
+  // MEJORA: No cerrar automáticamente si es un examen público (Acceso Instantáneo), 
+  // ya que podrían entrar más alumnos más tarde. Solo para EN VIVO o exámenes privados completos.
+  const esExamenPublico = partida.tipoPartida === tipos.MODOS_JUEGO.EXAMEN && partida.modoAcceso === tipos.TIPO_LOBBY.PUBLICA;
+
+  if (participacionesFinalizadas >= totalJugadores &&
+    partida.estadoPartida !== tipos.ESTADOS_PARTIDA.FINALIZADA &&
+    !esExamenPublico) {
+
+    console.log(`[Examen] Todos los alumnos actuales han finalizado. Cerrando partida automáticamente.`);
     cerrarPartidaLogic(partida, io).catch(err => {
       console.error('[Examen] Error en cierre automático de partida:', err);
     });
@@ -921,6 +1163,23 @@ async function finalizarPartida(id, io) {
 }
 
 async function obtenerOpcionesConfiguracion() {
+  // Obtener todos los cursos con sus asignaturas desde MongoDB
+  const cursos = await Curso.find().lean();
+  const asignaturas = await Asignatura.find().populate('curso', 'codigo nombre').lean();
+
+  // Organizar asignaturas por código de curso (DAM1, DAM2, etc.)
+  const asignaturasPorCurso = {};
+
+  for (const asig of asignaturas) {
+    const codigoCurso = asig.curso?.codigo;
+    if (codigoCurso) {
+      if (!asignaturasPorCurso[codigoCurso]) {
+        asignaturasPorCurso[codigoCurso] = [];
+      }
+      asignaturasPorCurso[codigoCurso].push(asig.nombre);
+    }
+  }
+
   return {
     modosJuego: Object.values(tipos.MODOS_JUEGO),
     tiposAcceso: Object.values(tipos.TIPO_LOBBY),
@@ -929,79 +1188,131 @@ async function obtenerOpcionesConfiguracion() {
       enVivo: tipos.DEFAULTS.EN_VIVO,
       programada: tipos.DEFAULTS.PROGRAMADA
     },
-    asignaturas: tipos.ASIGNATURAS
+    asignaturas: asignaturasPorCurso,
+    cursos: cursos.map(c => ({ _id: c._id, nombre: c.nombre, codigo: c.codigo }))
   };
 }
 
 async function obtenerPartidasPendientesAlumno(idAlumno) {
-  const alumno = await Usuario.findOne({ idPortal: idAlumno });
+  const alumno = await Usuario.findOne({ idPortal: idAlumno })
+    .populate('curso', 'nombre codigo')
+    .lean();
   if (!alumno) throw new Error('Alumno no encontrado');
 
-  // Buscar partidas en estado 'espera' (lobby abierto)
+  console.log('[obtenerPartidasPendientesAlumno] Alumno:', alumno.nombre, 'Curso:', alumno.curso);
+
+  // Buscar partidas en estado 'espera' o 'activa' (lobby abierto o ya iniciadas)
   const partidas = await Partida.find({
-    estadoPartida: { $in: [tipos.ESTADOS_PARTIDA.ESPERA] }
-  })
-    .populate('idCuestionario')
-    .sort({ 'fechas.creadaEn': -1 });
+    estadoPartida: { $in: [tipos.ESTADOS_PARTIDA.ESPERA, tipos.ESTADOS_PARTIDA.ACTIVA] }
+  }).lean();
 
-  // Filtrar por curso del alumno
-  const cursoAlumno = (alumno.curso || '').trim().toLowerCase();
+  console.log('[obtenerPartidasPendientesAlumno] Partidas encontradas:', partidas.length);
 
-  const filtradas = partidas.filter(p => {
-    const q = p.idCuestionario;
-    if (!q) return false;
-    // Si el cuestionario tiene curso, debe coincidir. Si no tiene, ¿se muestra a todos? Asumamos que sí o no.
-    // El usuario quiere "datos que existan para el curso". Si curso está vacío, tal vez es general.
-    // Vamos a ser estrictos: debe coincidir el curso, O el cuestionario ser "General"
-    const cursoQ = (q.curso || '').trim().toLowerCase();
+  // Obtener el nombre/código del curso del alumno
+  const cursoAlumnoNombre = alumno.curso?.nombre?.trim().toLowerCase() || '';
+  const cursoAlumnoCodigo = alumno.curso?.codigo?.trim().toLowerCase() || '';
 
-    // Filtro por Lobby Privado: si es privada, el alumno debe estar en participantesPermitidos
-    if (p.modoAcceso === tipos.TIPO_LOBBY.PRIVADA) {
-      if (!p.participantesPermitidos || !p.participantesPermitidos.includes(idAlumno)) {
-        return false;
+  console.log('[obtenerPartidasPendientesAlumno] Curso alumno:', { nombre: cursoAlumnoNombre, codigo: cursoAlumnoCodigo });
+
+  const filtradas = [];
+
+  for (const p of partidas) {
+    // Obtener el cuestionario para esta partida
+    let cuestionario = await Cuestionario.findById(p.idCuestionario).lean();
+
+    if (!cuestionario) {
+      console.log('[obtenerPartidasPendientesAlumno] Cuestionario no encontrado para partida:', p._id);
+      continue;
+    }
+
+    // Resolver asignatura y curso del cuestionario (pueden ser ObjectId o string)
+    let asignaturaNombre = '';
+    let cursoNombre = '';
+
+    if (cuestionario.asignatura) {
+      if (/^[0-9a-fA-F]{24}$/.test(String(cuestionario.asignatura))) {
+        const asigDoc = await Asignatura.findById(cuestionario.asignatura).select('nombre').lean();
+        asignaturaNombre = asigDoc?.nombre || '';
+      } else {
+        asignaturaNombre = String(cuestionario.asignatura);
       }
     }
 
-    if (!cursoQ) return true; // Cuestionario sin curso específico -> visible
+    if (cuestionario.curso) {
+      if (/^[0-9a-fA-F]{24}$/.test(String(cuestionario.curso))) {
+        const cursoDoc = await Curso.findById(cuestionario.curso).select('nombre codigo').lean();
+        cursoNombre = cursoDoc?.nombre || '';
+      } else {
+        cursoNombre = String(cuestionario.curso);
+      }
+    }
 
-    // Filtro de Limpieza: Ocultar partidas programadas pasadas
+    // El curso de la partida tiene prioridad sobre el del cuestionario
+    const cursoPartida = (p.curso || cursoNombre || '').trim().toLowerCase();
+
+    // Filtro por Lobby Privado
+    if (p.modoAcceso === tipos.TIPO_LOBBY.PRIVADA) {
+      if (!p.participantesPermitidos || !p.participantesPermitidos.includes(idAlumno)) {
+        continue;
+      }
+    }
+
+    // Filtro de partidas programadas pasadas
     if (p.tipoPartida === 'examen' && p.configuracionExamen?.programadaPara) {
       const startTime = new Date(p.configuracionExamen.programadaPara);
       const duracionMs = (p.configuracionExamen.tiempoTotalMin || 60) * 60 * 1000;
       const endTime = new Date(startTime.getTime() + duracionMs);
       const now = new Date();
-
-      // Si hoy es un día diferente y la partida ya terminó, u ocultar si pasaron 2 horas del fin
-      if (now > endTime) return false;
+      if (now > endTime) continue;
     }
 
-    return cursoQ === cursoAlumno;
-  });
+    // Filtro: No mostrar si el alumno ya finalizó la participación
+    const partAlumno = await Participacion.findOne({ idPartida: p._id, idAlumno });
+    if (partAlumno && partAlumno.estado === 'finalizada') {
+      console.log('[obtenerPartidasPendientesAlumno] Partida ocultada (Ya finalizada por alumno):', p.nombrePartida);
+      continue;
+    }
 
-  return filtradas.map(p => {
+    // Filtrar por curso: si la partida tiene curso, debe coincidir con el del alumno
+    if (cursoPartida) {
+      const coincide = cursoPartida === cursoAlumnoNombre ||
+        cursoPartida === cursoAlumnoCodigo ||
+        cursoAlumnoNombre.includes(cursoPartida) ||
+        cursoPartida.includes(cursoAlumnoNombre);
+
+      if (!coincide) {
+        console.log('[obtenerPartidasPendientesAlumno] Partida filtrada por curso:', p.nombrePartida, 'Curso partida:', cursoPartida);
+        continue;
+      }
+    }
+
+    // Determinar fecha a mostrar
     let fechaMostrar = p.fechas?.creadaEn;
     if (p.tipoPartida === 'examen' && p.configuracionExamen?.programadaPara) {
       fechaMostrar = p.configuracionExamen.programadaPara;
     }
 
-    return {
+    filtradas.push({
       _id: String(p._id),
       nombrePartida: p.nombrePartida,
       pin: p.pin,
       idCuestionario: {
-        _id: String(p.idCuestionario._id),
-        titulo: p.idCuestionario.titulo,
-        descripcion: p.idCuestionario.descripcion || '',
-        curso: p.idCuestionario.curso || '',
-        asignatura: p.idCuestionario.asignatura || ''
+        _id: String(cuestionario._id),
+        titulo: cuestionario.titulo,
+        descripcion: cuestionario.descripcion || '',
+        curso: cursoNombre,
+        asignatura: asignaturaNombre
       },
-      curso: p.curso || p.idCuestionario?.curso || '',
-      asignatura: p.asignatura || p.idCuestionario?.asignatura || '',
+      curso: p.curso || cursoNombre,
+      asignatura: p.asignatura || asignaturaNombre,
       fechaProgramada: fechaMostrar,
       estado: p.estadoPartida,
       tipo: p.tipoPartida
-    };
-  });
+    });
+  }
+
+  console.log('[obtenerPartidasPendientesAlumno] Partidas filtradas:', filtradas.length);
+  return filtradas;
 }
 
 /* --------------------- EXPORTS --------------------- */

@@ -69,8 +69,8 @@ export class ProfessorDashboardComponent implements OnInit {
           .toUpperCase()
           .substring(0, 2);
         
-        // Verificar si el profesor tiene asignaturas asignadas
-        this.showSubjectsWarning = !user.asignaturas || user.asignaturas.length === 0;
+        // Verificar si el profesor tiene asignaturas asignadas (solo para profesores)
+        this.showSubjectsWarning = user.rol === 'profesor' && (!user.asignaturas || user.asignaturas.length === 0);
         
         this.loadDashboardData(user.idPortal);
       }

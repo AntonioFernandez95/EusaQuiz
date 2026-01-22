@@ -43,11 +43,66 @@ export class AdminService {
         return this.http.delete(`${environment.apiUrl}/usuarios/${id}`, { headers: this.getHeaders() });
     }
 
+    updateUser(id: string, data: any): Observable<any> {
+        return this.http.put(`${environment.apiUrl}/usuarios/${id}`, data, { headers: this.getHeaders() });
+    }
+
     deleteGame(id: string): Observable<any> {
         return this.http.delete(`${this.apiUrl}/partidas/${id}`, { headers: this.getHeaders() });
     }
 
     updateGame(id: string, data: any): Observable<any> {
         return this.http.put(`${this.apiUrl}/partidas/${id}`, data, { headers: this.getHeaders() });
+    }
+
+    // Gestión de datos académicos
+    getCentros(): Observable<any> {
+        return this.http.get(`${environment.apiUrl}/datos-academicos/centros`, { headers: this.getHeaders() });
+    }
+
+    createCentro(data: any): Observable<any> {
+        return this.http.post(`${environment.apiUrl}/datos-academicos/centros`, data, { headers: this.getHeaders() });
+    }
+
+    updateCentro(id: string, data: any): Observable<any> {
+        return this.http.put(`${environment.apiUrl}/datos-academicos/centros/${id}`, data, { headers: this.getHeaders() });
+    }
+
+    deleteCentro(id: string): Observable<any> {
+        return this.http.delete(`${environment.apiUrl}/datos-academicos/centros/${id}`, { headers: this.getHeaders() });
+    }
+
+    getCursos(centro?: string): Observable<any> {
+        const params = centro ? `?centro=${centro}` : '';
+        return this.http.get(`${environment.apiUrl}/datos-academicos/cursos${params}`, { headers: this.getHeaders() });
+    }
+
+    createCurso(data: any): Observable<any> {
+        return this.http.post(`${environment.apiUrl}/datos-academicos/cursos`, data, { headers: this.getHeaders() });
+    }
+
+    updateCurso(id: string, data: any): Observable<any> {
+        return this.http.put(`${environment.apiUrl}/datos-academicos/cursos/${id}`, data, { headers: this.getHeaders() });
+    }
+
+    deleteCurso(id: string): Observable<any> {
+        return this.http.delete(`${environment.apiUrl}/datos-academicos/cursos/${id}`, { headers: this.getHeaders() });
+    }
+
+    getAsignaturas(curso?: string): Observable<any> {
+        const params = curso ? `?curso=${curso}` : '';
+        return this.http.get(`${environment.apiUrl}/datos-academicos/asignaturas${params}`, { headers: this.getHeaders() });
+    }
+
+    createAsignatura(data: any): Observable<any> {
+        return this.http.post(`${environment.apiUrl}/datos-academicos/asignaturas`, data, { headers: this.getHeaders() });
+    }
+
+    updateAsignatura(id: string, data: any): Observable<any> {
+        return this.http.put(`${environment.apiUrl}/datos-academicos/asignaturas/${id}`, data, { headers: this.getHeaders() });
+    }
+
+    deleteAsignatura(id: string): Observable<any> {
+        return this.http.delete(`${environment.apiUrl}/datos-academicos/asignaturas/${id}`, { headers: this.getHeaders() });
     }
 }

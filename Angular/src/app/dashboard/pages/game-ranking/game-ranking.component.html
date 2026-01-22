@@ -32,53 +32,107 @@
     </div>
   </header>
 
-  <main class="ranking-content animate-slide-up" *ngIf="ganador">
-    <!-- Winner Display -->
-    <div class="winner-alert" *ngIf="!partidaActiva">
-      <h2 class="winner-label">Ganador Final</h2>
-      <p class="winner-name">{{ ganador.nombre }}</p>
+  <main class="ranking-content animate-slide-up">
+    <!-- VISTA PRIVADA ALUMNO (EXAMEN) -->
+    <div
+      class="individual-result animate-fade-in"
+      *ngIf="userRole === 'alumno' && tipoPartida === 'examen'"
+    >
+      <div class="result-card">
+        <div class="result-header">
+          <h3>Tu Resultado</h3>
+        </div>
+
+        <div
+          class="grade-circle"
+          [style.border-color]="
+            miResultado?.puntos >= 5 ? '#10b981' : '#ef4444'
+          "
+        >
+          <span class="grade-val">{{ miResultado?.puntos || "0.0" }}</span>
+          <span class="grade-label">sobre 10</span>
+        </div>
+
+        <div class="result-status">
+          <p *ngIf="miResultado?.puntos >= 5" class="txt-success">
+            ¡Has aprobado el examen!
+          </p>
+          <p *ngIf="miResultado?.puntos < 5" class="txt-danger">
+            No has alcanzado el mínimo para aprobar.
+          </p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-value">{{ miResultado?.aciertos || 0 }}</span>
+            <span class="stat-label">Aciertos</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ miResultado?.fallos || 0 }}</span>
+            <span class="stat-label">Fallos</span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Tracking Info (Examen Activo) -->
-    <div class="tracking-summary" *ngIf="partidaActiva">
-      <p>
-        Los alumnos están realizando el examen. Las notas se actualizarán
-        automáticamente a medida que finalicen.
-      </p>
-    </div>
+    <!-- VISTA GENERAL (PROFESOR O EN VIVO) -->
+    <div
+      class="general-ranking"
+      *ngIf="userRole === 'profesor' || tipoPartida === 'en_vivo'"
+    >
+      <!-- Winner Display -->
+      <div class="winner-alert" *ngIf="!partidaActiva && ganador">
+        <h2 class="winner-label">Ganador Final</h2>
+        <p class="winner-name">{{ ganador.nombre }}</p>
+      </div>
 
-    <!-- Ranking Table Container -->
-    <div class="table-container">
-      <table class="ranking-table">
-        <thead>
-          <tr>
-            <th class="col-pos">Posición</th>
-            <th class="col-name">Nombre</th>
-            <th class="col-points">
-              {{ tipoPartida === "examen" ? "Nota" : "Puntos" }}
-            </th>
-            <th class="col-status" *ngIf="tipoPartida === 'examen'">Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of ranking; let i = index">
-            <td class="col-pos">
-              <span class="pos-badge" [style.color]="getPosColor(i)">{{
-                i + 1
-              }}</span>
-            </td>
-            <td class="col-name">{{ item.nombre }}</td>
-            <td class="col-points">
-              <span class="points-val">{{ item.puntos }}</span>
-            </td>
-            <td class="col-status" *ngIf="tipoPartida === 'examen'">
-              <span class="state-badge" [class.done]="item.finalizado">
-                {{ item.finalizado ? "Terminado" : "Jugando" }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Tracking Info (Examen Activo) -->
+      <div class="tracking-summary" *ngIf="partidaActiva">
+        <p>
+          Los alumnos están realizando el examen. Las notas se actualizarán
+          automáticamente a medida que finalicen.
+        </p>
+      </div>
+
+      <!-- Ranking Table Container -->
+      <div class="table-container" *ngIf="ranking && ranking.length > 0">
+        <table class="ranking-table">
+          <thead>
+            <tr>
+              <th class="col-pos">Posición</th>
+              <th class="col-name">Nombre</th>
+              <th class="col-points">
+                {{ tipoPartida === "examen" ? "Nota" : "Puntos" }}
+              </th>
+              <th class="col-status" *ngIf="tipoPartida === 'examen'">
+                Estado
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of ranking; let i = index">
+              <td class="col-pos">
+                <span class="pos-badge" [style.color]="getPosColor(i)">{{
+                  i + 1
+                }}</span>
+              </td>
+              <td class="col-name">{{ item.nombre }}</td>
+              <td class="col-points">
+                <span class="points-val">{{ item.puntos }}</span>
+              </td>
+              <td class="col-status" *ngIf="tipoPartida === 'examen'">
+                <span class="state-badge" [class.done]="item.finalizado">
+                  {{ item.finalizado ? "Terminado" : "Jugando" }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="no-results" *ngIf="!ranking || ranking.length === 0">
+        <p>Esperando a que los participantes finalicen...</p>
+      </div>
     </div>
 
     <!-- Actions -->
@@ -92,7 +146,13 @@
       >
         Finalizar Examen para todos
       </button>
-      <button class="btn-report" *ngIf="!partidaActiva" (click)="showReport()">
+      <button
+        class="btn-report"
+        *ngIf="
+          !partidaActiva && !(userRole === 'alumno' && tipoPartida === 'examen')
+        "
+        (click)="showReport()"
+      >
         Ver Reporte
       </button>
       <button class="btn-primary" (click)="exit()">Volver al Dashboard</button>
@@ -131,7 +191,7 @@
                       [class.high]="row.percentage >= 70"
                       [class.low]="row.percentage < 50"
                     >
-                      {{ row.percentage | number : "1.0-1" }}%
+                      {{ row.percentage | number: "1.0-1" }}%
                     </span>
                   </td>
                   <td class="col-action">

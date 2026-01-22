@@ -4,12 +4,13 @@
   "nombre": "Profesor Oak",
   "email": "oak@pokedex.com",
   "rol": "profesor",
-  "curso": "1 DAM",  
-  "centro": "EUSA"
+  "curso": ObjectId("..."),  // Referencia a Curso
+  "centro": ObjectId("...")  // Referencia a Centro
 }
-  */
+*/
 const mongoose = require('mongoose');
 const tipos = require('../utils/constants');
+
 const UsuarioSchema = new mongoose.Schema({
     // Identificador externo (Del sistema de Login del centro)
     idPortal: {
@@ -37,23 +38,29 @@ const UsuarioSchema = new mongoose.Schema({
         enum: Object.values(tipos.ROLES),
         required: true
     },
+
     curso: {
-        type: String,
-        enum: Object.values(tipos.CURSOS),
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Curso',
         default: null,
+        required: function () {
+            return this.rol === tipos.ROLES.ALUMNO;
+        }
+    },
+
+    centro: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Centro',
         required: function () {
             return this.rol !== tipos.ROLES.ADMIN;
         }
     },
-    centro: {
-        type: String,
-        enum: Object.values(tipos.CENTROS),
-        required: true
-    },
-    asignaturas: {
-        type: [String],
-        default: []
-    },
+
+    asignaturas: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Asignatura'
+    }],
+
     password: {
         type: String,
         required: false // Opcional para usuarios que vienen solo de portal

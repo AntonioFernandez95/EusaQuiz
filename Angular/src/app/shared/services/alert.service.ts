@@ -92,13 +92,21 @@ export class AlertService {
   /**
    * Muestra un diálogo de confirmación personalizado
    */
-  async confirm(title: string, text: string, confirmButtonText: string = 'Confirmar', cancelButtonText: string = 'Cancelar'): Promise<SweetAlertResult> {
+  async confirm(
+    title: string,
+    text: string,
+    confirmButtonText: string = 'Confirmar',
+    cancelButtonText: string = 'Cancelar',
+    type: 'success' | 'error' | 'warning' | 'info' | 'question' = 'question'
+  ): Promise<SweetAlertResult> {
+    const confirmColor = type === 'warning' || type === 'error' ? '#ef4444' : '#2d6a4f';
+    
     return Swal.fire({
       title: title,
       text: text,
-      icon: 'question',
+      icon: type,
       showCancelButton: true,
-      confirmButtonColor: '#2d6a4f',
+      confirmButtonColor: confirmColor,
       cancelButtonColor: '#64748b',
       confirmButtonText: confirmButtonText,
       cancelButtonText: cancelButtonText,
