@@ -2,10 +2,10 @@
 {
   "titulo": "Examen Final JS",
   "descripcion": "Preguntas sobre Mongoose y Node",
-  "asignatura": "Programación",
-  "curso": "1 DAM",
-  "centro": "EUSA",
-  "idProfesor": "AQUI_EL_OBJECT_ID_DEL_PROFE_CREADO_ANTES", 
+  "asignatura": ObjectId("..."),  // Referencia a Asignatura
+  "curso": ObjectId("..."),       // Referencia a Curso
+  "centro": ObjectId("..."),      // Referencia a Centro
+  "idProfesor": "PROFE_01",       // idPortal del profesor
   "origen": "manual"
 }
 */
@@ -28,23 +28,35 @@ const CuestionarioSchema = new mongoose.Schema({
     // --- Atributos Principales ---
     titulo: { type: String, required: true },
     descripcion: { type: String },
-    asignatura: { type: String },
-    curso: { type: String },
+    
+    asignatura: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Asignatura'
+    },
+    
+    curso: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Curso'
+    },
+    
     centro: {
-        type: String,
-        enum: Object.values(tipos.CENTROS),
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Centro',
         required: true
     },
-    idProfesor: {//!ATENCION
+    
+    idProfesor: {
         type: String,
         ref: 'Usuario',
         required: true
     },
+    
     origen: {
         type: String,
         enum: Object.values(tipos.ORIGEN),
         default: tipos.ORIGEN.IMPORTADO,
     },
+    
     estado: {
         type: String,
         enum: Object.values(tipos.ESTADO_CUESTIONARIO),
@@ -63,4 +75,3 @@ const CuestionarioSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.models.Cuestionario || mongoose.model('Cuestionario', CuestionarioSchema, 'cuestionarios');
-

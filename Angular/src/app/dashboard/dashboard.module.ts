@@ -21,6 +21,7 @@ import { StudentReportsComponent } from './pages/student-reports/student-reports
 import { AdminDashboardComponent } from './pages/admin/admin-dashboard.component';
 import { AdminUsersComponent } from './pages/admin/users/admin-users.component';
 import { AdminGamesComponent } from './pages/admin/games/admin-games.component';
+import { AdminDataComponent } from './pages/admin/data/admin-data.component';
 
 @NgModule({
   declarations: [
@@ -41,7 +42,8 @@ import { AdminGamesComponent } from './pages/admin/games/admin-games.component';
     StudentReportsComponent,
     AdminDashboardComponent,
     AdminUsersComponent,
-    AdminGamesComponent
+    AdminGamesComponent,
+    AdminDataComponent
   ],
   imports: [
     CommonModule,

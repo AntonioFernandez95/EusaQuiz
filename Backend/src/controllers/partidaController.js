@@ -67,9 +67,10 @@ exports.obtenerTodasPartidas = async (req, res) => {
 exports.obtenerDetallePartida = async (req, res) => {
   try {
     const partida = await partidaService.obtenerDetallePartida(req.params.id);
-    if (!partida) return res.status(404).json({ ok: false });
+    if (!partida) return res.status(404).json({ ok: false, error: 'Partida no encontrada' });
     res.json({ ok: true, data: partida });
   } catch (error) {
+    console.error('[obtenerDetallePartida] Error:', error);
     res.status(500).json({ ok: false, error: error.message });
   }
 };

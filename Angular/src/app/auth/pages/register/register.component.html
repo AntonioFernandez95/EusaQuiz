@@ -142,8 +142,8 @@
             <label for="centro">Centro</label>
             <select id="centro" formControlName="centro" class="form-select">
               <option value="">Selecciona tu centro</option>
-              <option *ngFor="let centro of centros" [value]="centro">
-                {{ centro }}
+              <option *ngFor="let centro of centros" [value]="centro._id">
+                {{ centro.nombre }}
               </option>
             </select>
             <div
@@ -171,7 +171,8 @@
         <div class="form-group">
           <label for="curso">Curso</label>
           <select id="curso" formControlName="curso" class="form-select">
-            <option *ngFor="let curso of cursos" [ngValue]="curso.id">
+            <option [ngValue]="null">Sin curso asignado</option>
+            <option *ngFor="let curso of cursos" [ngValue]="curso._id">
               {{ curso.nombre }}
             </option>
           </select>

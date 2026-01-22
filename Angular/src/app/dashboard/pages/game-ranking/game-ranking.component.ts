@@ -17,6 +17,7 @@ export class GameRankingComponent implements OnInit, OnDestroy {
   userName: string = '';
   userInitials: string = '';
   userProfileImg: string = '';
+  currentUserId: string = '';
   private serverUrl = environment.serverUrl;
   
   partidaId: string = '';
@@ -201,6 +202,7 @@ export class GameRankingComponent implements OnInit, OnDestroy {
         this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         this.userRole = user.rol; // 'profesor' o 'alumno'
+        this.currentUserId = user.idPortal;
       }
     });
 
@@ -299,6 +301,10 @@ export class GameRankingComponent implements OnInit, OnDestroy {
     if (this.ranking && this.ranking.length > 0) {
       this.ganador = this.ranking[0];
     }
+  }
+
+  get miResultado(): any {
+    return this.ranking.find(j => j.idAlumno === this.currentUserId);
   }
 
   getPosColor(index: number): string {

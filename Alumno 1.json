@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "titulo": "Alumno 1",
+    "asignatura": "Programación",
+    "autor": "admin",
+    "fecha": "2026-01-14T09:21:22.091Z",
+    "tipo": "PRACTICA"
+  },
+  "preguntas": [
+    {
+      "pregunta": "(IA Simulada) Pregunta 2 sobre Programación: ¿Cuál es un concepto clave de DAM?",
+      "opciones": [
+        "Concepto Correcto Simulado",
+        "Concepto Erróneo A",
+        "Concepto Erróneo B",
+        "Concepto Erróneo C"
+      ],
+      "respuesta_correcta": "Concepto Correcto Simulado",
+      "temas": [
+        "POO"
+      ],
+      "dificultad": 2
+    },
+    {
+      "pregunta": "(IA Simulada) Pregunta 2 sobre Programación: ¿Cuál es un concepto clave de DAM?",
+      "opciones": [
+        "Concepto Correcto Simulado",
+        "Concepto Erróneo A",
+        "Concepto Erróneo B",
+        "Concepto Erróneo C"
+      ],
+      "respuesta_correcta": "Concepto Correcto Simulado",
+      "temas": [
+        "POO"
+      ],
+      "dificultad": 2
+    },
+    {
+      "pregunta": "¿Qué pilar de la POO permite que una clase hija utilice métodos de la clase padre?",
+      "opciones": [
+        "Herencia",
+        "Polimorfismo",
+        "Encapsulamiento",
+        "Abstracción"
+      ],
+      "respuesta_correcta": "Herencia",
+      "temas": [
+        "POO"
+      ],
+      "dificultad": 1
+    },
+    {
+      "pregunta": "En Java, ¿qué colección no permite elementos duplicados?",
+      "opciones": [
+        "Set",
+        "List",
+        "Map",
+        "ArrayList"
+      ],
+      "respuesta_correcta": "Set",
+      "temas": [
+        "Estructuras de Datos"
+      ],
+      "dificultad": 2
+    }
+  ]
+}

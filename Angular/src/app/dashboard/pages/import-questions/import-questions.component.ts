@@ -63,7 +63,10 @@ export class ImportQuestionsComponent implements OnInit {
           .toUpperCase()
           .substring(0, 2);
         this.userId = user.idPortal;
-        this.userCentro = user.centro;
+        // El centro puede ser un objeto o un string
+        this.userCentro = typeof user.centro === 'object' && user.centro !== null 
+          ? user.centro._id 
+          : user.centro as string;
       }
     });
   }

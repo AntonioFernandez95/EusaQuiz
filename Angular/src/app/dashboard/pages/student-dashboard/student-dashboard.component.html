@@ -486,8 +486,8 @@
           <label>Curso:</label>
           <select [(ngModel)]="selectedCourse" class="form-select">
             <option value="" disabled>Selecciona un curso</option>
-            <option *ngFor="let curso of availableCourses" [value]="curso">
-              {{ curso }}
+            <option *ngFor="let curso of availableCourses" [value]="curso._id">
+              {{ curso.nombre }}
             </option>
           </select>
         </div>
