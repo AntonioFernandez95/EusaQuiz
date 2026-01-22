@@ -23,9 +23,11 @@
   </header>
 
   <div class="content" *ngIf="!isLoading">
-    <p class="subtitle">
-      Selecciona los módulos que impartirás durante este curso académico para
-      DAM 1 y DAM 2.
+    <p class="subtitle" *ngIf="userCursoNombre">
+      Selecciona los módulos que impartirás en <strong>{{ userCursoNombre }}</strong>.
+    </p>
+    <p class="subtitle" *ngIf="!userCursoNombre">
+      Selecciona los módulos que impartirás durante este curso académico.
     </p>
 
     <div class="subjects-grid">

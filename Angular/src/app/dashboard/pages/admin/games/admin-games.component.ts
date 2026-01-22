@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from 'src/app/services/admin.service';
+import { AlertService } from 'src/app/shared/services/alert.service';
 
 @Component({
     selector: 'app-admin-games',
@@ -21,7 +22,10 @@ export class AdminGamesComponent implements OnInit {
     searchQuery: string = '';
     dateFilter: string = '';
 
-    constructor(private adminService: AdminService) { }
+    constructor(
+        private adminService: AdminService,
+        private alertService: AlertService
+    ) { }
 
     ngOnInit(): void {
         this.loadGames();
@@ -90,32 +94,38 @@ export class AdminGamesComponent implements OnInit {
 
         this.adminService.updateGame(this.selectedGame._id, updateData).subscribe({
             next: (res) => {
-                alert('Configuración actualizada correctamente');
+                this.alertService.success('Actualizado', 'Configuración actualizada correctamente');
                 this.loadGames(); // Recargar lista
                 this.closeConfigModal();
                 this.isSaving = false;
             },
             error: (err) => {
                 console.error('Error updating game:', err);
-                alert('Error al actualizar la configuración');
+                this.alertService.error('Error', 'Error al actualizar la configuración');
                 this.isSaving = false;
             }
         });
     }
 
     deleteGame(id: string): void {
-        if (!confirm('¿Estás seguro de que deseas eliminar esta partida? Esta acción no se puede deshacer.')) {
-            return;
-        }
-
-        this.adminService.deleteGame(id).subscribe({
-            next: () => {
-                alert('Partida eliminada con éxito');
-                this.loadGames();
-            },
-            error: (err) => {
-                console.error('Error deleting game:', err);
-                alert('Error al eliminar la partida');
+        this.alertService.confirm(
+            '¿Eliminar partida?',
+            '¿Estás seguro de que deseas eliminar esta partida? Esta acción no se puede deshacer.',
+            'Eliminar',
+            'Cancelar',
+            'warning'
+        ).then(result => {
+            if (result.isConfirmed) {
+                this.adminService.deleteGame(id).subscribe({
+                    next: () => {
+                        this.alertService.success('Eliminado', 'Partida eliminada con éxito');
+                        this.loadGames();
+                    },
+                    error: (err) => {
+                        console.error('Error deleting game:', err);
+                        this.alertService.error('Error', 'Error al eliminar la partida');
+                    }
+                });
             }
         });
     }

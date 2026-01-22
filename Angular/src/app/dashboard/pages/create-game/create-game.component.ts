@@ -29,8 +29,8 @@ export class CreateGameComponent implements OnInit {
 
   // Extra options for Live
   showRanking: boolean = true;
-  shuffleQuestions: boolean = false;
-  shuffleAnswers: boolean = false;
+  shuffleQuestions: boolean = true;
+  shuffleAnswers: boolean = true;
 
   // Extra options for Scheduled
   scheduledDate: string = '';
@@ -53,6 +53,7 @@ export class CreateGameComponent implements OnInit {
   // Control de asignaturas del profesor
   userAssignedSubjects: string[] = [];
   hasNoSubjectsAssigned: boolean = false;
+  userRole: string = '';
 
   // Control del dropdown de cuestionarios y modales
   showQuizDropdown: boolean = false;
@@ -86,13 +87,17 @@ export class CreateGameComponent implements OnInit {
         this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
         this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         this.userId = user.idPortal;
+        this.userRole = user.rol;
         
         // Guardar asignaturas asignadas del profesor
-        this.userAssignedSubjects = user.asignaturas || [];
+        // Las asignaturas pueden ser objetos o strings
+        this.userAssignedSubjects = (user.asignaturas || []).map(s => 
+          typeof s === 'object' && s !== null ? s.nombre : s
+        ).filter(s => !!s) as string[];
         this.hasNoSubjectsAssigned = this.userAssignedSubjects.length === 0;
 
-        // Mostrar notificacion si no tiene asignaturas asignadas
-        if (this.hasNoSubjectsAssigned) {
+        // Mostrar notificacion si no tiene asignaturas asignadas (solo para profesores)
+        if (user.rol === 'profesor' && this.hasNoSubjectsAssigned) {
           this.alertService.warning(
             'Sin asignaturas asignadas',
             'Debes asignarte asignaturas antes de crear una partida. Ve a "Asignar Módulos" en tu dashboard.'
@@ -213,8 +218,8 @@ export class CreateGameComponent implements OnInit {
   }
 
   createGame(): void {
-    // Validar que el profesor tenga asignaturas asignadas
-    if (this.hasNoSubjectsAssigned) {
+    // Validar que el profesor tenga asignaturas asignadas (solo para profesores)
+    if (this.userRole === 'profesor' && this.hasNoSubjectsAssigned) {
       this.alertService.warning(
         'Sin asignaturas asignadas',
         'Debes asignarte asignaturas antes de crear una partida. Ve a "Asignar Módulos" en tu dashboard.'

@@ -56,7 +56,7 @@ const JugadorSchema = new mongoose.Schema({
     estado: {
         type: String,
         enum: [...Object.values(tipos.ESTADOS_PARTIDA), tipos.ESTADO_USER.ACTIVO, tipos.ESTADO_USER.INACTIVO, tipos.ESTADO_USER.ABANDONADO],
-        default: tipos.ESTADOS_PARTIDA.ACTIVA,
+        default: tipos.ESTADO_USER.ACTIVO,
     },
 
     aciertos: { type: Number, default: 0 },

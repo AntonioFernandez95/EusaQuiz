@@ -11,6 +11,47 @@ const Cuestionario = require('../models/cuestionario');
 const mongoose = require('mongoose');
 
 /**
+ * Helper para extraer el nombre de un campo que puede ser un ObjectId poblado o un string
+ * @param {Object|String} value - El valor que puede ser un objeto poblado o un string
+ * @returns {String} El nombre del objeto o el string original
+ */
+function extraerNombre(value) {
+  if (!value) return '';
+  if (typeof value === 'object' && value !== null) {
+    return value.nombre || '';
+  }
+  return String(value);
+}
+
+/**
+ * Transforma un cuestionario para devolver nombres de strings en lugar de objetos poblados
+ * @param {Object} quiz - Cuestionario de MongoDB
+ * @returns {Object} Cuestionario con campos transformados
+ */
+function transformarCuestionario(quiz) {
+  if (!quiz) return quiz;
+  const obj = quiz.toObject ? quiz.toObject() : { ...quiz };
+  
+  return {
+    ...obj,
+    centro: obj.centro ? {
+      _id: obj.centro._id || obj.centro,
+      nombre: extraerNombre(obj.centro),
+      codigo: obj.centro?.codigo || ''
+    } : null,
+    curso: obj.curso ? {
+      _id: obj.curso._id || obj.curso,
+      nombre: extraerNombre(obj.curso),
+      codigo: obj.curso?.codigo || ''
+    } : null,
+    asignatura: obj.asignatura ? {
+      _id: obj.asignatura._id || obj.asignatura,
+      nombre: extraerNombre(obj.asignatura)
+    } : null
+  };
+}
+
+/**
  * Crea un Error con código HTTP (status) para que el controller lo mapee fácilmente.
  * @param {number} status HTTP status code
  * @param {string} message Mensaje de error
@@ -46,8 +87,11 @@ async function obtenerMisCuestionarios(idProfesor) {
 
   // No validamos ObjectId estrictamente para permitir cadenas externas,
   // pero se puede añadir validación con mongoose.Types.ObjectId.isValid.
-  const quizzes = await Cuestionario.find({ idProfesor });
-  return quizzes;
+  const quizzes = await Cuestionario.find({ idProfesor })
+    .populate('centro', 'nombre codigo')
+    .populate('curso', 'nombre codigo')
+    .populate('asignatura', 'nombre');
+  return quizzes.map(transformarCuestionario);
 }
 
 /**
@@ -60,9 +104,12 @@ async function obtenerPorId(id) {
     throw httpError(400, 'ID inválido.');
   }
 
-  const quiz = await Cuestionario.findById(id);
+  const quiz = await Cuestionario.findById(id)
+    .populate('centro', 'nombre codigo')
+    .populate('curso', 'nombre codigo')
+    .populate('asignatura', 'nombre');
   if (!quiz) throw httpError(404, 'Cuestionario no encontrado.');
-  return quiz;
+  return transformarCuestionario(quiz);
 }
 
 /**
@@ -116,8 +163,12 @@ async function obtenerTodos(filters = {}) {
   if (asignatura) filtro.asignatura = asignatura;
   if (busqueda) filtro.titulo = { $regex: busqueda, $options: 'i' };
 
-  const cuestionarios = await Cuestionario.find(filtro).sort({ creadoEn: -1 });
-  return cuestionarios;
+  const cuestionarios = await Cuestionario.find(filtro)
+    .populate('centro', 'nombre codigo')
+    .populate('curso', 'nombre codigo')
+    .populate('asignatura', 'nombre')
+    .sort({ creadoEn: -1 });
+  return cuestionarios.map(transformarCuestionario);
 }
 
 /**

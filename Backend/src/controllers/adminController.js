@@ -1,9 +1,9 @@
 const Usuario = require('../models/usuario');
 const Partida = require('../models/partida');
 const Participacion = require('../models/participacion');
+const Curso = require('../models/curso');
 const fs = require('fs');
 const path = require('path');
-const constants = require('../utils/constants');
 
 const adminController = {
     /**
@@ -16,7 +16,17 @@ const adminController = {
             const partidasActivas = await Partida.countDocuments({ estado: 'activa' });
 
             // Usuarios recientes
-            const usuariosRecientes = await Usuario.find().sort({ creadoEn: -1 }).limit(5);
+            const usuariosRecientes = await Usuario.find()
+                .populate('centro', 'nombre codigo')
+                .populate('curso', 'nombre codigo')
+                .sort({ creadoEn: -1 })
+                .limit(5);
+
+            // Cursos y Centros desde la base de datos
+            const [cursos, centros] = await Promise.all([
+                Curso.find().populate('centro', 'nombre codigo').sort({ nombre: 1 }),
+                require('../models/centro').find().sort({ nombre: 1 })
+            ]);
 
             res.json({
                 ok: true,
@@ -27,7 +37,8 @@ const adminController = {
                 },
                 usuariosRecientes,
                 config: {
-                    cursos: Object.values(constants.CURSOS).filter(c => c !== null)
+                    cursos: cursos,
+                    centros: centros
                 }
             });
         } catch (error) {

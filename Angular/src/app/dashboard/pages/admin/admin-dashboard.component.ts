@@ -16,7 +16,7 @@ export class AdminDashboardComponent implements OnInit {
     };
     usuariosRecientes: any[] = [];
     loading: boolean = true;
-    activeView: 'overview' | 'users' | 'games' = 'overview';
+    activeView: 'overview' | 'users' | 'games' | 'data' = 'overview';
     serverUrl = environment.serverUrl;
     
     userName: string = '';
@@ -62,7 +62,7 @@ export class AdminDashboardComponent implements OnInit {
         });
     }
 
-    setTab(tab: 'overview' | 'users' | 'games'): void {
+    setTab(tab: 'overview' | 'users' | 'games' | 'data'): void {
         this.activeView = tab;
     }
 

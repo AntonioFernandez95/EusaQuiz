@@ -3,6 +3,7 @@ import { environment } from '../../../../environments/environment';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
+import { User, Curso } from '../../../auth/models/user.model';
 
 interface SubjectGroup {
   name: string;
@@ -19,6 +20,9 @@ export class AssignSubjectsComponent implements OnInit {
   userInitials: string = '';
   userProfileImg: string = '';
   userId: string = '';
+  userCursoId: string = '';       // ObjectId del curso
+  userCursoCodigo: string = '';   // Código del curso del profesor (ej: DAM1, DAM2)
+  userCursoNombre: string = '';   // Nombre del curso para mostrar
   private serverUrl = environment.serverUrl;
   
   availableSubjects: SubjectGroup[] = [];
@@ -46,9 +50,16 @@ export class AssignSubjectsComponent implements OnInit {
           .toUpperCase()
           .substring(0, 2);
         
+        // Obtener el código del curso del profesor
+        this.extractUserCurso(user);
+        
         // Cargar asignaturas seleccionadas si existen
         if (user.asignaturas) {
-          user.asignaturas.forEach((s: string) => this.selectedSubjects.add(s));
+          user.asignaturas.forEach((s) => {
+            // s puede ser un objeto Asignatura o un string (ObjectId)
+            const nombre = typeof s === 'object' && s !== null ? s.nombre : s;
+            if (nombre) this.selectedSubjects.add(nombre);
+          });
         }
         
         this.loadAvailableSubjects();
@@ -56,18 +67,78 @@ export class AssignSubjectsComponent implements OnInit {
     });
   }
 
+  /**
+   * Extrae el código y nombre del curso del usuario
+   */
+  private extractUserCurso(user: User): void {
+    if (user.curso) {
+      if (typeof user.curso === 'object' && user.curso !== null) {
+        // Curso está poblado como objeto
+        const curso = user.curso as Curso;
+        this.userCursoId = curso._id || '';
+        this.userCursoCodigo = curso.codigo || '';
+        this.userCursoNombre = curso.nombre || '';
+      } else {
+        // Curso es un string (ObjectId) - guardamos el ID para buscarlo después
+        this.userCursoId = user.curso as string;
+        this.userCursoCodigo = '';
+        this.userCursoNombre = '';
+      }
+    }
+    console.log('[AssignSubjects] extractUserCurso - Usuario curso:', { 
+      id: this.userCursoId, 
+      codigo: this.userCursoCodigo, 
+      nombre: this.userCursoNombre,
+      rawCurso: user.curso
+    });
+  }
+
   loadAvailableSubjects(): void {
     this.isLoading = true;
     this.dashboardService.getConfigOptions().subscribe(config => {
-      if (config && config.asignaturas) {
-        this.availableSubjects = [
-          { name: '1 DAM', subjects: config.asignaturas.DAM1 || [] },
-          { name: '2 DAM', subjects: config.asignaturas.DAM2 || [] },
-          { name: '1 DAW', subjects: config.asignaturas.DAW1 || [] },
-          { name: '2 DAW', subjects: config.asignaturas.DAW2 || [] },
-          { name: '1 ASIR', subjects: config.asignaturas.ASIR1 || [] },
-          { name: '2 ASIR', subjects: config.asignaturas.ASIR2 || [] }
-        ];
+      console.log('[AssignSubjects] Config recibida:', config);
+      
+      if (config) {
+        // Si tenemos el ID del curso pero no el código, buscarlo en la lista de cursos
+        if (this.userCursoId && !this.userCursoCodigo && config.cursos) {
+          console.log('[AssignSubjects] Buscando curso por ID:', this.userCursoId);
+          console.log('[AssignSubjects] Cursos disponibles:', config.cursos);
+          
+          // Comparar como strings para evitar problemas de tipo
+          const cursoEncontrado = config.cursos.find((c: any) => 
+            String(c._id) === String(this.userCursoId)
+          );
+          
+          if (cursoEncontrado) {
+            this.userCursoCodigo = cursoEncontrado.codigo;
+            this.userCursoNombre = cursoEncontrado.nombre;
+            console.log('[AssignSubjects] Curso encontrado en config:', cursoEncontrado);
+          } else {
+            console.log('[AssignSubjects] Curso NO encontrado en config.cursos');
+          }
+        }
+
+        if (config.asignaturas) {
+          // Si el profesor tiene un curso asignado, solo mostrar las asignaturas de ese curso
+          if (this.userCursoCodigo) {
+            const subjects = config.asignaturas[this.userCursoCodigo] || [];
+            this.availableSubjects = [
+              { name: this.userCursoNombre || this.userCursoCodigo, subjects }
+            ];
+            console.log('[AssignSubjects] Mostrando asignaturas de:', this.userCursoCodigo, subjects);
+          } else {
+            // Si no tiene curso asignado, mostrar todas las asignaturas
+            console.log('[AssignSubjects] Sin curso asignado, mostrando todas las asignaturas');
+            this.availableSubjects = [
+              { name: '1 DAM', subjects: config.asignaturas.DAM1 || [] },
+              { name: '2 DAM', subjects: config.asignaturas.DAM2 || [] },
+              { name: '1 DAW', subjects: config.asignaturas.DAW1 || [] },
+              { name: '2 DAW', subjects: config.asignaturas.DAW2 || [] },
+              { name: '1 ASIR', subjects: config.asignaturas.ASIR1 || [] },
+              { name: '2 ASIR', subjects: config.asignaturas.ASIR2 || [] }
+            ];
+          }
+        }
       }
       this.isLoading = false;
     });

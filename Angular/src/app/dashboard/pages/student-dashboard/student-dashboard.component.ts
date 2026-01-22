@@ -33,10 +33,11 @@ export class StudentDashboardComponent implements OnInit {
   selectedGameName: string = '';
   // Modal Curso
   showCourseModal: boolean = false;
-  allCourses: string[] = []; // Store all courses from constants
-  availableCourses: string[] = []; // Filtered courses for the logged in user
-  selectedCourse: string = '';
-  currentCourse: string = '';
+  allCourses: { _id: string, nombre: string, codigo: string }[] = [];
+  availableCourses: { _id: string, nombre: string, codigo: string }[] = [];
+  selectedCourse: string = ''; // Almacena el _id del curso seleccionado
+  currentCourse: string = ''; // Almacena el _id del curso actual
+  currentCourseName: string = ''; // Nombre para mostrar
   isUpdatingCourse: boolean = false;
 
   constructor(
@@ -51,7 +52,19 @@ export class StudentDashboardComponent implements OnInit {
       console.log('StudentDashboard: Current user update', user);
       if (user) {
         this.userName = user.nombre;
-        this.currentCourse = user.curso || '';
+        // El curso ahora puede ser un objeto o un string (ObjectId)
+        if (user.curso) {
+          if (typeof user.curso === 'object' && user.curso !== null) {
+            this.currentCourse = user.curso._id;
+            this.currentCourseName = user.curso.nombre;
+          } else {
+            this.currentCourse = user.curso as string;
+            this.currentCourseName = ''; // Se actualizará cuando se carguen los cursos
+          }
+        } else {
+          this.currentCourse = '';
+          this.currentCourseName = 'Sin curso';
+        }
         // Add timestamp to force image refresh and avoid cache issues
         // Also check strictly against string 'null' or 'undefined' which might come from backend/storage issues
         const hasValidPhoto = user.fotoPerfil && user.fotoPerfil !== 'null' && user.fotoPerfil !== 'undefined';
@@ -78,8 +91,16 @@ export class StudentDashboardComponent implements OnInit {
     this.authService.getConstants().subscribe({
       next: (res) => {
         if (res.ok && res.constants && res.constants.CURSOS) {
-          // Store all valid courses in a separate array
-          this.allCourses = (Object.values(res.constants.CURSOS) as string[]).filter((c: any) => !!c);
+          // CURSOS ahora es un array de objetos {_id, nombre, codigo}
+          this.allCourses = res.constants.CURSOS || [];
+          
+          // Si tenemos currentCourse pero no el nombre, buscarlo
+          if (this.currentCourse && !this.currentCourseName) {
+            const curso = this.allCourses.find(c => c._id === this.currentCourse);
+            if (curso) {
+              this.currentCourseName = curso.nombre;
+            }
+          }
         }
       }
     });
@@ -89,16 +110,28 @@ export class StudentDashboardComponent implements OnInit {
     this.isLoading = true;
     
     this.dashboardService.getScheduledGames(idAlumno).subscribe(games => {
-      // Filter games: match current course or if game has no specific course
+      console.log('[StudentDashboard] Partidas recibidas:', games);
+      console.log('[StudentDashboard] Curso actual:', this.currentCourse, this.currentCourseName);
+      
+      // El backend ya filtra por curso, pero hacemos doble check por seguridad
+      // Comparamos por nombre del curso ya que el backend devuelve nombres
       this.scheduledGames = games.filter(g => {
-        const gameCourse = g.curso || g.idCuestionario.curso;
-        // If the game has a target course, it must match the student's current course
-        if (gameCourse) {
-            return gameCourse === this.currentCourse;
-        }
-        // If no course specified, assume it's visible to all
-        return true;
+        const gameCourse = (g.curso || g.idCuestionario?.curso || '').toLowerCase().trim();
+        const studentCourse = (this.currentCourseName || '').toLowerCase().trim();
+        
+        // Si la partida no tiene curso específico, es visible para todos
+        if (!gameCourse) return true;
+        
+        // Comparar por nombre del curso
+        const match = gameCourse === studentCourse || 
+                      gameCourse.includes(studentCourse) || 
+                      studentCourse.includes(gameCourse);
+        
+        console.log('[StudentDashboard] Filtro partida:', g.nombrePartida, 'Curso partida:', gameCourse, 'Curso alumno:', studentCourse, 'Match:', match);
+        return match;
       });
+      
+      console.log('[StudentDashboard] Partidas filtradas:', this.scheduledGames.length);
       this.isLoading = false;
     });
 
@@ -225,11 +258,11 @@ export class StudentDashboardComponent implements OnInit {
   openCourseModal(): void {
     this.selectedCourse = this.currentCourse;
     
-    if (this.currentCourse) {
-      const mySpecialty = this.extractSpecialty(this.currentCourse);
+    if (this.currentCourseName) {
+      const mySpecialty = this.extractSpecialty(this.currentCourseName);
       // Filter available courses to only show those of the same specialty (track)
       this.availableCourses = this.allCourses.filter(c => 
-        this.extractSpecialty(c) === mySpecialty
+        this.extractSpecialty(c.nombre) === mySpecialty
       );
     } else {
       // Fallback if user somehow has no course
@@ -258,10 +291,13 @@ export class StudentDashboardComponent implements OnInit {
         this.isUpdatingCourse = false;
         if (res.ok) {
           this.currentCourse = this.selectedCourse;
-          this.alertService.success('Curso Actualizado', `Te has cambiado a ${this.selectedCourse}`);
+          // Buscar el nombre del curso seleccionado
+          const cursoSeleccionado = this.allCourses.find(c => c._id === this.selectedCourse);
+          this.currentCourseName = cursoSeleccionado?.nombre || '';
+          this.alertService.success('Curso Actualizado', `Te has cambiado a ${this.currentCourseName}`);
           this.closeCourseModal();
-          // Recargar datos dashboard se maneja en la suscripción a currentUser$
-          // this.loadDashboardData(user.idPortal); 
+          // Recargar datos dashboard
+          this.loadDashboardData(user.idPortal);
         }
       },
       error: (err) => {
