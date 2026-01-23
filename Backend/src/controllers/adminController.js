@@ -2,6 +2,7 @@ const Usuario = require('../models/usuario');
 const Partida = require('../models/partida');
 const Participacion = require('../models/participacion');
 const Curso = require('../models/curso');
+const Ajustes = require('../models/ajustes');
 const fs = require('fs');
 const path = require('path');
 
@@ -23,10 +24,17 @@ const adminController = {
                 .limit(5);
 
             // Cursos y Centros desde la base de datos
-            const [cursos, centros] = await Promise.all([
+            const [cursos, centros, ajustes] = await Promise.all([
                 Curso.find().populate('centro', 'nombre codigo').sort({ nombre: 1 }),
-                require('../models/centro').find().sort({ nombre: 1 })
+                require('../models/centro').find().sort({ nombre: 1 }),
+                Ajustes.findOne()
             ]);
+
+            // Si no hay ajustes, crear los por defecto
+            let currentBranding = ajustes;
+            if (!currentBranding) {
+                currentBranding = await Ajustes.create({ nombreApp: 'CampusQuiz', logoAppUrl: 'assets/img/logo-camera.png' });
+            }
 
             res.json({
                 ok: true,
@@ -38,7 +46,11 @@ const adminController = {
                 usuariosRecientes,
                 config: {
                     cursos: cursos,
-                    centros: centros
+                    centros: centros,
+                    branding: {
+                        nombreApp: currentBranding.nombreApp,
+                        logoAppUrl: currentBranding.logoAppUrl
+                    }
                 }
             });
         } catch (error) {
@@ -147,6 +159,52 @@ const adminController = {
         } catch (error) {
             console.error('Error en updateGameConfig:', error);
             res.status(500).json({ ok: false, mensaje: 'Error al actualizar partida', error: error.message });
+        }
+    },
+
+    /**
+     * Obtener branding de la aplicación
+     */
+    getBranding: async (req, res) => {
+        try {
+            let ajustes = await Ajustes.findOne();
+            if (!ajustes) {
+                ajustes = await Ajustes.create({ nombreApp: 'CampusQuiz', logoAppUrl: 'assets/img/logo-camera.png' });
+            }
+            res.json({ ok: true, data: ajustes });
+        } catch (error) {
+            console.error('Error en getBranding:', error);
+            res.status(500).json({ ok: false, mensaje: 'Error al obtener branding', error: error.message });
+        }
+    },
+
+    /**
+     * Actualizar branding de la aplicación
+     */
+    updateBranding: async (req, res) => {
+        try {
+            const { nombreApp } = req.body;
+            let updateData = { nombreApp };
+
+            if (req.file) {
+                // Normalizar path para usar slashes / en lugar de \
+                updateData.logoAppUrl = req.file.path.replace(/\\/g, '/');
+            }
+
+            let ajustes = await Ajustes.findOneAndUpdate(
+                {},
+                { $set: updateData },
+                { new: true, upsert: true }
+            );
+
+            res.json({
+                ok: true,
+                data: ajustes,
+                mensaje: 'Branding actualizado correctamente'
+            });
+        } catch (error) {
+            console.error('Error en updateBranding:', error);
+            res.status(500).json({ ok: false, mensaje: 'Error al actualizar branding', error: error.message });
         }
     }
 };

@@ -13,17 +13,17 @@ const routes: Routes = [
   {
     path: 'login',
     component: LoginComponent,
-    title: 'Iniciar Sesión | EUSAQuiz'
+    title: 'Iniciar Sesión | CampusQuiz'
   },
   {
     path: 'register',
     component: RegisterComponent,
-    title: 'Crear Cuenta | EUSAQuiz'
+    title: 'Crear Cuenta | CampusQuiz'
   },
   {
     path: 'forgot-password',
     component: ForgotPasswordComponent,
-    title: 'Recuperar Contraseña | EUSAQuiz'
+    title: 'Recuperar Contraseña | CampusQuiz'
   }
 ];
 

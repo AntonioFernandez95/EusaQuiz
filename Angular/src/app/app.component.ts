@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { BrandingService } from './services/branding.service';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +8,6 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'eusa-quiz';
+
+  constructor(private brandingService: BrandingService) {}
 }

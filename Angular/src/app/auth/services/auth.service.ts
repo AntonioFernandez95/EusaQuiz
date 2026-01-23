@@ -17,8 +17,8 @@ import {
 })
 export class AuthService {
   private readonly API_URL = environment.apiUrl;
-  private readonly TOKEN_KEY = 'eusaquiz_token';
-  private readonly USER_KEY = 'eusaquiz_user';
+  private readonly TOKEN_KEY = 'campusquiz_token';
+  private readonly USER_KEY = 'campusquiz_user';
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();

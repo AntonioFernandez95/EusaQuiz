@@ -5,6 +5,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { SocketService } from '../../../services/socket.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { BrandingService } from 'src/app/services/branding.service';
 
 @Component({
   selector: 'app-student-lobby',
@@ -28,7 +29,8 @@ export class StudentLobbyComponent implements OnInit, OnDestroy {
     private router: Router,
     private authService: AuthService,
     private dashboardService: DashboardService,
-    private socketService: SocketService
+    private socketService: SocketService,
+    public brandingService: BrandingService
   ) {}
 
   ngOnInit(): void {

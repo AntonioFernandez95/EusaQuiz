@@ -5,6 +5,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AlertService } from '../../../shared/services/alert.service';
+import { BrandingService } from 'src/app/services/branding.service';
 
 @Component({
   selector: 'app-student-reports',
@@ -47,7 +48,8 @@ export class StudentReportsComponent implements OnInit {
     private dashboardService: DashboardService,
     private router: Router,
     private route: ActivatedRoute,
-    private alertService: AlertService // Injected
+    private alertService: AlertService,
+    public brandingService: BrandingService
   ) {}
 
   ngOnInit(): void {

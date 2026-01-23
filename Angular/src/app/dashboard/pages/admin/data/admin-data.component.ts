@@ -36,6 +36,10 @@ export class AdminDataComponent implements OnInit {
   cursos: Curso[] = [];
   asignaturas: Asignatura[] = [];
 
+  // Filtros Asignaturas
+  subjectFilterName = '';
+  subjectFilterCourse = '';
+
   // Formularios
   showCentroForm = false;
   showCursoForm = false;
@@ -341,6 +345,18 @@ export class AdminDataComponent implements OnInit {
     this.showAsignaturaForm = false;
     this.editingAsignatura = null;
     this.asignaturaForm = { nombre: '', curso: '' };
+  }
+
+  // Getters para filtrado
+  get filteredAsignaturas(): Asignatura[] {
+    return this.asignaturas.filter(a => {
+      const matchName = a.nombre.toLowerCase().includes(this.subjectFilterName.toLowerCase());
+      
+      const courseId = typeof a.curso === 'object' ? (a.curso as any)._id : a.curso;
+      const matchCourse = !this.subjectFilterCourse || courseId === this.subjectFilterCourse;
+      
+      return matchName && matchCourse;
+    });
   }
 
   // Helpers

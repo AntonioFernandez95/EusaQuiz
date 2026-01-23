@@ -21,7 +21,7 @@ async function importExamen(data) {
 
     // Validar centro - debe ser uno de los valores permitidos
     const centrosValidos = Object.values(tipos.CENTROS);
-    const centroFinal = centro || tipos.CENTROS.EUSA;
+    const centroFinal = centro || tipos.CENTROS.NEGOCIOS;
     if (!centrosValidos.includes(centroFinal)) {
         throw new Error(`Centro no válido: "${centro}". Valores permitidos: ${centrosValidos.join(', ')}`);
     }

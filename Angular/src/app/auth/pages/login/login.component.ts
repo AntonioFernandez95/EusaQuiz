@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { AlertService } from '../../../shared/services/alert.service';
+import { BrandingService } from 'src/app/services/branding.service';
 
 @Component({
   selector: 'app-login',
@@ -20,7 +21,8 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private alertService: AlertService
+    private alertService: AlertService,
+    public brandingService: BrandingService
   ) { }
 
   ngOnInit(): void {
@@ -130,12 +132,12 @@ export class LoginComponent implements OnInit {
    * Simula la redirección al portal padre para login
    */
   loginFromPortal(): void {
-    // En producción, esto redirigiría al portal EUSA
+    // En producción, esto redirigiría al portal universitario
     // Por ahora mostramos un mensaje informativo
     this.errorMessage = '';
     this.alertService.info(
       'Autenticación Externa',
-      'Esta funcionalidad te redirigirá al portal oficial EUSA para una autenticación centralizada y segura.'
+      'Esta funcionalidad te redirigirá al portal oficial universitario para una autenticación centralizada y segura.'
     );
     // window.location.href = 'https://portal.eusa.es/auth?redirect=' + encodeURIComponent(window.location.origin + '/auth/login');
   }

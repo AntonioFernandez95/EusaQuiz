@@ -3,8 +3,8 @@
   <header class="dashboard-header animate-fade-in">
     <div class="logo">
       <img
-        src="assets/img/logo-camera.png"
-        alt="Escuela de Negocios Campus Cámara"
+        [src]="brandingService.appLogo$ | async"
+        [alt]="brandingService.appName$ | async"
         class="logo-img"
       />
     </div>
@@ -167,7 +167,7 @@
         </div>
         <div class="actions">
           <span class="date">{{
-            game.fechaProgramada | date : "dd/MM/yyyy HH:mm"
+            game.fechaProgramada | date: "dd/MM/yyyy HH:mm"
           }}</span>
           <button
             *ngIf="isJoinable(game.fechaProgramada)"
@@ -265,7 +265,7 @@
         </div>
         <div class="score-actions">
           <div class="score" [class.low]="result.porcentaje < 50">
-            {{ result.porcentaje | number : "1.0-2" }}%
+            {{ result.porcentaje | number: "1.0-2" }}%
           </div>
           <button
             class="btn-report-small"
@@ -368,7 +368,7 @@
                     [class.high]="row.percentage >= 70"
                     [class.low]="row.percentage < 50"
                   >
-                    {{ row.percentage | number : "1.0-1" }}%
+                    {{ row.percentage | number: "1.0-1" }}%
                   </span>
                 </td>
                 <td class="col-action">

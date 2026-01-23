@@ -154,7 +154,7 @@ export class GameRankingComponent implements OnInit, OnDestroy {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Reporte_EusaQuiz_${this.partidaId}.pdf`;
+        a.download = `Reporte_CampusQuiz_${this.partidaId}.pdf`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);

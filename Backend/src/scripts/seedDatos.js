@@ -13,7 +13,7 @@ const MONGO_URI = process.env.MONGO_URI;
 // Datos de los centros
 const centrosData = [
     { nombre: 'Campus Cámara FP', codigo: 'CAMPUS_CAMARA' },
-    { nombre: 'EUSA', codigo: 'EUSA' }
+    { nombre: 'Facultad de Negocios', codigo: 'NEGOCIOS' }
 ];
 
 // Datos de los cursos (se asignarán a ambos centros)

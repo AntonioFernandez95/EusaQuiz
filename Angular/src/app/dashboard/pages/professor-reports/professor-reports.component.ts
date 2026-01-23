@@ -6,6 +6,7 @@ import { forkJoin } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
 import { AlertService } from '../../../shared/services/alert.service';
+import { BrandingService } from 'src/app/services/branding.service';
 
 @Component({
   selector: 'app-professor-reports',
@@ -56,7 +57,8 @@ export class ProfessorReportsComponent implements OnInit {
     private dashboardService: DashboardService,
     private router: Router,
     private route: ActivatedRoute,
-    private alertService: AlertService
+    private alertService: AlertService,
+    public brandingService: BrandingService
   ) {}
 
   ngOnInit(): void {

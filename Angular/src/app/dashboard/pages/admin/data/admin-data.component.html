@@ -3,19 +3,22 @@
     <button
       [class.active]="activeTab === 'centros'"
       (click)="activeTab = 'centros'"
-      class="tab-btn">
+      class="tab-btn"
+    >
       <i class="fas fa-building"></i> Centros
     </button>
     <button
       [class.active]="activeTab === 'cursos'"
       (click)="activeTab = 'cursos'"
-      class="tab-btn">
+      class="tab-btn"
+    >
       <i class="fas fa-graduation-cap"></i> Cursos
     </button>
     <button
       [class.active]="activeTab === 'asignaturas'"
       (click)="activeTab = 'asignaturas'"
-      class="tab-btn">
+      class="tab-btn"
+    >
       <i class="fas fa-book"></i> Asignaturas
     </button>
   </div>
@@ -42,12 +45,22 @@
           <tbody>
             <tr *ngFor="let centro of centros">
               <td>{{ centro.nombre }}</td>
-              <td><code>{{ centro.codigo }}</code></td>
               <td>
-                <button class="btn-icon edit" (click)="editCentro(centro)" title="Editar">
+                <code>{{ centro.codigo }}</code>
+              </td>
+              <td>
+                <button
+                  class="btn-icon edit"
+                  (click)="editCentro(centro)"
+                  title="Editar"
+                >
                   <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-icon delete" (click)="deleteCentro(centro)" title="Eliminar">
+                <button
+                  class="btn-icon delete"
+                  (click)="deleteCentro(centro)"
+                  title="Eliminar"
+                >
                   <i class="fas fa-trash"></i>
                 </button>
               </td>
@@ -79,13 +92,23 @@
           <tbody>
             <tr *ngFor="let curso of cursos">
               <td>{{ curso.nombre }}</td>
-              <td><code>{{ curso.codigo }}</code></td>
+              <td>
+                <code>{{ curso.codigo }}</code>
+              </td>
               <td>{{ getCentroNombre(curso.centro) }}</td>
               <td>
-                <button class="btn-icon edit" (click)="editCurso(curso)" title="Editar">
+                <button
+                  class="btn-icon edit"
+                  (click)="editCurso(curso)"
+                  title="Editar"
+                >
                   <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-icon delete" (click)="deleteCurso(curso)" title="Eliminar">
+                <button
+                  class="btn-icon delete"
+                  (click)="deleteCurso(curso)"
+                  title="Eliminar"
+                >
                   <i class="fas fa-trash"></i>
                 </button>
               </td>
@@ -99,6 +122,28 @@
     <div *ngIf="activeTab === 'asignaturas'" class="tab-content">
       <div class="section-header">
         <h2>Gestión de Asignaturas</h2>
+
+        <div class="filter-toolbar">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              [(ngModel)]="subjectFilterName"
+              placeholder="Buscar asignatura..."
+            />
+          </div>
+
+          <div class="select-box">
+            <i class="fas fa-filter"></i>
+            <select [(ngModel)]="subjectFilterCourse">
+              <option value="">Todos los cursos</option>
+              <option *ngFor="let curso of cursos" [value]="curso._id">
+                {{ curso.nombre }}
+              </option>
+            </select>
+          </div>
+        </div>
+
         <button class="btn-primary" (click)="createAsignatura()">
           <i class="fas fa-plus"></i> Nueva Asignatura
         </button>
@@ -114,14 +159,22 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let asignatura of asignaturas">
+            <tr *ngFor="let asignatura of filteredAsignaturas">
               <td>{{ asignatura.nombre }}</td>
               <td>{{ getCursoNombre(asignatura.curso) }}</td>
               <td>
-                <button class="btn-icon edit" (click)="editAsignatura(asignatura)" title="Editar">
+                <button
+                  class="btn-icon edit"
+                  (click)="editAsignatura(asignatura)"
+                  title="Editar"
+                >
                   <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-icon delete" (click)="deleteAsignatura(asignatura)" title="Eliminar">
+                <button
+                  class="btn-icon delete"
+                  (click)="deleteAsignatura(asignatura)"
+                  title="Eliminar"
+                >
                   <i class="fas fa-trash"></i>
                 </button>
               </td>
@@ -133,30 +186,58 @@
   </div>
 
   <!-- Centro Form Modal -->
-  <div *ngIf="showCentroForm" class="modal-overlay" (click)="cancelCentroForm()">
+  <div
+    *ngIf="showCentroForm"
+    class="modal-overlay"
+    (click)="cancelCentroForm()"
+  >
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>{{ editingCentro ? 'Editar Centro' : 'Nuevo Centro' }}</h3>
+        <h3>{{ editingCentro ? "Editar Centro" : "Nuevo Centro" }}</h3>
         <button class="close-btn" (click)="cancelCentroForm()">&times;</button>
       </div>
 
       <form (ngSubmit)="saveCentro()" #centroFormData="ngForm">
         <div class="form-group">
           <label for="centroNombre">Nombre del Centro</label>
-          <input type="text" id="centroNombre" [(ngModel)]="centroForm.nombre"
-                 name="nombre" required class="form-control">
+          <input
+            type="text"
+            id="centroNombre"
+            [(ngModel)]="centroForm.nombre"
+            name="nombre"
+            required
+            class="form-control"
+          />
         </div>
 
         <div class="form-group">
           <label for="centroCodigo">Código</label>
-          <input type="text" id="centroCodigo" [(ngModel)]="centroForm.codigo"
-                 name="codigo" required class="form-control">
+          <input
+            type="text"
+            id="centroCodigo"
+            [(ngModel)]="centroForm.codigo"
+            name="codigo"
+            required
+            class="form-control"
+          />
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn-secondary" (click)="cancelCentroForm()">Cancelar</button>
-          <button type="submit" class="btn-primary" [disabled]="!centroFormData.valid || saving">
-            {{ saving ? 'Guardando...' : (editingCentro ? 'Actualizar' : 'Crear') }}
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="cancelCentroForm()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn-primary"
+            [disabled]="!centroFormData.valid || saving"
+          >
+            {{
+              saving ? "Guardando..." : editingCentro ? "Actualizar" : "Crear"
+            }}
           </button>
         </div>
       </form>
@@ -167,27 +248,44 @@
   <div *ngIf="showCursoForm" class="modal-overlay" (click)="cancelCursoForm()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>{{ editingCurso ? 'Editar Curso' : 'Nuevo Curso' }}</h3>
+        <h3>{{ editingCurso ? "Editar Curso" : "Nuevo Curso" }}</h3>
         <button class="close-btn" (click)="cancelCursoForm()">&times;</button>
       </div>
 
       <form (ngSubmit)="saveCurso()" #cursoFormData="ngForm">
         <div class="form-group">
           <label for="cursoNombre">Nombre del Curso</label>
-          <input type="text" id="cursoNombre" [(ngModel)]="cursoForm.nombre"
-                 name="nombre" required class="form-control">
+          <input
+            type="text"
+            id="cursoNombre"
+            [(ngModel)]="cursoForm.nombre"
+            name="nombre"
+            required
+            class="form-control"
+          />
         </div>
 
         <div class="form-group">
           <label for="cursoCodigo">Código</label>
-          <input type="text" id="cursoCodigo" [(ngModel)]="cursoForm.codigo"
-                 name="codigo" required class="form-control">
+          <input
+            type="text"
+            id="cursoCodigo"
+            [(ngModel)]="cursoForm.codigo"
+            name="codigo"
+            required
+            class="form-control"
+          />
         </div>
 
         <div class="form-group">
           <label for="cursoCentro">Centro</label>
-          <select id="cursoCentro" [(ngModel)]="cursoForm.centro"
-                  name="centro" required class="form-control">
+          <select
+            id="cursoCentro"
+            [(ngModel)]="cursoForm.centro"
+            name="centro"
+            required
+            class="form-control"
+          >
             <option value="">Seleccionar Centro</option>
             <option *ngFor="let centro of centros" [value]="centro._id">
               {{ centro.nombre }}
@@ -196,9 +294,21 @@
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn-secondary" (click)="cancelCursoForm()">Cancelar</button>
-          <button type="submit" class="btn-primary" [disabled]="!cursoFormData.valid || saving">
-            {{ saving ? 'Guardando...' : (editingCurso ? 'Actualizar' : 'Crear') }}
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="cancelCursoForm()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn-primary"
+            [disabled]="!cursoFormData.valid || saving"
+          >
+            {{
+              saving ? "Guardando..." : editingCurso ? "Actualizar" : "Crear"
+            }}
           </button>
         </div>
       </form>
@@ -206,24 +316,43 @@
   </div>
 
   <!-- Asignatura Form Modal -->
-  <div *ngIf="showAsignaturaForm" class="modal-overlay" (click)="cancelAsignaturaForm()">
+  <div
+    *ngIf="showAsignaturaForm"
+    class="modal-overlay"
+    (click)="cancelAsignaturaForm()"
+  >
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>{{ editingAsignatura ? 'Editar Asignatura' : 'Nueva Asignatura' }}</h3>
-        <button class="close-btn" (click)="cancelAsignaturaForm()">&times;</button>
+        <h3>
+          {{ editingAsignatura ? "Editar Asignatura" : "Nueva Asignatura" }}
+        </h3>
+        <button class="close-btn" (click)="cancelAsignaturaForm()">
+          &times;
+        </button>
       </div>
 
       <form (ngSubmit)="saveAsignatura()" #asignaturaFormData="ngForm">
         <div class="form-group">
           <label for="asignaturaNombre">Nombre de la Asignatura</label>
-          <input type="text" id="asignaturaNombre" [(ngModel)]="asignaturaForm.nombre"
-                 name="nombre" required class="form-control">
+          <input
+            type="text"
+            id="asignaturaNombre"
+            [(ngModel)]="asignaturaForm.nombre"
+            name="nombre"
+            required
+            class="form-control"
+          />
         </div>
 
         <div class="form-group">
           <label for="asignaturaCurso">Curso</label>
-          <select id="asignaturaCurso" [(ngModel)]="asignaturaForm.curso"
-                  name="curso" required class="form-control">
+          <select
+            id="asignaturaCurso"
+            [(ngModel)]="asignaturaForm.curso"
+            name="curso"
+            required
+            class="form-control"
+          >
             <option value="">Seleccionar Curso</option>
             <option *ngFor="let curso of cursos" [value]="curso._id">
               {{ curso.nombre }}
@@ -232,9 +361,25 @@
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn-secondary" (click)="cancelAsignaturaForm()">Cancelar</button>
-          <button type="submit" class="btn-primary" [disabled]="!asignaturaFormData.valid || saving">
-            {{ saving ? 'Guardando...' : (editingAsignatura ? 'Actualizar' : 'Crear') }}
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="cancelAsignaturaForm()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn-primary"
+            [disabled]="!asignaturaFormData.valid || saving"
+          >
+            {{
+              saving
+                ? "Guardando..."
+                : editingAsignatura
+                  ? "Actualizar"
+                  : "Crear"
+            }}
           </button>
         </div>
       </form>

@@ -150,7 +150,7 @@ const authController = {
                     nombre: payload.nombre || payload.email.split('@')[0],
                     email: payload.email,
                     rol: payload.rol || 'alumno',
-                    centro: payload.centro || 'EUSA',
+                    centro: payload.centro || 'NEGOCIOS',
                     curso: payload.curso || null
                 });
                 await user.save();

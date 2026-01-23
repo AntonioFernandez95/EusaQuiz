@@ -5,6 +5,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { SocketService } from '../../../services/socket.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { BrandingService } from 'src/app/services/branding.service';
 
 @Component({
   selector: 'app-game-monitor',
@@ -36,7 +37,8 @@ export class GameMonitorComponent implements OnInit, OnDestroy {
     private router: Router,
     private dashboardService: DashboardService,
     private authService: AuthService,
-    private socketService: SocketService
+    private socketService: SocketService,
+    public brandingService: BrandingService
   ) {}
 
   ngOnInit(): void {
