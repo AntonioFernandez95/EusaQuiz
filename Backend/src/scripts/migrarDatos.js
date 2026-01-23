@@ -20,7 +20,7 @@ const MAPEO_CENTROS = {
     'Campus Cámara': 'CAMPUS_CAMARA',
     'Campus Cámara FP': 'CAMPUS_CAMARA',
     'CAMPUS_CAMARA': 'CAMPUS_CAMARA',
-    'EUSA': 'EUSA'
+    'Facultad de Negocios': 'NEGOCIOS'
 };
 
 const MAPEO_CURSOS = {

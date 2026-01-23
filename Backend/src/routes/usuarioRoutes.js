@@ -114,7 +114,7 @@ router.get('/:id', wrapHandler(controller.obtenerUsuario));
  *             email: "maria@eusa.es"
  *             rol: "profesor"
  *             curso: "2 DAM"
- *             centro: "EUSA"
+ *             centro: "NEGOCIOS"
  *     responses:
  *       201:
  *         description: Usuario creado exitosamente

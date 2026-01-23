@@ -4,6 +4,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { AlertService } from '../../../shared/services/alert.service';
 import { environment } from '../../../../environments/environment';
+import { BrandingService } from 'src/app/services/branding.service';
 
 @Component({
   selector: 'app-create-game',
@@ -70,14 +71,14 @@ export class CreateGameComponent implements OnInit {
       }
     }
   }
-
   constructor(
     private dashboardService: DashboardService,
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
     private alertService: AlertService,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    public brandingService: BrandingService
   ) {}
 
   ngOnInit(): void {

@@ -105,4 +105,17 @@ export class AdminService {
     deleteAsignatura(id: string): Observable<any> {
         return this.http.delete(`${environment.apiUrl}/datos-academicos/asignaturas/${id}`, { headers: this.getHeaders() });
     }
+
+    getBranding(): Observable<any> {
+        return this.http.get(`${this.apiUrl}/branding`, { headers: this.getHeaders() });
+    }
+
+    updateBranding(nombreApp: string, logoFile?: File): Observable<any> {
+        const formData = new FormData();
+        formData.append('nombreApp', nombreApp);
+        if (logoFile) {
+            formData.append('logo', logoFile);
+        }
+        return this.http.put(`${this.apiUrl}/branding`, formData, { headers: this.getHeaders() });
+    }
 }

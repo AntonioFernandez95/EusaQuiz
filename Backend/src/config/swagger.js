@@ -5,11 +5,11 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'EusaQuiz API',
+      title: 'CampusQuiz API',
       version: '1.0.0',
-      description: 'API REST para la aplicación de quizzes interactivos EusaQuiz.  Permite gestionar cuestionarios, preguntas, partidas en tiempo real y usuarios.',
+      description: 'API REST para la aplicación de quizzes interactivos CampusQuiz.  Permite gestionar cuestionarios, preguntas, partidas en tiempo real y usuarios.',
       contact: {
-        name: 'Equipo EusaQuiz'
+        name: 'Equipo CampusQuiz'
       }
     },
     servers: [
@@ -50,7 +50,7 @@ const options = {
             email: 'oak@pokedex.com',
             rol: 'profesor',
             curso: '1 DAM',
-            centro: 'EUSA',
+            centro: 'NEGOCIOS',
             activo: true
           }
         },
@@ -90,7 +90,7 @@ const options = {
             descripcion: 'Preguntas sobre Mongoose y Node',
             asignatura: 'Programación',
             curso: '1 DAM',
-            centro: 'EUSA',
+            centro: 'NEGOCIOS',
             idProfesor: 'PROFE_01',
             origen: 'manual',
             numPreguntas: 10,
@@ -284,7 +284,7 @@ const setupSwagger = (app) => {
   // Swagger UI
   app. use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customCss: '. swagger-ui . topbar { display: none }',
-    customSiteTitle: 'EusaQuiz API Docs'
+    customSiteTitle: 'CampusQuiz API Docs'
   }));
   
   // Endpoint JSON para OpenAPI spec

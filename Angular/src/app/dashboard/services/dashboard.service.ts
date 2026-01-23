@@ -186,7 +186,7 @@ export class DashboardService {
    * Obtiene la lista de todos los alumnos
    */
   getStudents(curso?: string): Observable<any[]> {
-    const token = localStorage.getItem('eusaquiz_token');
+    const token = localStorage.getItem('campusquiz_token');
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`
     });

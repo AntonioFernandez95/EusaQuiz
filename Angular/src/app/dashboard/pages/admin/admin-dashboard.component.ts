@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from 'src/app/services/admin.service';
 import { AuthService } from 'src/app/auth/services/auth.service';
+import { BrandingService } from 'src/app/services/branding.service';
 import { environment } from 'src/environments/environment';
+import { AlertService } from 'src/app/shared/services/alert.service';
 
 @Component({
     selector: 'app-admin-dashboard',
@@ -16,8 +18,15 @@ export class AdminDashboardComponent implements OnInit {
     };
     usuariosRecientes: any[] = [];
     loading: boolean = true;
-    activeView: 'overview' | 'users' | 'games' | 'data' = 'overview';
+    activeView: 'overview' | 'users' | 'games' | 'data' | 'branding' = 'overview';
     serverUrl = environment.serverUrl;
+
+    // Branding Form
+    brandingForm = {
+        nombreApp: '',
+        logoFile: null as File | null
+    };
+    savingBranding: boolean = false;
     
     userName: string = '';
     userInitials: string = '';
@@ -25,12 +34,19 @@ export class AdminDashboardComponent implements OnInit {
 
     constructor(
         private adminService: AdminService,
-        private authService: AuthService
+        private authService: AuthService,
+        private alertService: AlertService,
+        public brandingService: BrandingService
     ) { }
 
     ngOnInit(): void {
         this.loadStats();
         this.loadUserInfo();
+        this.initBrandingForm();
+    }
+
+    initBrandingForm(): void {
+        this.brandingForm.nombreApp = this.brandingService.getAppName();
     }
 
     loadUserInfo(): void {
@@ -62,11 +78,34 @@ export class AdminDashboardComponent implements OnInit {
         });
     }
 
-    setTab(tab: 'overview' | 'users' | 'games' | 'data'): void {
+    setTab(tab: 'overview' | 'users' | 'games' | 'data' | 'branding'): void {
         this.activeView = tab;
     }
 
     logout(): void {
         this.authService.logout();
+    }
+
+    onLogoSelected(event: any): void {
+        const file = event.target.files[0];
+        if (file) {
+            this.brandingForm.logoFile = file;
+        }
+    }
+
+    saveBranding(): void {
+        this.savingBranding = true;
+        this.adminService.updateBranding(this.brandingForm.nombreApp, this.brandingForm.logoFile || undefined).subscribe({
+            next: (res) => {
+                this.alertService.success('Branding Actualizado', 'Los cambios se aplicarán en toda la aplicación.');
+                this.brandingService.updateState(res.data);
+                this.savingBranding = false;
+            },
+            error: (err) => {
+                console.error('Error saving branding:', err);
+                this.alertService.error('Error', 'No se pudo actualizar el branding');
+                this.savingBranding = false;
+            }
+        });
     }
 }

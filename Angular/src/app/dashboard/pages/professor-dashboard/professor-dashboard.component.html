@@ -2,15 +2,27 @@
   <!-- Banner de advertencia: Asignaturas pendientes -->
   <div class="warning-banner animate-fade-in" *ngIf="showSubjectsWarning">
     <div class="warning-content">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/>
-        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path
+          d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+        />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
       <div class="warning-text">
-        <strong>Asignaturas pendientes:</strong> Debes asignarte las asignaturas que vas a impartir antes de poder crear partidas.
+        <strong>Asignaturas pendientes:</strong> Debes asignarte las asignaturas
+        que vas a impartir antes de poder crear partidas.
       </div>
-      <button class="warning-action" (click)="assignSubjects()">Asignar ahora</button>
+      <button class="warning-action" (click)="assignSubjects()">
+        Asignar ahora
+      </button>
     </div>
   </div>
 
@@ -18,8 +30,8 @@
   <header class="dashboard-header animate-fade-in">
     <div class="logo">
       <img
-        src="assets/img/logo-camera.png"
-        alt="Escuela de Negocios Campus Cámara"
+        [src]="brandingService.appLogo$ | async"
+        [alt]="brandingService.appName$ | async"
         class="logo-img"
       />
     </div>
@@ -314,7 +326,7 @@
         </div>
 
         <div class="date-center">
-          {{ game.fechaProgramada | date : "dd/MM/yyyy HH:mm" }}
+          {{ game.fechaProgramada | date: "dd/MM/yyyy HH:mm" }}
         </div>
 
         <div class="actions-buttons">
@@ -512,7 +524,7 @@
                     [class.high]="row.percentage >= 70"
                     [class.low]="row.percentage < 50"
                   >
-                    {{ row.percentage | number : "1.0-1" }}%
+                    {{ row.percentage | number: "1.0-1" }}%
                   </span>
                 </td>
                 <td class="col-action">

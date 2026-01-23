@@ -5,6 +5,7 @@ import { DashboardService } from '../../services/dashboard.service';
 import { ScheduledGame, QuizResult, SubjectProgress } from '../../models/dashboard.models';
 import { AlertService } from '../../../shared/services/alert.service';
 import { environment } from '../../../../environments/environment';
+import { BrandingService } from 'src/app/services/branding.service';
 
 @Component({
   selector: 'app-student-dashboard',
@@ -44,7 +45,8 @@ export class StudentDashboardComponent implements OnInit {
     private authService: AuthService,
     private dashboardService: DashboardService,
     private router: Router,
-    private alertService: AlertService
+    private alertService: AlertService,
+    public brandingService: BrandingService
   ) {}
 
   ngOnInit(): void {
@@ -89,7 +91,7 @@ export class StudentDashboardComponent implements OnInit {
 
     // Cargar cursos disponibles
     this.authService.getConstants().subscribe({
-      next: (res) => {
+      next: (res: any) => {
         if (res.ok && res.constants && res.constants.CURSOS) {
           // CURSOS ahora es un array de objetos {_id, nombre, codigo}
           this.allCourses = res.constants.CURSOS || [];
@@ -109,13 +111,13 @@ export class StudentDashboardComponent implements OnInit {
   loadDashboardData(idAlumno: string): void {
     this.isLoading = true;
     
-    this.dashboardService.getScheduledGames(idAlumno).subscribe(games => {
+    this.dashboardService.getScheduledGames(idAlumno).subscribe((games: any[]) => {
       console.log('[StudentDashboard] Partidas recibidas:', games);
       console.log('[StudentDashboard] Curso actual:', this.currentCourse, this.currentCourseName);
       
       // El backend ya filtra por curso, pero hacemos doble check por seguridad
       // Comparamos por nombre del curso ya que el backend devuelve nombres
-      this.scheduledGames = games.filter(g => {
+      this.scheduledGames = games.filter((g: any) => {
         const gameCourse = (g.curso || g.idCuestionario?.curso || '').toLowerCase().trim();
         const studentCourse = (this.currentCourseName || '').toLowerCase().trim();
         
@@ -135,7 +137,7 @@ export class StudentDashboardComponent implements OnInit {
       this.isLoading = false;
     });
 
-    this.dashboardService.getResultsHistory(idAlumno).subscribe(history => {
+    this.dashboardService.getResultsHistory(idAlumno).subscribe((history: any[]) => {
       this.resultsHistory = history;
       this.subjectProgress = this.dashboardService.getSubjectProgress(history);
     });
@@ -195,7 +197,7 @@ export class StudentDashboardComponent implements OnInit {
     
     this.isDownloadingPDF = true;
     this.dashboardService.downloadReportPDF(this.selectedGameId).subscribe({
-      next: (blob) => {
+      next: (blob: any) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -206,7 +208,7 @@ export class StudentDashboardComponent implements OnInit {
         window.URL.revokeObjectURL(url);
         this.isDownloadingPDF = false;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error descargando PDF:', err);
         alert('Error al generar el PDF. Por favor, inténtalo de nuevo.');
         this.isDownloadingPDF = false;
@@ -233,13 +235,13 @@ export class StudentDashboardComponent implements OnInit {
     if (!user) return;
 
     this.authService.uploadFotoPerfil(user._id, file).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         if (res.ok) {
           this.userProfileImg = `${this.serverUrl}/${res.fotoPerfil}`;
           this.alertService.success('¡Listo!', 'Tu foto de perfil ha sido actualizada.');
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error subiendo foto:', err);
         this.alertService.error('Error', err.error?.mensaje || 'No se pudo subir la imagen.');
       }
@@ -287,7 +289,7 @@ export class StudentDashboardComponent implements OnInit {
 
     this.isUpdatingCourse = true;
     this.authService.updateUsuario(user._id, { curso: this.selectedCourse }).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.isUpdatingCourse = false;
         if (res.ok) {
           this.currentCourse = this.selectedCourse;
@@ -300,7 +302,7 @@ export class StudentDashboardComponent implements OnInit {
           this.loadDashboardData(user.idPortal);
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isUpdatingCourse = false;
         console.error('Error actualizando curso:', err);
         this.alertService.error('Error', 'No se pudo actualizar el curso.');

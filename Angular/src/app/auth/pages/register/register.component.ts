@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { BrandingService } from 'src/app/services/branding.service';
 
 @Component({
   selector: 'app-register',
@@ -15,6 +16,8 @@ export class RegisterComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   currentStep = 1;
+  showTermsModal = false;
+  selectedDocument = '';
 
   centros: { _id: string, nombre: string, codigo: string }[] = [];
   cursos: { _id: string, nombre: string, codigo: string }[] = [];
@@ -22,7 +25,8 @@ export class RegisterComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    public brandingService: BrandingService
   ) {}
 
   ngOnInit(): void {
@@ -201,5 +205,21 @@ export class RegisterComponent implements OnInit {
     } else {
       this.router.navigate(['/dashboard/alumno']);
     }
+  }
+
+  /**
+   * Abre el modal de términos y condiciones
+   */
+  openTermsModal(documentType: string): void {
+    this.selectedDocument = documentType;
+    this.showTermsModal = true;
+  }
+
+  /**
+   * Cierra el modal de términos y condiciones
+   */
+  closeTermsModal(): void {
+    this.showTermsModal = false;
+    this.selectedDocument = '';
   }
 }

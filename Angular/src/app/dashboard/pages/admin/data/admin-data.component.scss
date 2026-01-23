@@ -45,11 +45,55 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
 
         h2 {
           margin: 0;
           color: #1e293b;
           font-size: 1.5rem;
+        }
+
+        .filter-toolbar {
+          display: flex;
+          gap: 15px;
+          flex: 1;
+          margin: 0 20px;
+          align-items: center;
+
+          .search-box, .select-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+
+            i {
+              position: absolute;
+              left: 12px;
+              color: #94a3b8;
+              font-size: 0.9rem;
+            }
+
+            input, select {
+              padding: 8px 12px 8px 35px;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              font-size: 0.9rem;
+              background: #f8fafc;
+              transition: all 0.2s;
+              min-width: 180px;
+
+              &:focus {
+                outline: none;
+                border-color: #4361ee;
+                background: white;
+                box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.05);
+              }
+            }
+          }
+
+          .select-box select {
+            cursor: pointer;
+          }
         }
 
         .btn-primary {

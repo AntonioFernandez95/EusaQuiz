@@ -4,6 +4,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { AlertService } from '../../../shared/services/alert.service';
 import { environment } from '../../../../environments/environment';
+import { BrandingService } from 'src/app/services/branding.service';
 
 @Component({
   selector: 'app-professor-dashboard',
@@ -47,7 +48,8 @@ export class ProfessorDashboardComponent implements OnInit {
     private authService: AuthService,
     private dashboardService: DashboardService,
     private router: Router,
-    private alertService: AlertService
+    private alertService: AlertService,
+    public brandingService: BrandingService
   ) {}
 
   ngOnInit(): void {

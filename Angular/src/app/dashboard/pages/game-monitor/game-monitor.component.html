@@ -2,7 +2,11 @@
   <!-- Header -->
   <header class="dashboard-header animate-fade-in">
     <div class="logo" (click)="goBack()">
-      <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
+      <img
+        [src]="brandingService.appLogo$ | async"
+        [alt]="brandingService.appName$ | async"
+        class="logo-img"
+      />
     </div>
 
     <div class="page-title-center">Detalles Partida</div>

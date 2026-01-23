@@ -9,6 +9,7 @@ const { Xslt, XmlParser } = require('xslt-processor');
 const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
+const Ajustes = require('../models/ajustes');
 
 /**
  * Escapa caracteres especiales para XML
@@ -53,6 +54,9 @@ async function generarXMLPartida(idPartida, idSolicitante = null) {
   const preguntas = await Pregunta.find({ idCuestionario: partida.idCuestionario }).sort({ ordenPregunta: 1 });
   const participaciones = await Participacion.find({ idPartida: partida._id });
 
+  // Obtener Ajustes de Branding
+  const ajustes = await Ajustes.findOne() || { nombreApp: 'CampusQuiz' };
+
   // Construir XML
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
   xml += '<reporte>\n';
@@ -60,6 +64,11 @@ async function generarXMLPartida(idPartida, idSolicitante = null) {
   if (idSolicitante) {
     xml += `  <idSolicitante>${escapeXml(idSolicitante)}</idSolicitante>\n`;
   }
+
+  // Branding centralizado
+  xml += '  <branding>\n';
+  xml += `    <nombreApp>${escapeXml(ajustes.nombreApp)}</nombreApp>\n`;
+  xml += '  </branding>\n';
 
   // Metadatos de la partida
   xml += '  <partida>\n';
@@ -85,7 +94,7 @@ async function generarXMLPartida(idPartida, idSolicitante = null) {
     let aciertosCalculados = 0;
     let fallosCalculados = 0;
     let sinResponderCalculados = 0;
-    
+
     if (participacionJugador) {
       preguntas.forEach(pregunta => {
         const resp = participacionJugador.respuestas.find(r => r.idPregunta.toString() === pregunta._id.toString());
@@ -101,7 +110,7 @@ async function generarXMLPartida(idPartida, idSolicitante = null) {
       // Si no hay participación, todas son sin responder
       sinResponderCalculados = preguntas.length;
     }
-    
+
     xml += '    <jugador>\n';
     xml += `      <posicion>${idx + 1}</posicion>\n`;
     xml += `      <idAlumno>${escapeXml(jugador.idAlumno)}</idAlumno>\n`;
@@ -162,12 +171,12 @@ async function generarXMLPartida(idPartida, idSolicitante = null) {
   // Si hay un solicitante, añadir sus respuestas detalladas
   if (idSolicitante) {
     const participacionSolo = participaciones.find(p => p.idAlumno === idSolicitante);
-    
+
     if (participacionSolo) {
       xml += '  <respuestasSolicitante>\n';
       preguntas.forEach((pregunta, idx) => {
         const res = participacionSolo.respuestas.find(r => r.idPregunta.toString() === pregunta._id.toString());
-        
+
         xml += '    <respuesta>\n';
         xml += `      <numero>${idx + 1}</numero>\n`;
         xml += `      <textoPregunta>${escapeXml(pregunta.textoPregunta)}</textoPregunta>\n`;
@@ -214,14 +223,30 @@ async function transformarXSLT(xmlString) {
 
   let htmlResult = await xslt.xsltProcess(xmlDoc, xsltDoc);
   let htmlString = htmlResult.toString();
-  
-  // Insertar logo en base64
-  const logoPath = path.join(__dirname, '../templates/logo-base64.txt');
-  if (fs.existsSync(logoPath)) {
-    const logoBase64 = fs.readFileSync(logoPath, 'utf-8').trim();
-    if (htmlString.includes('LOGO_BASE64_PLACEHOLDER')) {
-      htmlString = htmlString.replace('LOGO_BASE64_PLACEHOLDER', logoBase64);
+
+  // Resolve Branding Logo Dynamic
+  let logoBase64 = '';
+  const ajustes = await Ajustes.findOne();
+
+  if (ajustes && ajustes.logoAppUrl && ajustes.logoAppUrl.startsWith('uploads/')) {
+    // Es un logo personalizado
+    const customLogoPath = path.join(__dirname, '../../', ajustes.logoAppUrl);
+    if (fs.existsSync(customLogoPath)) {
+      const bitmap = fs.readFileSync(customLogoPath);
+      logoBase64 = Buffer.from(bitmap).toString('base64');
     }
+  }
+
+  // Fallback to default logo if no custom or file not found
+  if (!logoBase64) {
+    const logoPath = path.join(__dirname, '../templates/logo-base64.txt');
+    if (fs.existsSync(logoPath)) {
+      logoBase64 = fs.readFileSync(logoPath, 'utf-8').trim();
+    }
+  }
+
+  if (htmlString.includes('LOGO_BASE64_PLACEHOLDER')) {
+    htmlString = htmlString.replace('LOGO_BASE64_PLACEHOLDER', logoBase64);
   }
 
   return htmlString;

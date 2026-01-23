@@ -31,7 +31,7 @@ const seedAdmin = async () => {
             email: adminEmail,
             password: hashedPassword,
             rol: ROLES.ADMIN,
-            centro: CENTROS.EUSA,
+            centro: 'NEGOCIOS',
             curso: null // El admin no suele tener curso asignado
         });
 

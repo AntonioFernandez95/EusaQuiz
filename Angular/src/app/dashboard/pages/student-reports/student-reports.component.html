@@ -2,7 +2,11 @@
   <!-- Header -->
   <header class="dashboard-header animate-fade-in">
     <div class="logo" (click)="goBack()">
-      <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
+      <img
+        [src]="brandingService.appLogo$ | async"
+        [alt]="brandingService.appName$ | async"
+        class="logo-img"
+      />
     </div>
     <div class="page-title-center">Análisis y Reportes</div>
     <div class="user-profile">
@@ -96,10 +100,7 @@
       <h3 class="section-label">Preguntas incorrectas</h3>
       <div class="report-card red">
         <div class="failed-questions-list">
-          <div
-            *ngFor="let q of failedQuestions"
-            class="failed-item"
-          >
+          <div *ngFor="let q of failedQuestions" class="failed-item">
             <strong>P{{ q.questionIndex }}:</strong> {{ q.textoPregunta }}
           </div>
         </div>
@@ -111,10 +112,7 @@
       <h3 class="section-label">Preguntas sin responder</h3>
       <div class="report-card gray">
         <div class="failed-questions-list">
-          <div
-            *ngFor="let q of unansweredQuestions"
-            class="unanswered-item"
-          >
+          <div *ngFor="let q of unansweredQuestions" class="unanswered-item">
             <strong>P{{ q.questionIndex }}:</strong> {{ q.textoPregunta }}
           </div>
         </div>
@@ -122,11 +120,21 @@
     </section>
 
     <!-- Mensaje si no hubo errores -->
-    <section class="report-section" *ngIf="failedQuestions.length === 0 && unansweredQuestions.length === 0 && selectedGameDetails">
+    <section
+      class="report-section"
+      *ngIf="
+        failedQuestions.length === 0 &&
+        unansweredQuestions.length === 0 &&
+        selectedGameDetails
+      "
+    >
       <h3 class="section-label">Resultado</h3>
       <div class="report-card green">
         <div class="card-main">
-          <strong>¡Increíble! Has respondido correctamente todas las preguntas.</strong>
+          <strong
+            >¡Increíble! Has respondido correctamente todas las
+            preguntas.</strong
+          >
         </div>
       </div>
     </section>

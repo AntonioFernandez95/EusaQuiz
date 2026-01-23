@@ -12,8 +12,8 @@
     <div class="auth-header">
       <div class="logo">
         <img
-          src="assets/img/logo-camera.png"
-          alt="Escuela de Negocios Campus Cámara"
+          [src]="brandingService.appLogo$ | async"
+          [alt]="brandingService.appName$ | async"
           class="logo-img"
         />
       </div>
@@ -319,7 +319,10 @@
             autocomplete="new-password"
           />
           <div
-            *ngIf="registerForm.get('confirmPassword')?.touched && registerForm.errors?.['passwordMismatch']"
+            *ngIf="
+              registerForm.get('confirmPassword')?.touched &&
+              registerForm.errors?.['passwordMismatch']
+            "
             class="error-message"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -335,8 +338,18 @@
           <label class="checkbox-label">
             <input type="checkbox" formControlName="acceptTerms" />
             <span class="checkbox-custom"></span>
-            Acepto los <a href="#" target="_blank">términos y condiciones</a> y
-            la <a href="#" target="_blank">política de privacidad</a>
+            Acepto los
+            <a
+              href="#"
+              (click)="$event.preventDefault(); openTermsModal('terms')"
+              >términos y condiciones</a
+            >
+            y la
+            <a
+              href="#"
+              (click)="$event.preventDefault(); openTermsModal('privacy')"
+              >política de privacidad</a
+            >
           </label>
         </div>
 
@@ -376,6 +389,141 @@
       <p>
         ¿Ya tienes una cuenta? <a routerLink="/auth/login">Inicia sesión</a>
       </p>
+    </div>
+  </div>
+
+  <!-- Modal de Términos y Condiciones -->
+  <div
+    class="modal-overlay animate-fade-in"
+    *ngIf="showTermsModal"
+    (click)="closeTermsModal()"
+  >
+    <div
+      class="modal-content animate-slide-up"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="modal-header">
+        <h3 class="modal-title">
+          {{
+            selectedDocument === "terms"
+              ? "Términos y Condiciones"
+              : "Política de Privacidad"
+          }}
+        </h3>
+        <button class="close-btn" (click)="closeTermsModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="selectedDocument === 'terms'" class="terms-content">
+          <h4>Términos y Condiciones de Uso</h4>
+          <p><strong>1. Aceptación de los Términos</strong></p>
+          <p>
+            Al acceder y utilizar CampusQuiz, aceptas cumplir con estos términos
+            y condiciones de uso. Si no estás de acuerdo con alguna parte de
+            estos términos, no debes utilizar la plataforma.
+          </p>
+
+          <p><strong>2. Descripción del Servicio</strong></p>
+          <p>
+            CampusQuiz es una plataforma educativa que permite la creación y
+            realización de cuestionarios interactivos para estudiantes y
+            profesores universitarios.
+          </p>
+
+          <p><strong>3. Uso Aceptable</strong></p>
+          <p>
+            Te comprometes a utilizar la plataforma únicamente para fines
+            educativos y académicos. Está prohibido:
+          </p>
+          <ul>
+            <li>
+              Utilizar la plataforma para actividades ilegales o no autorizadas
+            </li>
+            <li>Intentar acceder a sistemas o datos no autorizados</li>
+            <li>
+              Distribuir contenido ofensivo, discriminatorio o inapropiado
+            </li>
+            <li>Compartir credenciales de acceso con terceros</li>
+          </ul>
+
+          <p><strong>4. Propiedad Intelectual</strong></p>
+          <p>
+            Todo el contenido de CampusQuiz, incluyendo software, diseño, texto
+            y materiales, está protegido por derechos de autor y otras leyes de
+            propiedad intelectual.
+          </p>
+
+          <p><strong>5. Responsabilidades del Usuario</strong></p>
+          <p>
+            Eres responsable de mantener la confidencialidad de tus credenciales
+            de acceso y de todas las actividades que ocurran bajo tu cuenta.
+          </p>
+
+          <p><strong>6. Modificaciones</strong></p>
+          <p>
+            Nos reservamos el derecho de modificar estos términos en cualquier
+            momento. Los cambios serán efectivos inmediatamente después de su
+            publicación en la plataforma.
+          </p>
+        </div>
+
+        <div *ngIf="selectedDocument === 'privacy'" class="terms-content">
+          <h4>Política de Privacidad</h4>
+          <p><strong>1. Información que Recopilamos</strong></p>
+          <p>
+            Recopilamos información personal que nos proporcionas directamente,
+            como nombre, correo electrónico, rol académico y datos
+            institucionales necesarios para el funcionamiento de la plataforma.
+          </p>
+
+          <p><strong>2. Uso de la Información</strong></p>
+          <p>Utilizamos tu información para:</p>
+          <ul>
+            <li>Proporcionar y mantener el servicio educativo</li>
+            <li>Verificar tu identidad y rol académico</li>
+            <li>Generar reportes de actividad educativa</li>
+            <li>Comunicar información importante sobre la plataforma</li>
+          </ul>
+
+          <p><strong>3. Protección de Datos</strong></p>
+          <p>
+            Implementamos medidas de seguridad técnicas y administrativas para
+            proteger tu información personal contra acceso no autorizado,
+            alteración, divulgación o destrucción.
+          </p>
+
+          <p><strong>4. Compartir Información</strong></p>
+          <p>
+            No vendemos, alquilamos ni compartimos tu información personal con
+            terceros, excepto cuando sea necesario para proporcionar el servicio
+            o cuando lo exija la ley.
+          </p>
+
+          <p><strong>5. Retención de Datos</strong></p>
+          <p>
+            Mantenemos tu información mientras mantengas una cuenta activa en la
+            plataforma. Puedes solicitar la eliminación de tus datos
+            contactándonos.
+          </p>
+
+          <p><strong>6. Tus Derechos</strong></p>
+          <p>
+            Tienes derecho a acceder, rectificar, actualizar o eliminar tu
+            información personal. Para ejercer estos derechos, contacta al
+            administrador de la plataforma.
+          </p>
+
+          <p><strong>7. Cookies y Tecnologías Similares</strong></p>
+          <p>
+            Utilizamos cookies y tecnologías similares para mejorar tu
+            experiencia en la plataforma y analizar el uso del servicio.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="closeTermsModal()">
+          Entendido
+        </button>
+      </div>
     </div>
   </div>
 </div>

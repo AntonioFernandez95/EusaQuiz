@@ -6,7 +6,7 @@
     <html lang="es">
       <head>
         <meta charset="UTF-8"/>
-        <title>Informe de Evaluación - Campus Cámara FP Sevilla</title>
+        <title>Informe de Evaluación - <xsl:value-of select="/reporte/branding/nombreApp"/></title>
         <style>
           @page {
             size: A4;
@@ -352,8 +352,8 @@
             <div class="logo-section">
               <img class="logo-img" src="data:image/png;base64,LOGO_BASE64_PLACEHOLDER" alt="Logo CampusQuiz"/>
               <div class="institucion-info">
-                <h1>Campus Cámara FP</h1>
-                <div class="subtitulo">Centro adscrito a la Universidad de Sevilla</div>
+                <h1><xsl:value-of select="/reporte/branding/nombreApp"/></h1>
+                <div class="subtitulo">Plataforma de Evaluación Interactiva</div>
               </div>
             </div>
             <div class="documento-info">
@@ -370,7 +370,7 @@
           <!-- Datos del Examen -->
           <div class="examen-header">
             <div class="examen-titulo"><xsl:value-of select="/reporte/partida/titulo"/></div>
-            <div class="examen-asignatura">Evaluación mediante plataforma CampusQuiz</div>
+            <div class="examen-asignatura">Evaluación mediante plataforma <xsl:value-of select="/reporte/branding/nombreApp"/></div>
           </div>
           
           <!-- Metadatos -->
@@ -644,7 +644,7 @@
               Los datos reflejan el estado al momento de la evaluación.
             </div>
             <div class="powered">
-              CampusQuiz © 2026 - Centro De Formación Profesional
+              <xsl:value-of select="/reporte/branding/nombreApp"/> © 2026
             </div>
           </div>
         </div>

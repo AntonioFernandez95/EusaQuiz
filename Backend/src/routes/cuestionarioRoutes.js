@@ -158,7 +158,7 @@ router.get('/:id', controller.obtenerPorId);
  *             descripcion: "Preguntas sobre Mongoose y Node"
  *             asignatura: "Programación"
  *             curso: "1 DAM"
- *             centro: "EUSA"
+ *             centro: "NEGOCIOS"
  *             idProfesor: "PROFE_01"
  *             origen: "manual"
  *     responses:

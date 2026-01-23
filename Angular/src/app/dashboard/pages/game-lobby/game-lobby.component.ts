@@ -6,6 +6,7 @@ import { AlertService } from '../../../shared/services/alert.service';
 import { SocketService } from '../../../services/socket.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { BrandingService } from 'src/app/services/branding.service';
 
 interface PlayerLobby {
     idAlumno: string;
@@ -43,7 +44,8 @@ export class GameLobbyComponent implements OnInit, OnDestroy {
     private dashboardService: DashboardService,
     private authService: AuthService,
     private socketService: SocketService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    public brandingService: BrandingService
   ) {}
 
   ngOnInit(): void {

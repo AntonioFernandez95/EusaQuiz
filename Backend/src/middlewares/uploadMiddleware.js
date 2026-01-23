@@ -5,7 +5,13 @@ const fs = require('fs');
 // Configuración de almacenamiento temporal
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = 'uploads/profiles';
+        let dir = 'uploads/profiles';
+
+        // Si el archivo es para branding (logo)
+        if (file.fieldname === 'logo') {
+            dir = 'uploads/branding';
+        }
+
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
