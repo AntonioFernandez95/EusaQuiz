@@ -51,8 +51,14 @@ export class CreateGameComponent implements OnInit {
   availableQuizzes: any[] = [];
   qualificationModes: string[] = [];
 
+  // RAW Data for filtering
+  private allConfigSubjects: { name: string, course: string }[] = [];
+  private configCursos: any[] = [];
+  private alertsShown = false;
+
   // Control de asignaturas del profesor
   userAssignedSubjects: string[] = [];
+  userCourse: string = '';
   hasNoSubjectsAssigned: boolean = false;
   userRole: string = '';
 
@@ -97,13 +103,11 @@ export class CreateGameComponent implements OnInit {
         ).filter(s => !!s) as string[];
         this.hasNoSubjectsAssigned = this.userAssignedSubjects.length === 0;
 
-        // Mostrar notificacion si no tiene asignaturas asignadas (solo para profesores)
-        if (user.rol === 'profesor' && this.hasNoSubjectsAssigned) {
-          this.alertService.warning(
-            'Sin asignaturas asignadas',
-            'Debes asignarte asignaturas antes de crear una partida. Ve a "Asignar Módulos" en tu dashboard.'
-          );
-        }
+        // Guardar curso del profesor para filtrado
+        const cursoObj = user.curso as any;
+        this.userCourse = (cursoObj && typeof cursoObj === 'object') ? cursoObj.nombre : (cursoObj || '');
+        
+        this.refreshAvailableSubjects();
         
         this.loadQuizzes();
         // Cargamos todos inicialmente o según lo que haya
@@ -127,18 +131,56 @@ export class CreateGameComponent implements OnInit {
         const daw2 = (config.asignaturas.DAW2 || []).map((s: string) => ({ name: s, course: '2 DAW' }));
         const asir1 = (config.asignaturas.ASIR1 || []).map((s: string) => ({ name: s, course: '1 ASIR' }));
         const asir2 = (config.asignaturas.ASIR2 || []).map((s: string) => ({ name: s, course: '2 ASIR' }));
-        const allSubjects = [...dam1, ...dam2, ...daw1, ...daw2, ...asir1, ...asir2];
         
-        // Filtrar solo las asignaturas que el profesor tiene asignadas
-        if (this.userAssignedSubjects.length > 0) {
-          this.availableSubjects = allSubjects.filter(s => this.userAssignedSubjects.includes(s.name));
-        } else {
-          this.availableSubjects = []; // Sin asignaturas si no tiene ninguna asignada
-        }
-        
+        this.allConfigSubjects = [...dam1, ...dam2, ...daw1, ...daw2, ...asir1, ...asir2];
+        this.configCursos = config.cursos || [];
         this.qualificationModes = config.modosCalificacion || ['velocidad_precision'];
+
+        this.refreshAvailableSubjects();
       }
     });
+  }
+
+  refreshAvailableSubjects(): void {
+    // 1. Si no tenemos los datos del config o del usuario aún, salir
+    if (this.allConfigSubjects.length === 0 || !this.userId) return;
+
+    // 2. Intentar resolver el nombre del curso si this.userCourse parece un ID
+    if (this.userCourse && /^[0-9a-fA-F]{24}$/.test(this.userCourse)) {
+      const cursoEncontrado = this.configCursos.find(c => c._id === this.userCourse);
+      if (cursoEncontrado) {
+        this.userCourse = cursoEncontrado.nombre;
+        console.log('[CreateGame] Curso resuelto por ID:', this.userCourse);
+      }
+    }
+
+    // 3. Filtrar por asignaturas asignadas al profesor Y por su curso actual
+    if (this.userAssignedSubjects.length > 0) {
+      this.availableSubjects = this.allConfigSubjects.filter(s => 
+        this.userAssignedSubjects.includes(s.name) && 
+        (!this.userCourse || s.course === this.userCourse)
+      );
+    } else {
+      this.availableSubjects = [];
+    }
+
+    // 4. Lógica de Alertas (Solo si es profesor y no se han mostrado)
+    if (this.userRole === 'profesor' && !this.alertsShown && !this.isEditing) {
+      if (this.hasNoSubjectsAssigned) {
+        this.alertService.warning(
+          'Sin asignaturas asignadas',
+          'Debes asignarte asignaturas antes de crear una partida. Ve a "Asignar Módulos" en tu dashboard.'
+        );
+        this.alertsShown = true;
+      } else if (this.availableSubjects.length === 0 && this.userAssignedSubjects.length > 0) {
+        // Tiene asignaturas pero ninguna coincide con su curso
+        this.alertService.warning(
+          'Sin asignaturas para el curso actual',
+          `Tienes asignaturas asignadas pero ninguna pertenece a tu curso actual: "${this.userCourse || 'Sin curso'}".`
+        );
+        this.alertsShown = true;
+      }
+    }
   }
 
   loadGameData(): void {

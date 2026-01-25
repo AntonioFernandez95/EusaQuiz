@@ -32,6 +32,10 @@ export class StudentDashboardComponent implements OnInit {
   selectedGameId: string = '';
   expandedIndex: number = -1;
   selectedGameName: string = '';
+
+  // Modal Historial Completo
+  showFullHistoryModal: boolean = false;
+
   // Modal Curso
   showCourseModal: boolean = false;
   allCourses: { _id: string, nombre: string, codigo: string }[] = [];
@@ -141,6 +145,18 @@ export class StudentDashboardComponent implements OnInit {
       this.resultsHistory = history;
       this.subjectProgress = this.dashboardService.getSubjectProgress(history);
     });
+  }
+
+  get limitedResultsHistory(): QuizResult[] {
+    return this.resultsHistory.slice(0, 5);
+  }
+
+  openFullHistoryModal(): void {
+    this.showFullHistoryModal = true;
+  }
+
+  closeFullHistoryModal(): void {
+    this.showFullHistoryModal = false;
   }
 
   isJoinable(scheduledDate: string | undefined): boolean {
