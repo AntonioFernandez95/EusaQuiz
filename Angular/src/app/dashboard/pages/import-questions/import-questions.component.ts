@@ -160,6 +160,72 @@ export class ImportQuestionsComponent implements OnInit {
     reader.readAsText(file);
   }
 
+  // ========== Agregar/Eliminar Preguntas ==========
+  showAddModal: boolean = false;
+  newQuestion: QuestionImport = {
+    pregunta: '',
+    opciones: ['', '', '', ''],
+    respuesta_correcta: '',
+    temas: [],
+    dificultad: 1
+  };
+
+  removeQuestion(index: number): void {
+    if (confirm('¿Estás seguro de que quieres eliminar esta pregunta de la lista?')) {
+      this.questions.splice(index, 1);
+      // Actualizar metadata si existe
+      if (this.fileMetadata) {
+        this.fileMetadata.questionsCount = this.questions.length;
+      }
+    }
+  }
+
+  openAddModal(): void {
+    this.newQuestion = {
+      pregunta: '',
+      opciones: ['', '', '', ''],
+      respuesta_correcta: '',
+      temas: [],
+      dificultad: 1
+    };
+    this.showAddModal = true;
+  }
+
+  closeAddModal(): void {
+    this.showAddModal = false;
+  }
+
+  addQuestion(): void {
+    if (!this.newQuestion.pregunta.trim()) {
+      this.alertService.warning('Pregunta requerida', 'Debes escribir el texto de la pregunta.');
+      return;
+    }
+
+    const validOptions = this.newQuestion.opciones.filter(o => o.trim() !== '');
+    if (validOptions.length < 2) {
+      this.alertService.warning('Opciones requeridas', 'Debes escribir al menos 2 opciones de respuesta.');
+      return;
+    }
+
+    if (!this.newQuestion.respuesta_correcta.trim()) {
+      this.alertService.warning('Respuesta requerida', 'Debes indicar cual es la respuesta correcta.');
+      return;
+    }
+
+    this.questions.push({
+      ...this.newQuestion,
+      opciones: validOptions,
+      isEditing: false
+    });
+
+    if (this.fileMetadata) {
+      this.fileMetadata.questionsCount = this.questions.length;
+    }
+
+    this.closeAddModal();
+    this.alertService.success('Agregada', 'Pregunta agregada a la lista.');
+  }
+
   toggleGlobalEdit(): void {
     this.isGlobalEditing = !this.isGlobalEditing;
   }
@@ -168,6 +234,12 @@ export class ImportQuestionsComponent implements OnInit {
     if (!this.examName) {
         this.alertService.warning('Nombre requerido', 'Por favor, asigna un nombre al cuestionario para su identificación.');
         return;
+    }
+
+    // Validar que hay preguntas
+    if (this.questions.length === 0) {
+      this.alertService.warning('Sin preguntas', 'La lista de preguntas está vacía. Agrega al menos una pregunta.');
+      return;
     }
 
     // Validar que tenemos el centro del usuario

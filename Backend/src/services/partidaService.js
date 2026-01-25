@@ -910,19 +910,48 @@ async function obtenerDetallePartida(id) {
 
     // Calcular el total de alumnos en el curso para el contador de capacidad
     let totalAlumnosCurso = 0;
-    if (partida.curso) {
-      console.log('[obtenerDetallePartida] Buscando curso:', partida.curso);
-      const cursoDoc = await Curso.findOne({
-        $or: [{ codigo: partida.curso }, { nombre: partida.curso }]
-      }).lean();
-      console.log('[obtenerDetallePartida] Curso encontrado:', cursoDoc?._id || 'null');
-      if (cursoDoc) {
-        totalAlumnosCurso = await Usuario.countDocuments({
-          rol: tipos.ROLES.ALUMNO,
-          curso: cursoDoc._id
-        });
-        console.log('[obtenerDetallePartida] Total alumnos curso:', totalAlumnosCurso);
+
+    // Obtener ID del curso para el conteo de alumnos
+    let cursoIdParaConteo = null;
+
+    // 1. Prioridad: Usar el curso del cuestionario si ya lo tenemos como objeto/ID
+    if (cuestionario && cuestionario.curso) {
+      // cuestionario.curso ya fue procesado arriba y puede ser un objeto con _id o un string
+      if (cuestionario.curso._id) {
+        cursoIdParaConteo = cuestionario.curso._id;
       }
+    }
+
+    // 2. Si no hay ID o queremos asegurar, buscar por el nombre de curso de la partida
+    // Pero filtrando por el centro del profesor para evitar resultados de otros centros
+    if (!cursoIdParaConteo && partida.curso) {
+      console.log('[obtenerDetallePartida] Buscando curso por nombre/código:', partida.curso);
+
+      // Obtener el centro del profesor para filtrar
+      const profesor = await Usuario.findOne({ idPortal: partida.idProfesor }).select('centro').lean();
+
+      const filtroCurso = {
+        $or: [{ codigo: partida.curso }, { nombre: partida.curso }]
+      };
+
+      if (profesor && profesor.centro) {
+        filtroCurso.centro = profesor.centro;
+      }
+
+      const cursoDoc = await Curso.findOne(filtroCurso).lean();
+      if (cursoDoc) {
+        cursoIdParaConteo = cursoDoc._id;
+      }
+    }
+
+    if (cursoIdParaConteo) {
+      // Contar solo alumnos Activos del curso seleccionado
+      totalAlumnosCurso = await Usuario.countDocuments({
+        rol: tipos.ROLES.ALUMNO,
+        curso: cursoIdParaConteo,
+        activo: true
+      });
+      console.log('[obtenerDetallePartida] Total alumnos activos curso:', totalAlumnosCurso);
     }
 
     // Extraer nombres de los objetos poblados del cuestionario

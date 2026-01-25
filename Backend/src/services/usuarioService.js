@@ -37,21 +37,23 @@ async function listarUsuarios({ limit = 100, skip = 0, rol, curso } = {}) {
 
   const filter = {};
   if (rol) filter.rol = rol;
-  
+
   // Si viene curso, puede ser un ObjectId o un nombre/código de curso
   if (curso) {
     // Verificar si es un ObjectId válido
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(curso);
-    
+
     if (isObjectId) {
       filter.curso = curso;
     } else {
       // Es un nombre o código de curso, buscar el ObjectId
       if (Curso) {
+        // Nota: Aquí no tenemos el centro del profesor directamente en los argumentos.
+        // Se asume que el nombre/código es único o se buscará el primero encontrado.
         const cursoDoc = await Curso.findOne({
           $or: [{ nombre: curso }, { codigo: curso }]
         }).lean();
-        
+
         if (cursoDoc) {
           filter.curso = cursoDoc._id;
         } else {
@@ -61,6 +63,11 @@ async function listarUsuarios({ limit = 100, skip = 0, rol, curso } = {}) {
         }
       }
     }
+  }
+
+  // Filtrar por activos por defecto si es rol alumno
+  if (rol === 'alumno') {
+    filter.activo = true;
   }
 
   const query = Usuario.find(filter)
@@ -102,38 +109,38 @@ async function crearUsuario(payload = {}) {
 
 async function actualizarUsuario(id, payload = {}) {
   if (!Usuario) throw new Error('Modelo Usuario no encontrado.');
-  
+
   // Si vienen asignaturas como array de strings (nombres), convertirlas a ObjectIds
   if (payload.asignaturas && Array.isArray(payload.asignaturas) && payload.asignaturas.length > 0) {
     // Verificar si son strings (nombres) o ya son ObjectIds
     const primerElemento = payload.asignaturas[0];
-    const sonNombres = typeof primerElemento === 'string' && 
-                       !primerElemento.match(/^[0-9a-fA-F]{24}$/); // No es un ObjectId válido
-    
+    const sonNombres = typeof primerElemento === 'string' &&
+      !primerElemento.match(/^[0-9a-fA-F]{24}$/); // No es un ObjectId válido
+
     if (sonNombres && Asignatura) {
       // Buscar las asignaturas por nombre y obtener sus IDs
       const asignaturasEncontradas = await Asignatura.find({
         nombre: { $in: payload.asignaturas }
       }).select('_id nombre').lean();
-      
+
       // Mapear nombres a IDs
       const asignaturasIds = asignaturasEncontradas.map(a => a._id);
-      
+
       console.log('[usuarioService] Convirtiendo asignaturas:', {
         nombresRecibidos: payload.asignaturas,
         idsEncontrados: asignaturasIds.map(id => id.toString())
       });
-      
+
       payload.asignaturas = asignaturasIds;
     }
   }
-  
+
   const u = await Usuario.findByIdAndUpdate(id, payload, { new: true, runValidators: true })
     .populate('centro', 'nombre codigo')
     .populate('curso', 'nombre codigo')
     .populate('asignaturas', 'nombre')
     .exec();
-  
+
   return u;
 }
 

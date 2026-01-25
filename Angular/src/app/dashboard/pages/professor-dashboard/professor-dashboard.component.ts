@@ -41,6 +41,10 @@ export class ProfessorDashboardComponent implements OnInit {
   expandedIndex: number = -1;
   selectedGameName: string = '';
 
+  // Modales Historial Completo
+  showFullRecentModal: boolean = false;
+  showFullScheduledModal: boolean = false;
+
   // Notificacion de asignaturas pendientes
   showSubjectsWarning: boolean = false;
 
@@ -121,6 +125,30 @@ export class ProfessorDashboardComponent implements OnInit {
       this.filteredScheduledGames = [...this.scheduledGames];
       this.isLoading = false;
     });
+  }
+
+  get limitedRecentGames(): any[] {
+    return this.filteredRecentGames.slice(0, 5);
+  }
+
+  get limitedScheduledGames(): any[] {
+    return this.filteredScheduledGames.slice(0, 5);
+  }
+
+  openFullRecentModal(): void {
+    this.showFullRecentModal = true;
+  }
+
+  closeFullRecentModal(): void {
+    this.showFullRecentModal = false;
+  }
+
+  openFullScheduledModal(): void {
+    this.showFullScheduledModal = true;
+  }
+
+  closeFullScheduledModal(): void {
+    this.showFullScheduledModal = false;
   }
 
   createGame(): void {
