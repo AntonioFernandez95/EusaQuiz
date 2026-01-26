@@ -109,29 +109,50 @@ loadPartida(): void {
     const isPrivate = this.partida.modoAcceso === 'privada';
     
     if (isPrivate) {
-        // En modo privado, cargamos los nombres de los alumnos permitidos
-        // Para simplificar ahora, si no vienen los nombres cargamos los que ya están + placeholders para los permitidos
-        // Pero idealmente el backend debería darnos los nombres de participantesPermitidos
-        this.totalExpected = this.partida.participantesPermitidos?.length || 0;
-        
-        // Inicializamos lista con todos como "no_conectado"
-        // (En una implementación real necesitaríamos los nombres de participantesPermitidos)
-        this.players = (this.partida.participantesPermitidos || []).map((id: string) => {
-            const joined = this.partida.jugadores?.find((j: any) => j.idAlumno === id);
-            return {
-                idAlumno: id,
-                nombre: joined ? joined.nombreAlumno : `Alumno ${id.substring(0,5)}`,
-                status: joined ? 'conectado' : 'no_conectado'
-            };
-        });
+        // En modo privado, usar la lista de alumnos permitidos del backend
+        if (this.partida.alumnosCurso && this.partida.alumnosCurso.length > 0) {
+            this.players = this.partida.alumnosCurso.map((a: any) => {
+                const yaConectado = this.partida.jugadores?.some((j: any) => j.idAlumno === a.idAlumno);
+                return {
+                    idAlumno: a.idAlumno,
+                    nombre: a.nombre,
+                    status: yaConectado ? 'conectado' : 'no_conectado'
+                };
+            });
+            this.totalExpected = this.partida.alumnosCurso.length;
+        } else {
+            // Fallback: usar participantesPermitidos si no hay alumnosCurso
+            this.totalExpected = this.partida.participantesPermitidos?.length || 0;
+            this.players = (this.partida.participantesPermitidos || []).map((id: string) => {
+                const joined = this.partida.jugadores?.find((j: any) => j.idAlumno === id);
+                return {
+                    idAlumno: id,
+                    nombre: joined ? joined.nombreAlumno : `Alumno ${id.substring(0,5)}`,
+                    status: joined ? 'conectado' : 'no_conectado'
+                };
+            });
+        }
     } else {
-        // En modo público, los esperados son los que ya están o el total del curso
-        this.players = (this.partida.jugadores || []).map((j: any) => ({
-            idAlumno: j.idAlumno,
-            nombre: j.nombreAlumno,
-            status: 'conectado'
-        }));
-        this.totalExpected = this.partida.totalAlumnosCurso || Math.max(this.players.length, 1);
+        // En modo público, inicializar con todos los alumnos del curso
+        if (this.partida.alumnosCurso && this.partida.alumnosCurso.length > 0) {
+            this.players = this.partida.alumnosCurso.map((a: any) => {
+                const yaConectado = this.partida.jugadores?.some((j: any) => j.idAlumno === a.idAlumno);
+                return {
+                    idAlumno: a.idAlumno,
+                    nombre: a.nombre,
+                    status: yaConectado ? 'conectado' : 'no_conectado'
+                };
+            });
+            this.totalExpected = this.partida.alumnosCurso.length;
+        } else {
+            // Fallback: solo mostrar conectados si no hay lista de curso
+            this.players = (this.partida.jugadores || []).map((j: any) => ({
+                idAlumno: j.idAlumno,
+                nombre: j.nombreAlumno,
+                status: 'conectado'
+            }));
+            this.totalExpected = this.partida.totalAlumnosCurso || Math.max(this.players.length, 1);
+        }
     }
     
     this.updateStats();
@@ -210,13 +231,8 @@ loadPartida(): void {
       // data: { idAlumno, modo, totalParticipantes }
       const index = this.players.findIndex(p => p.idAlumno === data.idAlumno);
       if (index !== -1) {
-          if (this.partida.modoAcceso === 'privada') {
-              // En privada se queda en la lista pero como "no conectado"
-              this.players[index].status = 'no_conectado';
-          } else {
-              // En pública se elimina directamente
-              this.players.splice(index, 1);
-          }
+          // En ambos modos (privada y pública) se queda en la lista pero como "no conectado"
+          this.players[index].status = 'no_conectado';
       }
       this.updateStats();
   }

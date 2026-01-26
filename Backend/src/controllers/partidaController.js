@@ -86,7 +86,8 @@ exports.actualizarPartida = async (req, res) => {
 
 exports.eliminarPartida = async (req, res) => {
   try {
-    await partidaService.eliminarPartida(req.params.id);
+    const io = req.app.get('socketio');
+    await partidaService.eliminarPartida(req.params.id, io);
     res.json({ ok: true, mensaje: 'Eliminada' });
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });

@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { SocketService } from '../../../services/socket.service';
+import { BrandingService } from '../../../services/branding.service';
 import { Subscription, interval } from 'rxjs';
 import { takeWhile } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
@@ -42,7 +43,8 @@ export class LiveGameComponent implements OnInit, OnDestroy {
     private router: Router,
     private authService: AuthService,
     private dashboardService: DashboardService,
-    private socketService: SocketService
+    private socketService: SocketService,
+    public brandingService: BrandingService
   ) {}
 
   ngOnInit(): void {

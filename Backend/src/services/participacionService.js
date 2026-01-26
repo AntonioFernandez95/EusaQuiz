@@ -276,7 +276,7 @@ async function obtenerHistorialAlumno(idAlumno) {
   return participaciones.map(p => {
     const partida = p.idPartida;
     const cuestionario = partida ? partida.idCuestionario : null;
-    
+
     // Extraer nombres de los objetos poblados del cuestionario
     const cursoNombre = extraerNombre(cuestionario?.curso);
     const asignaturaNombre = extraerNombre(cuestionario?.asignatura);
@@ -313,12 +313,15 @@ async function obtenerHistorialAlumno(idAlumno) {
  * Calcula el porcentaje de aciertos
  */
 function calculatePercentage(participacion, cuestionario) {
-  const totalPreguntas = (cuestionario && cuestionario.numPreguntas > 0) 
-    ? cuestionario.numPreguntas 
+  const totalPreguntas = (cuestionario && cuestionario.numPreguntas > 0)
+    ? cuestionario.numPreguntas
     : (participacion.respuestas?.length || 0);
-  
+
   if (totalPreguntas === 0) return 0;
-  return Math.round((participacion.aciertos || 0) / totalPreguntas * 100);
+
+  // Cap at 100% as safety against questionnaire edits (deleting questions after play)
+  const rawPercentage = Math.round((participacion.aciertos || 0) / totalPreguntas * 100);
+  return Math.min(rawPercentage, 100);
 }
 
 module.exports = {

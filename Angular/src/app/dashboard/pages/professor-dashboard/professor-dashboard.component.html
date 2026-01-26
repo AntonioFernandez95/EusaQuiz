@@ -156,20 +156,23 @@
     </button>
   </div>
 
-  <!-- Partidas Programadas -->
+  <!-- Partidas Activas (En Vivo / Exámenes Abiertos) -->
   <section
-    class="dashboard-section animate-slide-up"
-    style="animation-delay: 0.1s"
+    class="dashboard-section active-games-section animate-slide-up"
+    style="animation-delay: 0.05s"
   >
     <div class="section-header-row">
-      <h2 class="section-title">Partidas programadas</h2>
+      <h2 class="section-title">
+        <span class="pulse-dot"></span>
+        Partidas activas
+      </h2>
       <div class="header-actions">
         <button
-          *ngIf="filteredScheduledGames.length > 5"
+          *ngIf="filteredActiveGames.length > 5"
           class="btn-text-action"
-          (click)="openFullScheduledModal()"
+          (click)="openFullActiveModal()"
         >
-          Ver todas las partidas
+          Ver todas las activas
         </button>
         <button
           class="btn-icon-refresh"
@@ -194,37 +197,51 @@
       </div>
     </div>
 
-    <div class="card-list" *ngIf="filteredScheduledGames.length > 0">
+    <div class="card-list" *ngIf="filteredActiveGames.length > 0">
       <div
-        class="card-item scheduled"
-        *ngFor="let game of limitedScheduledGames"
+        class="card-item active-game"
+        *ngFor="let game of limitedActiveGames"
+        [class.is-live-card]="game.tipoPartida === 'en_vivo'"
       >
         <div class="info">
-          <span class="title">
-            {{ game.nombrePartida || game.idCuestionario.titulo }}
+          <div class="title-row">
             <span
-              class="meta-tag"
-              *ngIf="game.curso || game.idCuestionario?.curso"
-              >/ {{ game.curso || game.idCuestionario?.curso }}</span
+              class="type-badge"
+              [class.live]="game.tipoPartida === 'en_vivo'"
             >
-            <span
-              class="meta-tag"
-              *ngIf="game.asignatura || game.idCuestionario?.asignatura"
-              >/ {{ game.asignatura || game.idCuestionario?.asignatura }}</span
+              {{ game.tipoPartida === "en_vivo" ? "En Vivo" : "Examen" }}
+            </span>
+            <span class="title">
+              {{ game.nombrePartida || game.idCuestionario.titulo }}
+            </span>
+          </div>
+          <span class="subtitle">
+            <span *ngIf="game.curso || game.idCuestionario?.curso">{{
+              game.curso || game.idCuestionario?.curso
+            }}</span>
+            <span *ngIf="game.asignatura || game.idCuestionario?.asignatura">
+              · {{ game.asignatura || game.idCuestionario?.asignatura }}</span
             >
           </span>
-          <span class="subtitle">{{ game.numAlumnos }} alumnos</span>
-        </div>
-
-        <div class="date-center">
-          {{ game.fechaProgramada | date: "dd/MM/yyyy HH:mm" }}
+          <div class="timer-badge" *ngIf="game.timerText">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            {{ game.timerText }}
+          </div>
         </div>
 
         <div class="actions-buttons">
           <button
             class="btn-action monitor"
             (click)="viewGameRanking(game._id)"
-            title="Ver Progreso"
+            title="Ver / Iniciar"
           >
             <svg
               width="18"
@@ -233,12 +250,129 @@
               fill="none"
               stroke="currentColor"
               stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
             >
               <line x1="18" y1="20" x2="18" y2="10" />
               <line x1="12" y1="20" x2="12" y2="4" />
               <line x1="6" y1="20" x2="6" y2="14" />
             </svg>
           </button>
+          <button
+            class="btn-action edit"
+            (click)="editGame(game._id)"
+            title="Editar"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+              />
+              <path
+                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+              />
+            </svg>
+          </button>
+          <button
+            class="btn-action delete"
+            (click)="deleteGame(game._id)"
+            title="Eliminar"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+              />
+              <line x1="10" y1="11" x2="10" y2="17" />
+              <line x1="14" y1="11" x2="14" y2="17" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="empty-state mini"
+      *ngIf="filteredActiveGames.length === 0 && !isLoading"
+    >
+      <p>No hay partidas activas en este momento.</p>
+    </div>
+  </section>
+
+  <!-- Partidas Programadas (Solo Futuras) -->
+  <section
+    class="dashboard-section animate-slide-up"
+    style="animation-delay: 0.1s"
+  >
+    <div class="section-header-row">
+      <h2 class="section-title">Partidas programadas</h2>
+      <div class="header-actions">
+        <button
+          *ngIf="filteredFutureScheduledGames.length > 5"
+          class="btn-text-action"
+          (click)="openFullScheduledModal()"
+        >
+          Ver todas las programaciones
+        </button>
+      </div>
+    </div>
+
+    <div class="card-list" *ngIf="filteredFutureScheduledGames.length > 0">
+      <div
+        class="card-item scheduled"
+        *ngFor="let game of limitedScheduledGames"
+      >
+        <div class="info">
+          <span class="title">
+            {{ game.nombrePartida || game.idCuestionario.titulo }}
+          </span>
+          <span class="subtitle">
+            <span *ngIf="game.curso || game.idCuestionario?.curso">{{
+              game.curso || game.idCuestionario?.curso
+            }}</span>
+            <span *ngIf="game.asignatura || game.idCuestionario?.asignatura">
+              · {{ game.asignatura || game.idCuestionario?.asignatura }}</span
+            >
+          </span>
+        </div>
+
+        <div class="date-center">
+          <div class="date-tag">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            {{ game.displayDate | date: "dd/MM HH:mm" }}
+          </div>
+        </div>
+
+        <div class="actions-buttons">
           <button
             class="btn-action edit"
             (click)="editGame(game._id)"
@@ -286,10 +420,10 @@
     </div>
 
     <div
-      class="empty-state"
-      *ngIf="filteredScheduledGames.length === 0 && !isLoading"
+      class="empty-state mini"
+      *ngIf="filteredFutureScheduledGames.length === 0 && !isLoading"
     >
-      <p>No se encontraron partidas programadas.</p>
+      <p>No hay partidas programadas próximamente.</p>
     </div>
   </section>
 
@@ -357,8 +491,7 @@
             </span>
           </div>
           <span class="subtitle">
-            {{ game.numAlumnos }} alumnos · {{ game.aciertosPorcentaje }}%
-            aciertos ·
+            {{ game.aciertosPorcentaje }}% aciertos ·
             {{
               game.fechas?.finalizadaEn || game.fechas?.creadaEn
                 | date: "dd/MM/yyyy HH:mm"
@@ -645,6 +778,161 @@
     </div>
   </div>
 
+  <!-- Modal Partidas Activas Completo -->
+  <div
+    class="modal-overlay animate-fade-in"
+    *ngIf="showFullActiveModal"
+    (click)="closeFullActiveModal()"
+  >
+    <div
+      class="modal-content animate-slide-up large-modal"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="modal-header">
+        <h3>Todas las Partidas Activas</h3>
+        <button class="close-btn" (click)="closeFullActiveModal()">
+          &times;
+        </button>
+      </div>
+      <div class="modal-body scrollable">
+        <div class="card-list full-list">
+          <div
+            *ngFor="let game of filteredActiveGames"
+            class="card-item active-game"
+            [class.is-live-card]="game.tipoPartida === 'en_vivo'"
+          >
+            <div class="info">
+              <div class="title-row">
+                <span
+                  class="type-badge"
+                  [class.live]="game.tipoPartida === 'en_vivo'"
+                >
+                  {{ game.tipoPartida === "en_vivo" ? "En Vivo" : "Examen" }}
+                </span>
+                <span class="title">
+                  {{ game.nombrePartida || game.idCuestionario.titulo }}
+                </span>
+              </div>
+              <span class="subtitle">
+                {{ game.curso || game.idCuestionario?.curso }} ·
+                {{ game.asignatura || game.idCuestionario?.asignatura }}
+              </span>
+              <div class="timer-badge" *ngIf="game.timerText">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                {{ game.timerText }}
+              </div>
+            </div>
+
+            <div class="actions-buttons">
+              <button
+                class="btn-action monitor"
+                (click)="viewGameRanking(game._id)"
+                title="Ver Progreso"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="18" y1="20" x2="18" y2="10" />
+                  <line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+              </button>
+              <button
+                class="btn-action delete"
+                (click)="deleteGame(game._id)"
+                title="Eliminar"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path
+                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                  />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+              </button>
+              <button
+                class="btn-action edit"
+                (click)="editGame(game._id)"
+                title="Editar"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  />
+                </svg>
+              </button>
+              <button
+                class="btn-action delete"
+                (click)="deleteGame(game._id)"
+                title="Eliminar"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path
+                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                  />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" (click)="closeFullActiveModal()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Partidas Recientes Completo -->
   <div
     class="modal-overlay animate-fade-in"
@@ -677,11 +965,23 @@
                 </span>
                 <span class="title">
                   {{ game.nombrePartida || game.idCuestionario.titulo }}
+                  <span
+                    class="meta-tag"
+                    *ngIf="game.curso || game.idCuestionario?.curso"
+                    >/ {{ game.curso || game.idCuestionario?.curso }}</span
+                  >
+                  <span
+                    class="meta-tag"
+                    *ngIf="game.asignatura || game.idCuestionario?.asignatura"
+                    >/
+                    {{
+                      game.asignatura || game.idCuestionario?.asignatura
+                    }}</span
+                  >
                 </span>
               </div>
               <span class="subtitle">
-                {{ game.numAlumnos }} alumnos · {{ game.aciertosPorcentaje }}%
-                aciertos ·
+                {{ game.aciertosPorcentaje }}% aciertos ·
                 {{
                   game.fechas?.finalizadaEn || game.fechas?.creadaEn
                     | date: "dd/MM/yyyy HH:mm"
@@ -712,6 +1012,27 @@
                   <line x1="16" y1="13" x2="8" y2="13" />
                   <line x1="16" y1="17" x2="8" y2="17" />
                   <polyline points="10 9 9 9 8 9" />
+                </svg>
+              </button>
+              <button
+                class="btn-report-small btn-delete-red"
+                (click)="deleteGame(game._id)"
+                title="Eliminar"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path
+                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                  ></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
                 </svg>
               </button>
             </div>
@@ -745,17 +1066,41 @@
       <div class="modal-body scrollable">
         <div class="card-list full-list">
           <div
-            *ngFor="let game of filteredScheduledGames"
+            *ngFor="let game of filteredFutureScheduledGames"
             class="card-item scheduled"
           >
             <div class="info">
               <span class="title">
                 {{ game.nombrePartida || game.idCuestionario.titulo }}
               </span>
-              <span class="subtitle">{{ game.numAlumnos }} alumnos</span>
+              <span class="subtitle">
+                <span *ngIf="game.curso || game.idCuestionario?.curso">{{
+                  game.curso || game.idCuestionario?.curso
+                }}</span>
+                <span
+                  *ngIf="game.asignatura || game.idCuestionario?.asignatura"
+                >
+                  ·
+                  {{ game.asignatura || game.idCuestionario?.asignatura }}</span
+                >
+              </span>
             </div>
             <div class="date-center">
-              {{ game.fechaProgramada | date: "dd/MM/yyyy HH:mm" }}
+              <span class="subtitle">{{
+                game.displayDate | date: "dd/MM/yyyy HH:mm"
+              }}</span>
+              <div class="timer-badge" *ngIf="game.timerText">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                {{ game.timerText }}
+              </div>
             </div>
             <div class="actions-buttons">
               <button

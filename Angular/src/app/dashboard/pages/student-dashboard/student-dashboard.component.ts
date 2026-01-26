@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
@@ -12,17 +12,26 @@ import { BrandingService } from 'src/app/services/branding.service';
   templateUrl: './student-dashboard.component.html',
   styleUrls: ['./student-dashboard.component.scss']
 })
-export class StudentDashboardComponent implements OnInit {
+export class StudentDashboardComponent implements OnInit, OnDestroy {
   userName: string = '';
   userInitials: string = '';
   
   scheduledGames: ScheduledGame[] = [];
+  
+  // Categorías de partidas no finalizadas
+  activeGames: any[] = [];
+  futureScheduledGames: any[] = [];
+  
+  filteredActiveGames: any[] = [];
+  filteredFutureScheduledGames: any[] = [];
+
   resultsHistory: QuizResult[] = [];
   subjectProgress: SubjectProgress[] = [];
   
   isLoading = true;
   userProfileImg: string = '';
   private serverUrl = environment.serverUrl;
+  private timerInterval: any;
 
   // Modal de reporte
   showReportModal: boolean = false;
@@ -33,8 +42,10 @@ export class StudentDashboardComponent implements OnInit {
   expandedIndex: number = -1;
   selectedGameName: string = '';
 
-  // Modal Historial Completo
+  // Modales Historial Completo
   showFullHistoryModal: boolean = false;
+  showFullActiveModal: boolean = false;
+  showFullScheduledModal: boolean = false;
 
   // Modal Curso
   showCourseModal: boolean = false;
@@ -114,37 +125,132 @@ export class StudentDashboardComponent implements OnInit {
 
   loadDashboardData(idAlumno: string): void {
     this.isLoading = true;
+    const now = new Date().getTime();
     
     this.dashboardService.getScheduledGames(idAlumno).subscribe((games: any[]) => {
-      console.log('[StudentDashboard] Partidas recibidas:', games);
-      console.log('[StudentDashboard] Curso actual:', this.currentCourse, this.currentCourseName);
-      
-      // El backend ya filtra por curso, pero hacemos doble check por seguridad
-      // Comparamos por nombre del curso ya que el backend devuelve nombres
-      this.scheduledGames = games.filter((g: any) => {
+      // 1. Filtrar por curso (seguridad extra)
+      const filteredByCourse = games.filter((g: any) => {
         const gameCourse = (g.curso || g.idCuestionario?.curso || '').toLowerCase().trim();
         const studentCourse = (this.currentCourseName || '').toLowerCase().trim();
-        
-        // Si la partida no tiene curso específico, es visible para todos
         if (!gameCourse) return true;
-        
-        // Comparar por nombre del curso
-        const match = gameCourse === studentCourse || 
-                      gameCourse.includes(studentCourse) || 
-                      studentCourse.includes(gameCourse);
-        
-        console.log('[StudentDashboard] Filtro partida:', g.nombrePartida, 'Curso partida:', gameCourse, 'Curso alumno:', studentCourse, 'Match:', match);
-        return match;
+        return gameCourse === studentCourse || 
+               gameCourse.includes(studentCourse) || 
+               studentCourse.includes(gameCourse);
       });
+
+      // 2. Procesar y categorizar
+      const processedGames = filteredByCourse.map((game: any) => {
+        const startDate = game.configuracionExamen?.programadaPara || game.fechaProgramada || game.fechas?.creadaEn;
+        const startTime = new Date(startDate).getTime();
+        // CUALQUIER partida con fecha futura (aunque sea en vivo) debe ser isFuture
+        const isFuture = (startTime - now) > 10000; // Margen 10s
+
+        return {
+          ...game,
+          timerText: this.calculateTimer(game),
+          displayDate: startDate,
+          isFuture: isFuture,
+          startTimeMs: startTime // Guardamos para el guard en joinGame
+        };
+      });
+
+      this.activeGames = processedGames.filter(g => !g.isFuture);
+      this.futureScheduledGames = processedGames.filter(g => g.isFuture);
+
+      this.filteredActiveGames = [...this.activeGames];
+      this.filteredFutureScheduledGames = [...this.futureScheduledGames];
       
-      console.log('[StudentDashboard] Partidas filtradas:', this.scheduledGames.length);
       this.isLoading = false;
+      this.startTimers();
     });
 
     this.dashboardService.getResultsHistory(idAlumno).subscribe((history: any[]) => {
       this.resultsHistory = history;
       this.subjectProgress = this.dashboardService.getSubjectProgress(history);
     });
+  }
+
+  ngOnDestroy(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
+  }
+
+  startTimers(): void {
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    
+    this.timerInterval = setInterval(() => {
+      this.updateTimers();
+    }, 1000);
+  }
+
+  updateTimers(): void {
+    let updated = false;
+
+    const updateList = (list: any[]) => {
+        list.forEach(game => {
+            const newTimer = this.calculateTimer(game);
+            if (game.timerText !== newTimer) {
+                game.timerText = newTimer;
+                updated = true;
+            }
+        });
+    };
+
+    updateList(this.activeGames);
+    updateList(this.futureScheduledGames);
+
+    if (updated) {
+      this.filteredActiveGames = [...this.activeGames];
+      this.filteredFutureScheduledGames = [...this.futureScheduledGames];
+    }
+  }
+
+  calculateTimer(game: any): string {
+    // 1. Extraer fecha de inicio de forma robusta
+    const startDateRaw = 
+      game.configuracionExamen?.programadaPara || 
+      game.fechaProgramada || 
+      (game.fechas && game.fechas.creadaEn);
+
+    if (!startDateRaw || game.tipoPartida !== 'examen') return '';
+
+    const now = new Date().getTime();
+    const startTime = new Date(startDateRaw).getTime();
+    
+    // Para alumnos, configuracionExamen podría no estar poblado igual que para el profesor
+    // pero intentamos obtenerlo. Si no, por defecto 60 min.
+    const duracionMin = game.configuracionExamen?.tiempoTotalMin || 60;
+    const endTime = startTime + (duracionMin * 60 * 1000);
+
+    if (now < startTime) {
+      // Es un examen futuro: NO mostrar timer
+      return ''; 
+    } else if (now < endTime) {
+      // Es un examen activo: Mostrar countdown
+      const diff = endTime - now;
+      return `Cierra en: ${this.formatDiff(diff)}`;
+    } else {
+      // Finalizado
+      return 'Finalizado';
+    }
+  }
+
+  formatDiff(ms: number): string {
+    const totalSecs = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  get limitedActiveGames(): any[] {
+    return this.filteredActiveGames.slice(0, 5);
+  }
+
+  get limitedScheduledGames(): any[] {
+    return this.filteredFutureScheduledGames.slice(0, 5);
   }
 
   get limitedResultsHistory(): QuizResult[] {
@@ -159,27 +265,49 @@ export class StudentDashboardComponent implements OnInit {
     this.showFullHistoryModal = false;
   }
 
+  openFullActiveModal(): void {
+    this.showFullActiveModal = true;
+  }
+
+  closeFullActiveModal(): void {
+    this.showFullActiveModal = false;
+  }
+
+  openFullScheduledModal(): void {
+    this.showFullScheduledModal = true;
+  }
+
+  closeFullScheduledModal(): void {
+    this.showFullScheduledModal = false;
+  }
+
   isJoinable(scheduledDate: string | undefined): boolean {
-    if (!scheduledDate) return true; // Si no hay fecha, es acceso instantáneo
+    if (!scheduledDate) return true; 
     
     const now = new Date().getTime();
     const gameTime = new Date(scheduledDate).getTime();
-
-    // Se puede unir si ya llegó la hora (o faltan menos de 10 segundos por margen de red)
     return (gameTime - now) <= 10000;
   }
 
-  joinGame(game: ScheduledGame): void {
-    if (game.tipoPartida === 'examen') {
-        const now = new Date().getTime();
-        const gameTime = new Date(game.fechaProgramada!).getTime();
-        
-        // Si ya es la hora, entramos directo al examen
-        if (now >= gameTime) {
-            this.router.navigate(['/dashboard/student/game-exam', game._id]);
-            return;
-        }
+  joinGame(game: any): void {
+    const now = new Date().getTime();
+    const startDate = game.configuracionExamen?.programadaPara || game.fechaProgramada || game.fechas?.creadaEn;
+    const startTime = new Date(startDate).getTime();
+
+    // BLOQUEO ESTRICTO: No permitir entrada antes de tiempo (margen 10s)
+    if ((startTime - now) > 10000) {
+        this.alertService.info('Aún no es la hora', 'Este examen/partida todavía no ha comenzado. Por favor, espera a la hora programada.');
+        return;
     }
+
+    if (game.tipoPartida === 'examen') {
+        // Si ya es la hora o el examen ya está activo (dentro de la ventana de duración)
+        // Navegamos directo al examen
+        this.router.navigate(['/dashboard/student/game-exam', game._id]);
+        return;
+    }
+    
+    // Por defecto para partidas Live
     this.router.navigate(['/dashboard/student/lobby', game._id]);
   }
 

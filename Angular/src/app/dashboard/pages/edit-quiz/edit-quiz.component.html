@@ -92,14 +92,28 @@
                   [(ngModel)]="q.pregunta"
                   class="edit-input"
                 />
-                <span *ngIf="!isGlobalEditing" class="q-text">{{ q.pregunta }}</span>
-                
-                <button 
-                  class="btn-delete-question" 
+                <span *ngIf="!isGlobalEditing" class="q-text">{{
+                  q.pregunta
+                }}</span>
+
+                <button
+                  class="btn-delete-question"
                   (click)="confirmDeleteQuestion(q, i)"
                   title="Eliminar pregunta"
                 >
-                  🗑️
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#dc2626"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
                 </button>
               </div>
 
@@ -111,14 +125,18 @@
                   class="edit-select"
                 >
                   <option value="" disabled>Seleccionar</option>
-                  <option *ngFor="let opt of q.opciones" [value]="opt">{{ opt }}</option>
+                  <option *ngFor="let opt of q.opciones" [value]="opt">
+                    {{ opt }}
+                  </option>
                 </select>
-                <span *ngIf="!isGlobalEditing" class="answer-text">{{ q.respuesta_correcta }}</span>
+                <span *ngIf="!isGlobalEditing" class="answer-text">{{
+                  q.respuesta_correcta
+                }}</span>
               </div>
 
               <div class="q-options-preview" *ngIf="!isGlobalEditing">
-                <span 
-                  class="badge" 
+                <span
+                  class="badge"
                   *ngFor="let opt of q.opciones"
                   [class.correct]="opt === q.respuesta_correcta"
                 >
@@ -129,7 +147,11 @@
               <div class="q-options-edit" *ngIf="isGlobalEditing">
                 <div
                   class="option-edit-item"
-                  *ngFor="let opt of q.opciones; let optIdx = index; trackBy: trackByIndex"
+                  *ngFor="
+                    let opt of q.opciones;
+                    let optIdx = index;
+                    trackBy: trackByIndex
+                  "
                 >
                   <input
                     type="text"
@@ -174,10 +196,10 @@
           (click)="saveAllChanges()"
           [disabled]="isSaving"
         >
-          {{ isSaving ? 'Guardando...' : 'Guardar todo' }}
+          {{ isSaving ? "Guardando..." : "Guardar todo" }}
         </button>
         <button class="btn-edit" (click)="toggleGlobalEdit()">
-          {{ isGlobalEditing ? 'Terminar edicion' : 'Editar preguntas' }}
+          {{ isGlobalEditing ? "Terminar edicion" : "Editar preguntas" }}
         </button>
         <button class="btn-cancel" (click)="cancel()">Cancelar</button>
       </div>
@@ -202,7 +224,11 @@
           <label>Opciones de respuesta</label>
           <div class="options-grid">
             <input
-              *ngFor="let opt of newQuestion.opciones; let i = index; trackBy: trackByIndex"
+              *ngFor="
+                let opt of newQuestion.opciones;
+                let i = index;
+                trackBy: trackByIndex
+              "
               type="text"
               [(ngModel)]="newQuestion.opciones[i]"
               placeholder="Opcion {{ i + 1 }}"
@@ -216,8 +242,12 @@
             <label>Respuesta correcta</label>
             <select [(ngModel)]="newQuestion.respuesta_correcta">
               <option value="" disabled selected>Seleccionar</option>
-              <option *ngFor="let opt of newQuestion.opciones" [value]="opt" [disabled]="!opt">
-                {{ opt || '(vacio)' }}
+              <option
+                *ngFor="let opt of newQuestion.opciones"
+                [value]="opt"
+                [disabled]="!opt"
+              >
+                {{ opt || "(vacio)" }}
               </option>
             </select>
           </div>
@@ -235,23 +265,33 @@
       </div>
       <div class="modal-actions">
         <button class="btn-primary" (click)="addQuestion()">Agregar</button>
-        <button class="btn-secondary" (click)="closeAddModal()">Cancelar</button>
+        <button class="btn-secondary" (click)="closeAddModal()">
+          Cancelar
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Modal Confirmar Eliminacion -->
-  <div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+  <div
+    class="modal-overlay"
+    *ngIf="showDeleteModal"
+    (click)="closeDeleteModal()"
+  >
     <div class="modal-content modal-delete" (click)="$event.stopPropagation()">
       <h3 class="modal-title">Eliminar Pregunta</h3>
       <div class="modal-body">
         <p>¿Estas seguro de que deseas eliminar esta pregunta?</p>
         <p class="question-preview">"{{ questionToDelete?.pregunta }}"</p>
-        <p class="warning-text">Esta accion se aplicara al guardar los cambios.</p>
+        <p class="warning-text">
+          Esta accion se aplicara al guardar los cambios.
+        </p>
       </div>
       <div class="modal-actions">
         <button class="btn-danger" (click)="deleteQuestion()">Eliminar</button>
-        <button class="btn-secondary" (click)="closeDeleteModal()">Cancelar</button>
+        <button class="btn-secondary" (click)="closeDeleteModal()">
+          Cancelar
+        </button>
       </div>
     </div>
   </div>

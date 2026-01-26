@@ -137,6 +137,17 @@ export class CreateGameComponent implements OnInit {
         this.qualificationModes = config.modosCalificacion || ['velocidad_precision'];
 
         this.refreshAvailableSubjects();
+
+        // Restaurar estado si volvemos de edición
+        const stateStr = this.route.snapshot.queryParamMap.get('returnState');
+        if (stateStr) {
+          try {
+            const state = JSON.parse(stateStr);
+            this.restoreFormState(state);
+          } catch (e) {
+            console.error('Error restaurando estado:', e);
+          }
+        }
       }
     });
   }
@@ -378,13 +389,68 @@ export class CreateGameComponent implements OnInit {
     return quiz ? quiz.titulo : '';
   }
 
+  // ========== Lógica de Persistencia de Estado ==========
+
+  private getFormState(): any {
+    return {
+      gameName: this.gameName,
+      selectedSubject: this.selectedSubject,
+      timePerQuestion: this.timePerQuestion,
+      selectedQuizId: this.selectedQuizId,
+      gameMode: this.gameMode,
+      totalExamTime: this.totalExamTime,
+      accessType: this.accessType,
+      qualificationMode: this.qualificationMode,
+      showRanking: this.showRanking,
+      shuffleQuestions: this.shuffleQuestions,
+      shuffleAnswers: this.shuffleAnswers,
+      scheduledDate: this.scheduledDate,
+      scheduledTime: this.scheduledTime,
+      instantAccess: this.instantAccess,
+      selectedStudentIds: this.selectedStudentIds,
+      editId: this.editId,
+      isEditing: this.isEditing
+    };
+  }
+
+  private restoreFormState(state: any): void {
+    if (!state) return;
+    this.gameName = state.gameName || '';
+    this.selectedSubject = state.selectedSubject || '';
+    this.timePerQuestion = state.timePerQuestion || 30;
+    this.selectedQuizId = state.selectedQuizId || '';
+    this.gameMode = state.gameMode || 'en_vivo';
+    this.totalExamTime = state.totalExamTime || 60;
+    this.accessType = state.accessType || 'publica';
+    this.qualificationMode = state.qualificationMode || 'velocidad_precision';
+    this.showRanking = state.showRanking !== undefined ? state.showRanking : true;
+    this.shuffleQuestions = state.shuffleQuestions !== undefined ? state.shuffleQuestions : true;
+    this.shuffleAnswers = state.shuffleAnswers !== undefined ? state.shuffleAnswers : true;
+    this.scheduledDate = state.scheduledDate || '';
+    this.scheduledTime = state.scheduledTime || '';
+    this.instantAccess = state.instantAccess !== undefined ? state.instantAccess : false;
+    this.selectedStudentIds = state.selectedStudentIds || [];
+    this.editId = state.editId || '';
+    this.isEditing = state.isEditing || false;
+
+    if (this.selectedSubject) {
+        this.onSubjectChange();
+    }
+  }
+
   // ========== Métodos para editar cuestionario ==========
 
   openEditQuizModal(quiz: any, event: Event): void {
     event.stopPropagation();
     this.showQuizDropdown = false;
-    // Navegar a la página de edición de cuestionario
-    this.router.navigate(['/dashboard/professor/edit-quiz', quiz._id]);
+    
+    // Serializar estado actual
+    const state = JSON.stringify(this.getFormState());
+    
+    // Navegar a la página de edición pasando el estado en queryParams
+    this.router.navigate(['/dashboard/professor/edit-quiz', quiz._id], {
+      queryParams: { returnState: state }
+    });
   }
 
   // ========== Métodos para eliminar cuestionario ==========

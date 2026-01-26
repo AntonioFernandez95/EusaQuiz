@@ -28,12 +28,17 @@ export class EditQuizComponent implements OnInit {
   userId: string = '';
   private serverUrl = environment.serverUrl;
 
-  // Datos del cuestionario
+  // Datos del cuestionario (para visualización)
   quizId: string = '';
   quizTitle: string = '';
   quizSubject: string = '';
   quizDescription: string = '';
   quizCourse: string = '';
+
+  // IDs internos (para guardado seguro)
+  private quizSubjectId: string = '';
+  private quizCourseId: string = '';
+  private quizCentroId: string = '';
 
   // Preguntas
   questions: QuestionEdit[] = [];
@@ -95,9 +100,17 @@ export class EditQuizComponent implements OnInit {
       next: (quiz) => {
         if (quiz) {
           this.quizTitle = quiz.titulo || '';
-          this.quizSubject = quiz.asignatura || '';
           this.quizDescription = quiz.descripcion || '';
-          this.quizCourse = quiz.curso || '';
+          
+          // Extraer nombre para los inputs del HTML y ID para el guardado
+          this.quizSubject = quiz.asignatura?.nombre || (typeof quiz.asignatura === 'string' ? quiz.asignatura : '');
+          this.quizSubjectId = quiz.asignatura?._id || (typeof quiz.asignatura === 'string' ? quiz.asignatura : '');
+          
+          this.quizCourse = quiz.curso?.nombre || (typeof quiz.curso === 'string' ? quiz.curso : '');
+          this.quizCourseId = quiz.curso?._id || (typeof quiz.curso === 'string' ? quiz.curso : '');
+
+          this.quizCentroId = quiz.centro?._id || (typeof quiz.centro === 'string' ? quiz.centro : '');
+
           this.loadQuestions();
         } else {
           this.alertService.error('Error', 'Cuestionario no encontrado.');
@@ -155,12 +168,17 @@ export class EditQuizComponent implements OnInit {
     this.isSaving = true;
 
     // 1. Actualizar datos del cuestionario
-    const quizData = {
+    // Asegurar esquema estricto: idProfesor requerido, IDs opcionales como null si vacíos
+    const quizData: any = {
       titulo: this.quizTitle,
-      asignatura: this.quizSubject,
       descripcion: this.quizDescription,
-      curso: this.quizCourse
+      idProfesor: this.userId, // Requerido por el schema
+      centro: this.quizCentroId || null,
+      asignatura: this.quizSubjectId || null,
+      curso: this.quizCourseId || null
     };
+
+    console.log('[EditQuiz] Guardando cuestionario payload:', quizData);
 
     this.dashboardService.updateCuestionario(this.quizId, quizData).subscribe({
       next: () => {
@@ -198,8 +216,17 @@ export class EditQuizComponent implements OnInit {
         this.alertService.success('Guardado', 'Cuestionario actualizado correctamente.');
         this.isSaving = false;
         this.isGlobalEditing = false;
-        // Recargar para ver cambios
-        this.loadQuizData();
+        
+        // Redirigir automáticamente si hay un estado de retorno (estamos en flujo de creación de partida)
+        const returnState = this.route.snapshot.queryParamMap.get('returnState');
+        if (returnState) {
+            this.router.navigate(['/dashboard/professor/create-game'], {
+                queryParams: { returnState }
+            });
+        } else {
+            // Comportamiento estándar: recargar para ver cambios
+            this.loadQuizData();
+        }
       })
       .catch((err) => {
         console.error('Error procesando preguntas:', err);
@@ -271,9 +298,19 @@ export class EditQuizComponent implements OnInit {
 
   // ========== Eliminar pregunta ==========
   confirmDeleteQuestion(q: QuestionEdit, index: number): void {
-    this.questionToDelete = q;
-    this.questionToDeleteIndex = index;
-    this.showDeleteModal = true;
+    this.alertService.confirm(
+        '¿Eliminar pregunta?',
+        '¿Estás seguro de que quieres eliminar esta pregunta? Esta acción se aplicará al guardar los cambios.',
+        'Eliminar',
+        'Cancelar',
+        'warning'
+    ).then((result) => {
+        if (result.isConfirmed) {
+            this.questionToDelete = q;
+            this.questionToDeleteIndex = index;
+            this.deleteQuestion();
+        }
+    });
   }
 
   closeDeleteModal(): void {
@@ -307,7 +344,14 @@ export class EditQuizComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/dashboard/professor/create-game']);
+    const returnState = this.route.snapshot.queryParamMap.get('returnState');
+    if (returnState) {
+        this.router.navigate(['/dashboard/professor/create-game'], {
+            queryParams: { returnState }
+        });
+    } else {
+        this.router.navigate(['/dashboard/professor/create-game']);
+    }
   }
 
   cancel(): void {

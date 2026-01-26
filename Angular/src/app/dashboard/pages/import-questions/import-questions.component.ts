@@ -171,13 +171,18 @@ export class ImportQuestionsComponent implements OnInit {
   };
 
   removeQuestion(index: number): void {
-    if (confirm('¿Estás seguro de que quieres eliminar esta pregunta de la lista?')) {
-      this.questions.splice(index, 1);
-      // Actualizar metadata si existe
-      if (this.fileMetadata) {
-        this.fileMetadata.questionsCount = this.questions.length;
+    this.alertService.confirm(
+      '¿Eliminar pregunta?',
+      '¿Estás seguro de que quieres eliminar esta pregunta de la lista?'
+    ).then((result) => {
+      if (result.isConfirmed) {
+        this.questions.splice(index, 1);
+        // Actualizar metadata si existe
+        if (this.fileMetadata) {
+          this.fileMetadata.questionsCount = this.questions.length;
+        }
       }
-    }
+    });
   }
 
   openAddModal(): void {

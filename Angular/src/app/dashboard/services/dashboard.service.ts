@@ -30,7 +30,7 @@ export class DashboardService {
           if (!res.ok) return [];
           return res.data.map(item => ({
             ...item,
-            porcentaje: (item.respuestasCorrectas / item.totalPreguntas) * 100 || 0
+            porcentaje: Math.min((item.respuestasCorrectas / item.totalPreguntas) * 100, 100) || 0
           }));
         })
       );
@@ -53,7 +53,7 @@ export class DashboardService {
 
     return Object.keys(subjects).map(key => ({
       subject: key,
-      percentage: Math.round(subjects[key].total / subjects[key].count)
+      percentage: Math.min(Math.round(subjects[key].total / subjects[key].count), 100)
     }));
   }
 

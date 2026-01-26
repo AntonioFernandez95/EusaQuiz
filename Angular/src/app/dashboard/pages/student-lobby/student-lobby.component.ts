@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { SocketService } from '../../../services/socket.service';
+import { AlertService } from '../../../shared/services/alert.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { BrandingService } from 'src/app/services/branding.service';
@@ -30,6 +31,7 @@ export class StudentLobbyComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private dashboardService: DashboardService,
     private socketService: SocketService,
+    private alertService: AlertService,
     public brandingService: BrandingService
   ) {}
 
@@ -123,6 +125,15 @@ export class StudentLobbyComponent implements OnInit, OnDestroy {
         this.socketService.on('inicio_examen').subscribe(data => {
             console.log('El examen ha comenzado:', data);
             this.router.navigate(['/dashboard/student/game-exam', this.partidaId]);
+        })
+    );
+
+    // ESCUCHAR ELIMINACIÓN DE PARTIDA (Seguridad/Cancelación)
+    this.subs.add(
+        this.socketService.on('partida_eliminada').subscribe(data => {
+            console.log('La partida ha sido eliminada por el profesor');
+            this.alertService.info('Partida Cancelada', 'El profesor ha eliminado o cancelado esta partida. Serás redirigido al dashboard.');
+            this.router.navigate(['/dashboard/student']);
         })
     );
   }
