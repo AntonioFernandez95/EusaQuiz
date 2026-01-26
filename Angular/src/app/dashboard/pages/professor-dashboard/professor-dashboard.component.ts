@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../auth/services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
@@ -11,15 +11,19 @@ import { BrandingService } from 'src/app/services/branding.service';
   templateUrl: './professor-dashboard.component.html',
   styleUrls: ['./professor-dashboard.component.scss']
 })
-export class ProfessorDashboardComponent implements OnInit {
+export class ProfessorDashboardComponent implements OnInit, OnDestroy {
   userName: string = '';
   userInitials: string = '';
   
   recentGames: any[] = [];
-  scheduledGames: any[] = [];
+  
+  // Categorías de partidas no finalizadas
+  activeGames: any[] = [];
+  futureScheduledGames: any[] = [];
   
   filteredRecentGames: any[] = [];
-  filteredScheduledGames: any[] = [];
+  filteredActiveGames: any[] = [];
+  filteredFutureScheduledGames: any[] = [];
 
   stats = {
     participationRate: 0,
@@ -31,6 +35,7 @@ export class ProfessorDashboardComponent implements OnInit {
   currentUserId: string = '';
   userProfileImg: string = '';
   private serverUrl = environment.serverUrl;
+  private timerInterval: any;
 
   // Modal de reporte
   showReportModal: boolean = false;
@@ -43,6 +48,7 @@ export class ProfessorDashboardComponent implements OnInit {
 
   // Modales Historial Completo
   showFullRecentModal: boolean = false;
+  showFullActiveModal: boolean = false;
   showFullScheduledModal: boolean = false;
 
   // Notificacion de asignaturas pendientes
@@ -116,23 +122,115 @@ export class ProfessorDashboardComponent implements OnInit {
       }
     });
 
-    // Cargar partidas programadas
+    // Cargar partidas programadas/activas
     this.dashboardService.getScheduledGamesProfessor(idProfesor).subscribe(games => {
-      this.scheduledGames = games.map((game: any) => ({
-        ...game,
-        numAlumnos: game.jugadores?.length || 0
-      }));
-      this.filteredScheduledGames = [...this.scheduledGames];
+      const now = new Date().getTime();
+      
+      const processedGames = games.map((game: any) => {
+        const startDate = game.configuracionExamen?.programadaPara || game.fechaProgramada || game.fechas?.creadaEn;
+        const startTime = new Date(startDate).getTime();
+        
+        return {
+          ...game,
+          numAlumnos: game.jugadores?.length || 0,
+          timerText: this.calculateTimer(game),
+          displayDate: startDate,
+          isFuture: game.tipoPartida === 'examen' && now < startTime
+        };
+      });
+
+      // Dividir en listas: Activas vs Programadas Futuras
+      this.activeGames = processedGames.filter(g => !g.isFuture);
+      this.futureScheduledGames = processedGames.filter(g => g.isFuture);
+
+      this.filteredActiveGames = [...this.activeGames];
+      this.filteredFutureScheduledGames = [...this.futureScheduledGames];
+
       this.isLoading = false;
+      this.startTimers();
     });
+  }
+
+  ngOnDestroy(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+    }
+  }
+
+  startTimers(): void {
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    
+    this.timerInterval = setInterval(() => {
+      this.updateTimers();
+    }, 1000);
+  }
+
+  updateTimers(): void {
+    let updated = false;
+
+    // Actualizar timers en ambas listas
+    const updateList = (list: any[]) => {
+        list.forEach(game => {
+            const newTimer = this.calculateTimer(game);
+            if (game.timerText !== newTimer) {
+                game.timerText = newTimer;
+                updated = true;
+            }
+        });
+    };
+
+    updateList(this.activeGames);
+    updateList(this.futureScheduledGames);
+
+    if (updated) {
+      this.filteredActiveGames = [...this.activeGames];
+      this.filteredFutureScheduledGames = [...this.futureScheduledGames];
+      this.onSearch(); // Re-aplicar filtro si existe búsqueda
+    }
+  }
+
+  calculateTimer(game: any): string {
+    const startDateRaw = 
+      game.configuracionExamen?.programadaPara || 
+      game.fechaProgramada || 
+      (game.fechas && game.fechas.creadaEn);
+
+    if (!startDateRaw || game.tipoPartida !== 'examen') return '';
+
+    const now = new Date().getTime();
+    const startTime = new Date(startDateRaw).getTime();
+    const duracionMin = game.configuracionExamen?.tiempoTotalMin || 60;
+    const endTime = startTime + (duracionMin * 60 * 1000);
+
+    if (now < startTime) {
+      return '';
+    } else if (now < endTime) {
+      const diff = endTime - now;
+      return `Cierra en: ${this.formatDiff(diff)}`;
+    } else {
+      return 'Finalizado';
+    }
+  }
+
+  formatDiff(ms: number): string {
+    const totalSecs = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
   get limitedRecentGames(): any[] {
     return this.filteredRecentGames.slice(0, 5);
   }
 
+  get limitedActiveGames(): any[] {
+    return this.filteredActiveGames.slice(0, 5);
+  }
+
   get limitedScheduledGames(): any[] {
-    return this.filteredScheduledGames.slice(0, 5);
+    return this.filteredFutureScheduledGames.slice(0, 5);
   }
 
   openFullRecentModal(): void {
@@ -141,6 +239,14 @@ export class ProfessorDashboardComponent implements OnInit {
 
   closeFullRecentModal(): void {
     this.showFullRecentModal = false;
+  }
+
+  openFullActiveModal(): void {
+    this.showFullActiveModal = true;
+  }
+
+  closeFullActiveModal(): void {
+    this.showFullActiveModal = false;
   }
 
   openFullScheduledModal(): void {
@@ -265,9 +371,7 @@ export class ProfessorDashboardComponent implements OnInit {
         const a = document.createElement('a');
         a.href = url;
         a.download = `Reporte_${this.selectedGameName.replace(/\s+/g, '_')}.pdf`;
-        document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
         this.isDownloadingPDF = false;
       },
@@ -284,35 +388,30 @@ export class ProfessorDashboardComponent implements OnInit {
     
     if (!query) {
       this.filteredRecentGames = this.recentGames;
-      this.filteredScheduledGames = this.scheduledGames;
+      this.filteredActiveGames = this.activeGames;
+      this.filteredFutureScheduledGames = this.futureScheduledGames;
       return;
     }
 
-    const words = query.split(/\s+/);
+    // Dividir en palabras y filtrar las que son solo descriptivas como "curso"
+    const words = query.split(/\s+/).filter(w => w !== 'curso' && w !== 'c');
 
     const filterFn = (game: any) => {
       const title = (game.nombrePartida || game.idCuestionario?.titulo || '').toLowerCase();
       const asignatura = (game.asignatura || game.idCuestionario?.asignatura || '').toLowerCase();
       const cursoStr = (game.curso || game.idCuestionario?.curso || '').toString().toLowerCase();
       
-      // Inteligencia para "curso 1" o "curso 2"
-      if (query === 'curso 1' || query === '1') {
-        if (cursoStr === '1' || cursoStr.includes('primero') || cursoStr.includes('1')) return true;
-      }
-      if (query === 'curso 2' || query === '2') {
-        if (cursoStr === '2' || cursoStr.includes('segundo') || cursoStr.includes('2')) return true;
-      }
-
       const combined = `${title} ${asignatura} ${cursoStr}`;
+      // El registro debe contener TODAS las palabras clave (ej. "1" y "Programación")
       return words.every(word => combined.includes(word));
     };
 
     this.filteredRecentGames = this.recentGames.filter(filterFn);
-    this.filteredScheduledGames = this.scheduledGames.filter(filterFn);
+    this.filteredActiveGames = this.activeGames.filter(filterFn);
+    this.filteredFutureScheduledGames = this.futureScheduledGames.filter(filterFn);
   }
 
   filterByCourse(course: string): void {
-    // Si el curso es el mismo que ya está en el buscador, lo limpiamos
     if (this.searchQuery === course) {
       this.searchQuery = '';
     } else {

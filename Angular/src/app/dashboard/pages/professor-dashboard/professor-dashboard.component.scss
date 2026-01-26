@@ -1,5 +1,36 @@
 @import "../../../../styles.scss";
 
+// Punto de pulso para partidas activas (Sutil y Elegante)
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 0.6rem;
+
+    &::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: #22c55e;
+        border-radius: 50%;
+        top: 0;
+        left: 0;
+        animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        opacity: 0.6;
+    }
+}
+
+@keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 0.8; }
+    50% { transform: scale(2.5); opacity: 0; }
+    100% { transform: scale(0.8); opacity: 0; }
+}
+
 // Banner de advertencia para asignaturas pendientes
 .warning-banner {
   max-width: 1200px;
@@ -171,7 +202,38 @@
     .subtitle {
       color: var(--text-muted);
       font-size: 0.85rem;
+      display: block; // Asegurar salto línea
     }
+  }
+
+  .metrics-mini {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    .players-count {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #f1f5f9;
+        padding: 0.3rem 0.75rem;
+        border-radius: 6px;
+    }
+  }
+
+  .date-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f8fafc;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-weight: 700;
+    color: #475569;
   }
 
   &.recent {
@@ -184,6 +246,14 @@
       font-weight: 700;
       color: #166534;
       font-size: 1.1rem;
+    }
+  }
+
+  &.active-game {
+    border-left: 6px solid #22c55e;
+    
+    &.is-live-card {
+        border-left-color: #3b82f6; // Azul para En Vivo
     }
   }
 
@@ -206,53 +276,82 @@
       font-weight: 600;
       letter-spacing: 0.5px;
     }
+  }
 
-    .actions-buttons {
-      justify-self: end;
+  .actions-buttons {
+    justify-self: end;
+    display: flex;
+    gap: 0.75rem;
+
+    .btn-action {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
       display: flex;
-      gap: 0.75rem;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
 
-      .btn-action {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        background: white;
-
-        &.monitor {
-          color: #6366f1;
-          &:hover {
-            background: #f5f3ff;
-            border-color: #818cf8;
-            transform: translateY(-2px);
-          }
+      &.monitor {
+        color: #6366f1;
+        &:hover {
+          background: #f5f3ff;
+          border-color: #818cf8;
+          transform: translateY(-2px);
         }
+      }
 
-        &.edit {
-          color: #008cc2;
-          &:hover {
-            background: #f0f9ff;
-            border-color: #00adef;
-            transform: translateY(-2px);
-          }
+      &.edit {
+        color: #008cc2;
+        &:hover {
+          background: #f0f9ff;
+          border-color: #00adef;
+          transform: translateY(-2px);
         }
+      }
 
-        &.delete {
-          color: #ef4444;
-          &:hover {
-            background: #fef2f2;
-            border-color: #f87171;
-            transform: translateY(-2px);
-          }
+      &.delete {
+        color: #ef4444;
+        &:hover {
+          background: #fef2f2;
+          border-color: #f87171;
+          transform: translateY(-2px);
         }
       }
     }
   }
+}
+
+// Estilos para el temporizador premium
+.timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(0, 173, 239, 0.1); /* Usando azul primary */
+  color: #008cc2;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  border: 1px solid rgba(0, 173, 239, 0.2);
+  backdrop-filter: blur(4px);
+  animation: pulse-timer 2s infinite ease-in-out;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+  }
+}
+
+@keyframes pulse-timer {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 .search-section {
@@ -470,8 +569,10 @@
   color: #475569;
 
   &.live {
-    background: #dcfce7;
-    color: #166534;
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
+    border: 1px solid #fecaca;
   }
 }
 

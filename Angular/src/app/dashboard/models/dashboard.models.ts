@@ -14,6 +14,14 @@ export interface ScheduledGame {
   fechaProgramada?: string;
   tipoPartida?: string;
   estado: 'espera' | 'jugando' | 'finalizada';
+  timerText?: string;
+  fechas?: {
+    creadaEn?: string;
+    finalizadaEn?: string;
+  };
+  configuracionExamen?: {
+    tiempoTotalMin?: number;
+  };
 }
 
 export interface QuizResult {

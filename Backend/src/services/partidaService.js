@@ -966,13 +966,46 @@ async function obtenerDetallePartida(id) {
       asignatura: asignaturaNombre
     };
 
+    // Para partidas públicas, obtener lista de alumnos del curso
+    // Para partidas privadas, obtener lista de alumnos permitidos
+    let alumnosCurso = [];
+    if (partida.modoAcceso === 'publica' && cursoIdParaConteo) {
+      const alumnos = await Usuario.find({
+        rol: tipos.ROLES.ALUMNO,
+        curso: cursoIdParaConteo,
+        activo: true
+      }).select('idPortal nombre correo').lean();
+
+      alumnosCurso = alumnos.map(a => ({
+        idAlumno: a.idPortal,
+        nombre: a.nombre,
+        correo: a.correo
+      }));
+      console.log('[obtenerDetallePartida] Alumnos del curso para lobby público:', alumnosCurso.length);
+    } else if (partida.modoAcceso === 'privada' && partida.participantesPermitidos && partida.participantesPermitidos.length > 0) {
+      // Obtener nombres de los alumnos permitidos
+      const alumnos = await Usuario.find({
+        idPortal: { $in: partida.participantesPermitidos },
+        activo: true
+      }).select('idPortal nombre correo').lean();
+
+      alumnosCurso = alumnos.map(a => ({
+        idAlumno: a.idPortal,
+        nombre: a.nombre,
+        correo: a.correo
+      }));
+      console.log('[obtenerDetallePartida] Alumnos permitidos para lobby privado:', alumnosCurso.length);
+    }
+
+
     console.log('[obtenerDetallePartida] Completado con éxito');
     return {
       ...partida,
       idCuestionario: cuestionarioConNombres,
       jugadores: jugadoresEnriquecidos,
       preguntas,
-      totalAlumnosCurso
+      totalAlumnosCurso,
+      alumnosCurso
     };
   } catch (error) {
     console.error('[obtenerDetallePartida] ERROR:', error.message);
@@ -1035,7 +1068,17 @@ async function actualizarPartida(id, payload) {
   return partida;
 }
 
-async function eliminarPartida(id) {
+async function eliminarPartida(id, io) {
+  // 1. Obtener datos antes de borrar para el PIN (sala de socket)
+  const partida = await Partida.findById(id);
+  if (partida && io) {
+    console.log(`[Socket] Notificando eliminación de partida PIN: ${partida.pin}`);
+    io.to(partida.pin).emit('partida_eliminada', {
+      mensaje: 'La partida ha sido eliminada por el profesor.'
+    });
+  }
+
+  // 2. Borrar registros
   await Partida.findByIdAndDelete(id);
   await Participacion.deleteMany({ idPartida: id });
   return;
