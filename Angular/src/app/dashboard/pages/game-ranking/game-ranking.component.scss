@@ -554,7 +554,7 @@
 
     .stats-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 1.5rem;
       border-top: 2px solid #f1f5f9;
       padding-top: 2rem;
