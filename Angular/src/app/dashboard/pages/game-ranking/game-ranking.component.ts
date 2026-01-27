@@ -281,14 +281,23 @@ export class GameRankingComponent implements OnInit, OnDestroy {
         this.partidaActiva = data.estadoPartida === 'activa';
         
         if (data.jugadores) {
-          this.ranking = data.jugadores.map((j: any) => ({
-            idAlumno: j.idAlumno,
-            nombre: j.nombreAlumno,
-            puntos: j.puntuacionTotal,
-            aciertos: j.aciertos,
-            fallos: j.fallos,
-            finalizado: j.estado === 'inactivo' || j.estado === 'finalizada' || j.estado === 'finalizado'
-          })).sort((a: any, b: any) => b.puntos - a.puntos);
+          const totalQuestions = data.idCuestionario?.numPreguntas || 0;
+          this.ranking = data.jugadores.map((j: any) => {
+            const aciertos = j.aciertos || 0;
+            const fallos = j.fallos || 0;
+            // Si es examen, calculamos sin responder basándonos en el total del cuestionario
+            const sinResponder = totalQuestions > 0 ? Math.max(0, totalQuestions - (aciertos + fallos)) : 0;
+
+            return {
+              idAlumno: j.idAlumno,
+              nombre: j.nombreAlumno,
+              puntos: j.puntuacionTotal,
+              aciertos: aciertos,
+              fallos: fallos,
+              sinResponder: sinResponder,
+              finalizado: j.estado === 'inactivo' || j.estado === 'finalizada' || j.estado === 'finalizado'
+            };
+          }).sort((a: any, b: any) => b.puntos - a.puntos);
           this.procesarRanking();
         }
         // Conectar socket para seguimiento en vivo si es profesor o examen
