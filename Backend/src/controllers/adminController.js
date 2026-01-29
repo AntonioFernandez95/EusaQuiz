@@ -3,6 +3,7 @@ const Partida = require('../models/partida');
 const Participacion = require('../models/participacion');
 const Curso = require('../models/curso');
 const Ajustes = require('../models/ajustes');
+const tipos = require('../utils/constants');
 const fs = require('fs');
 const path = require('path');
 
@@ -14,7 +15,9 @@ const adminController = {
         try {
             const totalUsuarios = await Usuario.countDocuments();
             const totalPartidas = await Partida.countDocuments();
-            const partidasActivas = await Partida.countDocuments({ estado: 'activa' });
+            const partidasActivas = await Partida.countDocuments({
+                estadoPartida: { $in: [tipos.ESTADOS_PARTIDA.ACTIVA, tipos.ESTADOS_PARTIDA.ESPERA] }
+            });
 
             // Usuarios recientes
             const usuariosRecientes = await Usuario.find()
