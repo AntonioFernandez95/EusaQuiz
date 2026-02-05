@@ -50,10 +50,11 @@ const routes: Routes = [
     path: 'professor',
     component: ProfessorDashboardComponent
   },
-  {
-    path: 'professor/assign-subjects',
-    component: AssignSubjectsComponent
-  },
+  // Route disabled - module assignment now handled by admin
+  // {
+  //   path: 'professor/assign-subjects',
+  //   component: AssignSubjectsComponent
+  // },
   {
     path: 'professor/import-questions',
     component: ImportQuestionsComponent

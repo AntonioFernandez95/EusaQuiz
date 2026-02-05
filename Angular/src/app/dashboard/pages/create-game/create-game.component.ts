@@ -180,7 +180,7 @@ export class CreateGameComponent implements OnInit {
       if (this.hasNoSubjectsAssigned) {
         this.alertService.warning(
           'Sin asignaturas asignadas',
-          'Debes asignarte asignaturas antes de crear una partida. Ve a "Asignar Módulos" en tu dashboard.'
+          'Contacta con el administrador para que te asigne los módulos antes de crear una partida.'
         );
         this.alertsShown = true;
       } else if (this.availableSubjects.length === 0 && this.userAssignedSubjects.length > 0) {
@@ -276,7 +276,7 @@ export class CreateGameComponent implements OnInit {
     if (this.userRole === 'profesor' && this.hasNoSubjectsAssigned) {
       this.alertService.warning(
         'Sin asignaturas asignadas',
-        'Debes asignarte asignaturas antes de crear una partida. Ve a "Asignar Módulos" en tu dashboard.'
+        'Contacta con el administrador para que te asigne los módulos antes de crear una partida.'
       );
       return;
     }

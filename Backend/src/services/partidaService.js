@@ -478,7 +478,7 @@ async function crearPartida(data) {
 
   // Validar que el profesor tenga asignaturas asignadas
   if (!profesor.asignaturas || profesor.asignaturas.length === 0) {
-    throw new Error('Debes asignarte asignaturas antes de crear una partida. Ve a "Asignar Módulos" en tu dashboard.');
+    throw new Error('Contacta con el administrador para que te asigne los módulos antes de crear una partida.');
   }
 
   // Validar que la asignatura seleccionada esté entre las asignaturas del profesor

@@ -19,6 +19,17 @@
         <option *ngFor="let c of availableCourses" [value]="c">{{ c }}</option>
       </select>
     </div>
+    <div class="filter-group">
+      <select
+        [(ngModel)]="roleFilter"
+        (change)="filterUsers()"
+        class="filter-select"
+      >
+        <option value="">Todos los roles</option>
+        <option value="profesor">Profesor</option>
+        <option value="alumno">Alumno</option>
+      </select>
+    </div>
     <div class="total-badge">{{ filteredUsers.length }} usuarios</div>
   </div>
 
@@ -37,7 +48,7 @@
       </thead>
       <tbody>
         <tr
-          *ngFor="let u of filteredUsers"
+          *ngFor="let u of filteredUsers; trackBy: trackByUserId"
           class="animate__animated animate__fadeIn"
         >
           <td>
@@ -63,15 +74,15 @@
             <span class="role-badge" [ngClass]="u.rol">{{ u.rol }}</span>
           </td>
           <td>
-            {{ u.curso?.nombre || "N/A" }} <br /><small>{{
-              u.centro?.nombre || u.centro || "N/A"
+            {{ u.curso?.nombre || 'N/A' }} <br /><small>{{
+              u.centro?.nombre || u.centro || 'N/A'
             }}</small>
           </td>
           <td>
             <span class="status-dot" [class.active]="u.activo"></span>
-            {{ u.activo ? "Activo" : "Inactivo" }}
+            {{ u.activo ? 'Activo' : 'Inactivo' }}
           </td>
-          <td>{{ u.creadoEn | date: "short" }}</td>
+          <td>{{ u.creadoEn | date: 'short' }}</td>
           <td>
             <div class="actions">
               <button
@@ -141,10 +152,10 @@
             <ul class="scrollable">
               <li *ngFor="let p of selectedUser.participaciones">
                 <strong>{{
-                  p.idPartida?.idCuestionario?.titulo || "Partida eliminada"
+                  p.idPartida?.idCuestionario?.titulo || 'Partida eliminada'
                 }}</strong>
                 <span>Score: {{ p.puntuacionTotal }} pts</span>
-                <small>{{ p.fecha | date: "short" }}</small>
+                <small>{{ p.fecha | date: 'short' }}</small>
               </li>
             </ul>
           </div>
@@ -264,28 +275,44 @@
             </select>
           </div>
 
-          <div class="form-group full-width">
-            <label for="editAsignaturas">Asignaturas (solo profesores)</label>
+          <div
+            class="form-group full-width"
+            *ngIf="editFormData.rol === 'profesor'"
+          >
+            <label for="editAsignaturas">Asignaturas asignadas</label>
             <div
-              class="subjects-list"
-              *ngIf="
-                editFormData.asignaturas && editFormData.asignaturas.length > 0
-              "
+              class="subjects-editor"
+              *ngIf="availableSubjectGroups.length > 0"
             >
-              <span
-                *ngFor="let subj of editFormData.asignaturas"
-                class="subject-tag"
+              <div
+                *ngFor="let group of availableSubjectGroups"
+                class="subject-group"
               >
-                {{ getSubjectName(subj) }}
-              </span>
+                <div class="subject-group-title">{{ group.name }}</div>
+                <div class="subject-checkboxes">
+                  <label
+                    *ngFor="let subj of group.subjects"
+                    class="subject-checkbox"
+                  >
+                    <input
+                      type="checkbox"
+                      [checked]="isSubjectSelected(subj)"
+                      (change)="toggleSubject(subj)"
+                    />
+                    {{ subj }}
+                  </label>
+                </div>
+              </div>
             </div>
             <small
-              *ngIf="
-                !editFormData.asignaturas ||
-                editFormData.asignaturas.length === 0
-              "
+              *ngIf="availableSubjectGroups.length === 0"
+              class="text-muted"
             >
-              Sin asignaturas asignadas
+              No hay asignaturas disponibles. Asigne primero un curso al
+              profesor.
+            </small>
+            <small *ngIf="selectedSubjects.size > 0" class="selected-count">
+              {{ selectedSubjects.size }} asignatura(s) seleccionada(s)
             </small>
           </div>
 
@@ -310,7 +337,7 @@
             class="btn-primary"
             [disabled]="!editForm.valid || saving"
           >
-            {{ saving ? "Guardando..." : "Guardar cambios" }}
+            {{ saving ? 'Guardando...' : 'Guardar cambios' }}
           </button>
         </div>
       </form>

@@ -4,6 +4,12 @@ import { environment } from 'src/environments/environment';
 import { DashboardService } from 'src/app/dashboard/services/dashboard.service';
 import { AlertService } from 'src/app/shared/services/alert.service';
 
+interface SubjectGroup {
+  name: string;
+  code: string;
+  subjects: string[];
+}
+
 @Component({
     selector: 'app-admin-users',
     templateUrl: './admin-users.component.html',
@@ -14,6 +20,7 @@ export class AdminUsersComponent implements OnInit {
     filteredUsers: any[] = [];
     searchTerm: string = '';
     courseFilter: string = '';
+    roleFilter: string = '';
     availableCourses: string[] = [];
     availableCoursesObj: any[] = [];
     availableCenters: any[] = [];
@@ -24,15 +31,30 @@ export class AdminUsersComponent implements OnInit {
     saving: boolean = false;
     serverUrl = environment.serverUrl;
 
+    // For subject assignment
+    availableSubjectGroups: SubjectGroup[] = [];
+    selectedSubjects: Set<string> = new Set();
+    configAsignaturas: any = {};
+
     constructor(
         private adminService: AdminService,
-        private alertService: AlertService
+        private alertService: AlertService,
+        private dashboardService: DashboardService
     ) { }
 
     ngOnInit(): void {
         this.loadUsers();
         this.loadAvailableCourses();
         this.loadAvailableCenters();
+        this.loadConfigOptions();
+    }
+
+    loadConfigOptions(): void {
+        this.dashboardService.getConfigOptions().subscribe(config => {
+            if (config && config.asignaturas) {
+                this.configAsignaturas = config.asignaturas;
+            }
+        });
     }
 
     loadAvailableCourses(): void {
@@ -97,6 +119,7 @@ export class AdminUsersComponent implements OnInit {
     filterUsers(): void {
         const query = (this.searchTerm || '').toLowerCase().trim();
         const courseFilter = (this.courseFilter || '').toLowerCase().trim();
+        const roleFilter = (this.roleFilter || '').toLowerCase().trim();
 
         this.filteredUsers = this.users.filter(u => {
             const matchesSearch = !query ||
@@ -107,7 +130,10 @@ export class AdminUsersComponent implements OnInit {
             const userCourseName = this.getCourseName(u.curso).toLowerCase().trim();
             const matchesCourse = !courseFilter || userCourseName === courseFilter;
 
-            return matchesSearch && matchesCourse;
+            // Filtrar por rol (excluir admin del filtro)
+            const matchesRole = !roleFilter || u.rol === roleFilter;
+
+            return matchesSearch && matchesCourse && matchesRole;
         });
     }
 
@@ -156,15 +182,73 @@ export class AdminUsersComponent implements OnInit {
             rol: user.rol,
             centro: user.centro?._id || user.centro,
             curso: user.curso?._id || user.curso,
+            cursoCode: user.curso?.codigo || '',
             asignaturas: user.asignaturas || [],
             activo: user.activo !== false // Default true si no está definido
         };
+        
+        // Initialize selected subjects from user's current asignaturas
+        this.selectedSubjects = new Set();
+        if (user.asignaturas) {
+            user.asignaturas.forEach((s: any) => {
+                const nombre = typeof s === 'object' && s !== null ? s.nombre : s;
+                if (nombre) this.selectedSubjects.add(nombre);
+            });
+        }
+        
+        // Load filtered subjects based on user's curso
+        this.loadFilteredSubjects();
+        
         this.editingUser = user;
+    }
+
+    loadFilteredSubjects(): void {
+        this.availableSubjectGroups = [];
+        
+        if (!this.configAsignaturas) return;
+        
+        const cursoCode = this.editFormData.cursoCode;
+        
+        if (cursoCode && this.configAsignaturas[cursoCode]) {
+            // If user has a curso, show only subjects for that curso
+            const cursoObj = this.availableCoursesObj.find(c => c.codigo === cursoCode);
+            this.availableSubjectGroups = [{
+                name: cursoObj?.nombre || cursoCode,
+                code: cursoCode,
+                subjects: this.configAsignaturas[cursoCode] || []
+            }];
+        } else {
+            // If no curso, show all subjects grouped by curso
+            for (const [code, subjects] of Object.entries(this.configAsignaturas)) {
+                if (Array.isArray(subjects) && subjects.length > 0) {
+                    const cursoObj = this.availableCoursesObj.find(c => c.codigo === code);
+                    this.availableSubjectGroups.push({
+                        name: cursoObj?.nombre || code,
+                        code: code,
+                        subjects: subjects as string[]
+                    });
+                }
+            }
+        }
+    }
+
+    toggleSubject(subject: string): void {
+        if (this.selectedSubjects.has(subject)) {
+            this.selectedSubjects.delete(subject);
+        } else {
+            this.selectedSubjects.add(subject);
+        }
+    }
+
+    isSubjectSelected(subject: string): boolean {
+        return this.selectedSubjects.has(subject);
     }
 
     cancelEdit(): void {
         this.editingUser = null;
         this.editFormData = {};
+        this.selectedSubjects = new Set();
+        this.availableSubjectGroups = [];
         this.saving = false;
     }
 
@@ -174,7 +258,7 @@ export class AdminUsersComponent implements OnInit {
         this.saving = true;
 
         // Preparar datos para enviar (solo campos modificables)
-        const updateData = {
+        const updateData: any = {
             nombre: this.editFormData.nombre,
             email: this.editFormData.email,
             idPortal: this.editFormData.idPortal,
@@ -183,6 +267,11 @@ export class AdminUsersComponent implements OnInit {
             curso: this.editFormData.curso,
             activo: this.editFormData.activo
         };
+
+        // Include asignaturas if user is a profesor
+        if (this.editFormData.rol === 'profesor') {
+            updateData.asignaturas = Array.from(this.selectedSubjects);
+        }
 
         this.adminService.updateUser(this.editFormData._id, updateData).subscribe({
             next: (res) => {
@@ -200,5 +289,15 @@ export class AdminUsersComponent implements OnInit {
 
     getSubjectName(subj: any): string {
         return typeof subj === 'object' && subj !== null ? subj.nombre : subj;
+    }
+
+    formatSubjectsList(asignaturas: any[], limit: number = 3): string {
+        if (!asignaturas || asignaturas.length === 0) return '';
+        const names = asignaturas.slice(0, limit).map(s => this.getSubjectName(s));
+        return names.join(', ');
+    }
+
+    trackByUserId(index: number, user: any): string {
+        return user._id;
     }
 }

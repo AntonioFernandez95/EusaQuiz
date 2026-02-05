@@ -73,7 +73,11 @@ async function listarUsuarios({ limit = 100, skip = 0, rol, curso } = {}) {
   const query = Usuario.find(filter)
     .populate('centro', 'nombre codigo')
     .populate('curso', 'nombre codigo')
-    .populate('asignaturas', 'nombre')
+    .populate({
+      path: 'asignaturas',
+      select: 'nombre curso',
+      populate: { path: 'curso', select: 'nombre codigo' }
+    })
     .skip(+skip)
     .limit(+limit);
   const items = await query.exec();
@@ -85,7 +89,11 @@ async function obtenerUsuarioPorId(id) {
   const u = await Usuario.findById(id)
     .populate('centro', 'nombre codigo')
     .populate('curso', 'nombre codigo')
-    .populate('asignaturas', 'nombre')
+    .populate({
+      path: 'asignaturas',
+      select: 'nombre curso',
+      populate: { path: 'curso', select: 'nombre codigo' }
+    })
     .exec();
   return u;
 }
@@ -118,16 +126,35 @@ async function actualizarUsuario(id, payload = {}) {
       !primerElemento.match(/^[0-9a-fA-F]{24}$/); // No es un ObjectId válido
 
     if (sonNombres && Asignatura) {
-      // Buscar las asignaturas por nombre y obtener sus IDs
-      const asignaturasEncontradas = await Asignatura.find({
+      // Obtener el curso del usuario (puede venir en payload o hay que buscarlo)
+      let cursoId = payload.curso;
+
+      // Si no viene curso en payload, obtener el actual del usuario
+      if (!cursoId) {
+        const usuarioActual = await Usuario.findById(id).select('curso').lean();
+        cursoId = usuarioActual?.curso;
+      }
+
+      // Construir el filtro de búsqueda
+      const filtroAsignaturas = {
         nombre: { $in: payload.asignaturas }
-      }).select('_id nombre').lean();
+      };
+
+      // Si el usuario tiene curso, filtrar asignaturas solo de ese curso
+      if (cursoId) {
+        filtroAsignaturas.curso = cursoId;
+      }
+
+      // Buscar las asignaturas por nombre (y curso si aplica)
+      const asignaturasEncontradas = await Asignatura.find(filtroAsignaturas)
+        .select('_id nombre curso').lean();
 
       // Mapear nombres a IDs
       const asignaturasIds = asignaturasEncontradas.map(a => a._id);
 
       console.log('[usuarioService] Convirtiendo asignaturas:', {
         nombresRecibidos: payload.asignaturas,
+        cursoFiltro: cursoId?.toString() || 'ninguno',
         idsEncontrados: asignaturasIds.map(id => id.toString())
       });
 
@@ -138,7 +165,11 @@ async function actualizarUsuario(id, payload = {}) {
   const u = await Usuario.findByIdAndUpdate(id, payload, { new: true, runValidators: true })
     .populate('centro', 'nombre codigo')
     .populate('curso', 'nombre codigo')
-    .populate('asignaturas', 'nombre')
+    .populate({
+      path: 'asignaturas',
+      select: 'nombre curso',
+      populate: { path: 'curso', select: 'nombre codigo' }
+    })
     .exec();
 
   return u;

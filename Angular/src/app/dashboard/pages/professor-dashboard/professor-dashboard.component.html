@@ -17,12 +17,10 @@
         <line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
       <div class="warning-text">
-        <strong>Asignaturas pendientes:</strong> Debes asignarte las asignaturas
-        que vas a impartir antes de poder crear partidas.
+        <strong>Asignaturas pendientes:</strong> Contacta con el administrador
+        para que te asigne los módulos que vas a impartir antes de poder crear
+        partidas.
       </div>
-      <button class="warning-action" (click)="assignSubjects()">
-        Asignar ahora
-      </button>
     </div>
   </div>
 
@@ -127,6 +125,7 @@
       </svg>
       Análisis y reporte
     </button>
+    <!-- Asignar Módulos button removed - now handled by admin
     <button class="action-card btn--subjects" (click)="assignSubjects()">
       <svg
         viewBox="0 0 24 24"
@@ -141,6 +140,7 @@
       </svg>
       Asignar Módulos
     </button>
+    -->
     <button class="action-card btn--template" (click)="downloadJSONTemplate()">
       <svg
         viewBox="0 0 24 24"
@@ -209,7 +209,7 @@
               class="type-badge"
               [class.live]="game.tipoPartida === 'en_vivo'"
             >
-              {{ game.tipoPartida === "en_vivo" ? "En Vivo" : "Examen" }}
+              {{ game.tipoPartida === 'en_vivo' ? 'En Vivo' : 'Examen' }}
             </span>
             <span class="title">
               {{ game.nombrePartida || game.idCuestionario.titulo }}
@@ -368,7 +368,7 @@
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            {{ game.displayDate | date: "dd/MM HH:mm" }}
+            {{ game.displayDate | date: 'dd/MM HH:mm' }}
           </div>
         </div>
 
@@ -473,7 +473,7 @@
               class="type-badge"
               [class.live]="game.tipoPartida === 'en_vivo'"
             >
-              {{ game.tipoPartida === "en_vivo" ? "En Vivo" : "Examen" }}
+              {{ game.tipoPartida === 'en_vivo' ? 'En Vivo' : 'Examen' }}
             </span>
             <span class="title">
               {{ game.nombrePartida || game.idCuestionario.titulo }}
@@ -494,7 +494,7 @@
             {{ game.aciertosPorcentaje }}% aciertos ·
             {{
               game.fechas?.finalizadaEn || game.fechas?.creadaEn
-                | date: "dd/MM/yyyy HH:mm"
+                | date: 'dd/MM/yyyy HH:mm'
             }}
           </span>
         </div>
@@ -679,12 +679,12 @@
                     [class.high]="row.percentage >= 70"
                     [class.low]="row.percentage < 50"
                   >
-                    {{ row.percentage | number: "1.0-1" }}%
+                    {{ row.percentage | number: '1.0-1' }}%
                   </span>
                 </td>
                 <td class="col-action">
                   <button class="btn-sm-details" (click)="toggleDetails(i)">
-                    {{ expandedIndex === i ? "Ocultar" : "Ver detalles" }}
+                    {{ expandedIndex === i ? 'Ocultar' : 'Ver detalles' }}
                   </button>
                 </td>
               </tr>
@@ -771,7 +771,7 @@
               d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
             />
           </svg>
-          {{ isDownloadingPDF ? "Generando PDF..." : "Descargar PDF" }}
+          {{ isDownloadingPDF ? 'Generando PDF...' : 'Descargar PDF' }}
         </button>
         <button class="btn-primary" (click)="closeReport()">Cerrar</button>
       </div>
@@ -807,7 +807,7 @@
                   class="type-badge"
                   [class.live]="game.tipoPartida === 'en_vivo'"
                 >
-                  {{ game.tipoPartida === "en_vivo" ? "En Vivo" : "Examen" }}
+                  {{ game.tipoPartida === 'en_vivo' ? 'En Vivo' : 'Examen' }}
                 </span>
                 <span class="title">
                   {{ game.nombrePartida || game.idCuestionario.titulo }}
@@ -961,7 +961,7 @@
                   class="type-badge"
                   [class.live]="game.tipoPartida === 'en_vivo'"
                 >
-                  {{ game.tipoPartida === "en_vivo" ? "En Vivo" : "Examen" }}
+                  {{ game.tipoPartida === 'en_vivo' ? 'En Vivo' : 'Examen' }}
                 </span>
                 <span class="title">
                   {{ game.nombrePartida || game.idCuestionario.titulo }}
@@ -984,7 +984,7 @@
                 {{ game.aciertosPorcentaje }}% aciertos ·
                 {{
                   game.fechas?.finalizadaEn || game.fechas?.creadaEn
-                    | date: "dd/MM/yyyy HH:mm"
+                    | date: 'dd/MM/yyyy HH:mm'
                 }}
               </span>
             </div>
@@ -1087,7 +1087,7 @@
             </div>
             <div class="date-center">
               <span class="subtitle">{{
-                game.displayDate | date: "dd/MM/yyyy HH:mm"
+                game.displayDate | date: 'dd/MM/yyyy HH:mm'
               }}</span>
               <div class="timer-badge" *ngIf="game.timerText">
                 <svg
