@@ -19,12 +19,17 @@ export class AuthService {
   private readonly API_URL = environment.apiUrl;
   private readonly TOKEN_KEY = 'campusquiz_token';
   private readonly USER_KEY = 'campusquiz_user';
+  private readonly ACTIVE_COURSE_KEY = 'campusquiz_active_course';
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+
+  // Curso activo seleccionado (para profesores con múltiples cursos)
+  private activeCourseSubject = new BehaviorSubject<any>(null);
+  public activeCourse$ = this.activeCourseSubject.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -173,8 +178,10 @@ export class AuthService {
   private clearAuth(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    sessionStorage.removeItem(this.ACTIVE_COURSE_KEY);
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
+    this.activeCourseSubject.next(null);
   }
 
   /**
@@ -204,6 +211,69 @@ export class AuthService {
   hasRole(rol: 'profesor' | 'alumno'): boolean {
     const user = this.getCurrentUser();
     return user?.rol === rol;
+  }
+
+  /**
+   * Establece el curso activo para profesores con múltiples cursos
+   * Se almacena en sessionStorage para persistir durante la sesión del navegador
+   */
+  setActiveCourse(course: any): void {
+    this.activeCourseSubject.next(course);
+    if (course) {
+      sessionStorage.setItem(this.ACTIVE_COURSE_KEY, JSON.stringify(course));
+    } else {
+      sessionStorage.removeItem(this.ACTIVE_COURSE_KEY);
+    }
+  }
+
+  /**
+   * Obtiene el curso activo seleccionado
+   */
+  getActiveCourse(): any {
+    // Si hay uno en memoria, usarlo
+    if (this.activeCourseSubject.value) {
+      return this.activeCourseSubject.value;
+    }
+    // Si no, intentar restaurar de sessionStorage
+    const stored = sessionStorage.getItem(this.ACTIVE_COURSE_KEY);
+    if (stored) {
+      try {
+        const course = JSON.parse(stored);
+        this.activeCourseSubject.next(course);
+        return course;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Inicializa el curso activo (para profesores)
+   * Si tiene múltiples cursos, selecciona el primero por defecto
+   */
+  initializeActiveCourse(user: any): void {
+    if (user?.rol === 'profesor') {
+      // Si ya hay un curso activo guardado, verificar que sigue siendo válido
+      const currentActive = this.getActiveCourse();
+      const userCursos = user.cursos || [];
+      
+      if (currentActive) {
+        // Verificar que el curso activo está en la lista de cursos del usuario
+        const isValid = userCursos.some((c: any) => 
+          (c._id || c) === (currentActive._id || currentActive)
+        );
+        if (isValid) return; // Mantener el curso activo actual
+      }
+      
+      // Si hay cursos disponibles, seleccionar el primero
+      if (userCursos.length > 0) {
+        this.setActiveCourse(userCursos[0]);
+      } else if (user.curso) {
+        // Fallback al curso singular si existe
+        this.setActiveCourse(user.curso);
+      }
+    }
   }
 
   /**

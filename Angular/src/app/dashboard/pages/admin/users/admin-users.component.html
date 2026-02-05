@@ -74,7 +74,7 @@
             <span class="role-badge" [ngClass]="u.rol">{{ u.rol }}</span>
           </td>
           <td>
-            {{ u.curso?.nombre || 'N/A' }} <br /><small>{{
+            {{ formatCoursesList(u) }} <br /><small>{{
               u.centro?.nombre || u.centro || 'N/A'
             }}</small>
           </td>
@@ -260,7 +260,7 @@
             <small>Centros disponibles: {{ availableCenters.length }}</small>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" *ngIf="editFormData.rol !== 'profesor'">
             <label for="editCurso">Curso</label>
             <select
               id="editCurso"
@@ -273,6 +273,32 @@
                 {{ c.nombre }}
               </option>
             </select>
+          </div>
+
+          <!-- Cursos for professors (multiple selection) -->
+          <div
+            class="form-group full-width"
+            *ngIf="editFormData.rol === 'profesor'"
+          >
+            <label>Cursos asignados</label>
+            <div class="courses-editor">
+              <div class="course-checkboxes">
+                <label
+                  *ngFor="let c of availableCoursesObj"
+                  class="course-checkbox"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="isCourseSelected(c._id)"
+                    (change)="toggleCourse(c._id)"
+                  />
+                  {{ c.nombre }}
+                </label>
+              </div>
+            </div>
+            <small *ngIf="selectedCourses.size > 0" class="selected-count">
+              {{ selectedCourses.size }} curso(s) seleccionado(s)
+            </small>
           </div>
 
           <div

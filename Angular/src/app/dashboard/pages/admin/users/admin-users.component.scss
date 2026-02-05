@@ -548,6 +548,45 @@
             }
         }
 
+        .courses-editor {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            background: #f8fafc;
+            margin-bottom: 8px;
+
+            .course-checkboxes {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+
+                .course-checkbox {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: white;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    font-size: 0.85rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    border: 1px solid #e2e8f0;
+
+                    &:hover {
+                        border-color: #10b981;
+                        background: #ecfdf5;
+                    }
+
+                    input[type="checkbox"] {
+                        width: 14px;
+                        height: 14px;
+                        accent-color: #10b981;
+                        cursor: pointer;
+                    }
+                }
+            }
+        }
+
         .selected-count {
             display: block;
             margin-top: 8px;

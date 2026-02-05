@@ -67,6 +67,18 @@ export class RegisterComponent implements OnInit {
     this.registerForm.get('password')?.valueChanges.subscribe(() => {
       this.calculatePasswordStrength();
     });
+
+    // Escuchar cambios en el rol para validar curso condicionalmente
+    this.registerForm.get('rol')?.valueChanges.subscribe((rol) => {
+      const cursoControl = this.registerForm.get('curso');
+      if (rol === 'alumno') {
+        cursoControl?.setValidators([Validators.required]);
+      } else {
+        cursoControl?.clearValidators();
+        cursoControl?.setValue(null);
+      }
+      cursoControl?.updateValueAndValidity();
+    });
   }
 
   /**
@@ -89,12 +101,16 @@ export class RegisterComponent implements OnInit {
     const nombre = this.registerForm.get('nombre');
     const rol = this.registerForm.get('rol');
     const centro = this.registerForm.get('centro');
+    const curso = this.registerForm.get('curso');
 
-    return !!(
-      nombre?.valid &&
-      rol?.valid &&
-      centro?.valid
-    );
+    const baseValid = !!(nombre?.valid && rol?.valid && centro?.valid);
+    
+    // Si es alumno, el curso también debe ser válido
+    if (rol?.value === 'alumno') {
+      return baseValid && !!curso?.valid;
+    }
+    
+    return baseValid;
   }
 
   /**

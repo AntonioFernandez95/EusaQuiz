@@ -103,9 +103,20 @@ export class CreateGameComponent implements OnInit {
         ).filter(s => !!s) as string[];
         this.hasNoSubjectsAssigned = this.userAssignedSubjects.length === 0;
 
-        // Guardar curso del profesor para filtrado
-        const cursoObj = user.curso as any;
-        this.userCourse = (cursoObj && typeof cursoObj === 'object') ? cursoObj.nombre : (cursoObj || '');
+        // Para profesores con múltiples cursos: usar el curso activo seleccionado
+        const userAny = user as any;
+        if (user.rol === 'profesor' && userAny.cursos && userAny.cursos.length > 0) {
+          // Inicializar curso activo si no existe
+          this.authService.initializeActiveCourse(user);
+          const activeCourse = this.authService.getActiveCourse();
+          if (activeCourse) {
+            this.userCourse = typeof activeCourse === 'object' ? activeCourse.nombre : activeCourse;
+          }
+        } else {
+          // Fallback al curso singular
+          const cursoObj = user.curso as any;
+          this.userCourse = (cursoObj && typeof cursoObj === 'object') ? cursoObj.nombre : (cursoObj || '');
+        }
         
         this.refreshAvailableSubjects();
         

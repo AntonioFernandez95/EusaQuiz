@@ -2,6 +2,7 @@ const Usuario = require('../models/usuario');
 const Partida = require('../models/partida');
 const Participacion = require('../models/participacion');
 const Curso = require('../models/curso');
+const Cuestionario = require('../models/cuestionario');
 const Ajustes = require('../models/ajustes');
 const tipos = require('../utils/constants');
 const fs = require('fs');

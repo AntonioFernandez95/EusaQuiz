@@ -34,6 +34,7 @@ export class AdminUsersComponent implements OnInit {
     // For subject assignment
     availableSubjectGroups: SubjectGroup[] = [];
     selectedSubjects: Set<string> = new Set();
+    selectedCourses: Set<string> = new Set(); // For professors with multiple courses
     configAsignaturas: any = {};
 
     constructor(
@@ -181,11 +182,21 @@ export class AdminUsersComponent implements OnInit {
             idPortal: user.idPortal,
             rol: user.rol,
             centro: user.centro?._id || user.centro,
-            curso: user.curso?._id || user.curso,
+            curso: user.curso?._id || user.curso, // Para alumnos
+            cursos: user.cursos || [], // Para profesores (múltiples cursos)
             cursoCode: user.curso?.codigo || '',
             asignaturas: user.asignaturas || [],
             activo: user.activo !== false // Default true si no está definido
         };
+        
+        // Initialize selected courses for professors
+        this.selectedCourses = new Set();
+        if (user.rol === 'profesor' && user.cursos) {
+            user.cursos.forEach((c: any) => {
+                const id = typeof c === 'object' && c !== null ? c._id : c;
+                if (id) this.selectedCourses.add(id);
+            });
+        }
         
         // Initialize selected subjects from user's current asignaturas
         this.selectedSubjects = new Set();
@@ -196,7 +207,7 @@ export class AdminUsersComponent implements OnInit {
             });
         }
         
-        // Load filtered subjects based on user's curso
+        // Load filtered subjects based on user's cursos
         this.loadFilteredSubjects();
         
         this.editingUser = user;
@@ -207,27 +218,45 @@ export class AdminUsersComponent implements OnInit {
         
         if (!this.configAsignaturas) return;
         
-        const cursoCode = this.editFormData.cursoCode;
-        
-        if (cursoCode && this.configAsignaturas[cursoCode]) {
-            // If user has a curso, show only subjects for that curso
-            const cursoObj = this.availableCoursesObj.find(c => c.codigo === cursoCode);
-            this.availableSubjectGroups = [{
-                name: cursoObj?.nombre || cursoCode,
-                code: cursoCode,
-                subjects: this.configAsignaturas[cursoCode] || []
-            }];
-        } else {
-            // If no curso, show all subjects grouped by curso
-            for (const [code, subjects] of Object.entries(this.configAsignaturas)) {
-                if (Array.isArray(subjects) && subjects.length > 0) {
-                    const cursoObj = this.availableCoursesObj.find(c => c.codigo === code);
-                    this.availableSubjectGroups.push({
-                        name: cursoObj?.nombre || code,
-                        code: code,
-                        subjects: subjects as string[]
-                    });
+        // For professors, use selectedCourses
+        if (this.editFormData.rol === 'profesor') {
+            if (this.selectedCourses.size > 0) {
+                // Show subjects for all selected courses
+                for (const cursoId of this.selectedCourses) {
+                    const cursoObj = this.availableCoursesObj.find(c => c._id === cursoId);
+                    const cursoCode = cursoObj?.codigo;
+                    if (cursoCode && this.configAsignaturas[cursoCode]) {
+                        this.availableSubjectGroups.push({
+                            name: cursoObj?.nombre || cursoCode,
+                            code: cursoCode,
+                            subjects: this.configAsignaturas[cursoCode] || []
+                        });
+                    }
                 }
+            } else {
+                // If no courses selected, show all subjects grouped by curso
+                for (const [code, subjects] of Object.entries(this.configAsignaturas)) {
+                    if (Array.isArray(subjects) && subjects.length > 0) {
+                        const cursoObj = this.availableCoursesObj.find(c => c.codigo === code);
+                        this.availableSubjectGroups.push({
+                            name: cursoObj?.nombre || code,
+                            code: code,
+                            subjects: subjects as string[]
+                        });
+                    }
+                }
+            }
+        } else {
+            // For alumnos, use single curso
+            const cursoCode = this.editFormData.cursoCode;
+            
+            if (cursoCode && this.configAsignaturas[cursoCode]) {
+                const cursoObj = this.availableCoursesObj.find(c => c.codigo === cursoCode);
+                this.availableSubjectGroups = [{
+                    name: cursoObj?.nombre || cursoCode,
+                    code: cursoCode,
+                    subjects: this.configAsignaturas[cursoCode] || []
+                }];
             }
         }
     }
@@ -244,10 +273,26 @@ export class AdminUsersComponent implements OnInit {
         return this.selectedSubjects.has(subject);
     }
 
+    toggleCourse(courseId: string): void {
+        if (this.selectedCourses.has(courseId)) {
+            this.selectedCourses.delete(courseId);
+        } else {
+            this.selectedCourses.add(courseId);
+        }
+        // Clear and reload subjects when courses change
+        this.selectedSubjects = new Set();
+        this.loadFilteredSubjects();
+    }
+
+    isCourseSelected(courseId: string): boolean {
+        return this.selectedCourses.has(courseId);
+    }
+
     cancelEdit(): void {
         this.editingUser = null;
         this.editFormData = {};
         this.selectedSubjects = new Set();
+        this.selectedCourses = new Set();
         this.availableSubjectGroups = [];
         this.saving = false;
     }
@@ -264,13 +309,20 @@ export class AdminUsersComponent implements OnInit {
             idPortal: this.editFormData.idPortal,
             rol: this.editFormData.rol,
             centro: this.editFormData.centro,
-            curso: this.editFormData.curso,
             activo: this.editFormData.activo
         };
 
-        // Include asignaturas if user is a profesor
+        // For professors: use cursos (array) and asignaturas
         if (this.editFormData.rol === 'profesor') {
+            updateData.cursos = Array.from(this.selectedCourses);
             updateData.asignaturas = Array.from(this.selectedSubjects);
+            // Clear curso (singular) for professors
+            updateData.curso = null;
+        } else {
+            // For alumnos: use curso (singular)
+            updateData.curso = this.editFormData.curso;
+            // Clear cursos for non-professors
+            updateData.cursos = [];
         }
 
         this.adminService.updateUser(this.editFormData._id, updateData).subscribe({
@@ -295,6 +347,18 @@ export class AdminUsersComponent implements OnInit {
         if (!asignaturas || asignaturas.length === 0) return '';
         const names = asignaturas.slice(0, limit).map(s => this.getSubjectName(s));
         return names.join(', ');
+    }
+
+    formatCoursesList(user: any): string {
+        // For professors with multiple courses
+        if (user.rol === 'profesor' && user.cursos && user.cursos.length > 0) {
+            return user.cursos.map((c: any) => c?.nombre || c).join(', ');
+        }
+        // For alumnos or professors with single curso
+        if (user.curso) {
+            return user.curso?.nombre || user.curso;
+        }
+        return 'N/A';
     }
 
     trackByUserId(index: number, user: any): string {

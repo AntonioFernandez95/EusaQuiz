@@ -54,6 +54,10 @@ export class ProfessorDashboardComponent implements OnInit, OnDestroy {
   // Notificacion de asignaturas pendientes
   showSubjectsWarning: boolean = false;
 
+  // Selector de curso activo (para profesores con múltiples cursos)
+  userCourses: any[] = [];
+  activeCourse: any = null;
+
   constructor(
     private authService: AuthService,
     private dashboardService: DashboardService,
@@ -83,6 +87,14 @@ export class ProfessorDashboardComponent implements OnInit, OnDestroy {
         
         // Verificar si el profesor tiene asignaturas asignadas (solo para profesores)
         this.showSubjectsWarning = user.rol === 'profesor' && (!user.asignaturas || user.asignaturas.length === 0);
+        
+        // Cargar cursos del profesor para el selector
+        if (user.rol === 'profesor') {
+          this.userCourses = (user as any).cursos || [];
+          // Inicializar curso activo
+          this.authService.initializeActiveCourse(user);
+          this.activeCourse = this.authService.getActiveCourse();
+        }
         
         this.loadDashboardData(user.idPortal);
       }
@@ -456,5 +468,23 @@ export class ProfessorDashboardComponent implements OnInit, OnDestroy {
     if (this.currentUserId) {
       this.loadDashboardData(this.currentUserId);
     }
+  }
+
+  /**
+   * Cambia el curso activo del profesor
+   */
+  onActiveCourseChange(course: any): void {
+    this.activeCourse = course;
+    this.authService.setActiveCourse(course);
+    // Mostrar notificación de cambio
+    const courseName = course?.nombre || 'Sin curso';
+    this.alertService.success('Curso cambiado', `Ahora estás trabajando en: ${courseName}`);
+  }
+
+  /**
+   * Obtiene el ID del curso para comparación en el selector
+   */
+  getCourseId(course: any): string {
+    return course?._id || course;
   }
 }

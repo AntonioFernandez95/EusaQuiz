@@ -24,6 +24,36 @@
     </div>
   </div>
 
+  <!-- Selector de curso activo (solo si tiene múltiples cursos) -->
+  <div
+    class="course-selector-bar animate-fade-in"
+    *ngIf="userCourses.length > 1"
+  >
+    <div class="course-selector-content">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+      <span class="course-label">Curso activo:</span>
+      <select
+        class="course-select"
+        [ngModel]="getCourseId(activeCourse)"
+        (ngModelChange)="onActiveCourseChange($event)"
+      >
+        <option *ngFor="let course of userCourses" [ngValue]="course">
+          {{ course?.nombre || course }}
+        </option>
+      </select>
+    </div>
+  </div>
+
   <!-- Header -->
   <header class="dashboard-header animate-fade-in">
     <div class="logo">

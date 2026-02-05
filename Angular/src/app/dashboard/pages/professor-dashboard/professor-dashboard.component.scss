@@ -83,6 +83,74 @@
   }
 }
 
+// Selector de curso activo
+.course-selector-bar {
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  border: 1px solid #0ea5e9;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.15);
+
+  .course-selector-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+
+    svg {
+      flex-shrink: 0;
+      color: #0284c7;
+    }
+
+    .course-label {
+      color: #0369a1;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .course-select {
+      padding: 0.5rem 2rem 0.5rem 0.75rem;
+      border: 2px solid #0ea5e9;
+      border-radius: 8px;
+      background: white;
+      color: #0369a1;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230284c7' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+
+      &:hover {
+        border-color: #0284c7;
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: #0284c7;
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .course-selector-content {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .course-select {
+      width: 100%;
+    }
+  }
+}
+
 @media (max-width: 600px) {
   .warning-banner .warning-content {
     flex-direction: column;

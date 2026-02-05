@@ -42,26 +42,33 @@ async function listarUsuarios({ limit = 100, skip = 0, rol, curso } = {}) {
   if (curso) {
     // Verificar si es un ObjectId válido
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(curso);
+    let cursoId;
 
     if (isObjectId) {
-      filter.curso = curso;
+      cursoId = curso;
     } else {
       // Es un nombre o código de curso, buscar el ObjectId
       if (Curso) {
-        // Nota: Aquí no tenemos el centro del profesor directamente en los argumentos.
-        // Se asume que el nombre/código es único o se buscará el primero encontrado.
         const cursoDoc = await Curso.findOne({
           $or: [{ nombre: curso }, { codigo: curso }]
         }).lean();
 
         if (cursoDoc) {
-          filter.curso = cursoDoc._id;
+          cursoId = cursoDoc._id;
         } else {
           // Si no se encuentra el curso, devolver array vacío
           console.log(`[usuarioService] Curso "${curso}" no encontrado`);
           return [];
         }
       }
+    }
+
+    // Buscar en curso (alumnos) O en cursos (profesores)
+    if (cursoId) {
+      filter.$or = [
+        { curso: cursoId },
+        { cursos: cursoId }
+      ];
     }
   }
 
@@ -72,7 +79,8 @@ async function listarUsuarios({ limit = 100, skip = 0, rol, curso } = {}) {
 
   const query = Usuario.find(filter)
     .populate('centro', 'nombre codigo')
-    .populate('curso', 'nombre codigo')
+    .populate('curso', 'nombre codigo')  // Para alumnos
+    .populate('cursos', 'nombre codigo') // Para profesores (múltiples cursos)
     .populate({
       path: 'asignaturas',
       select: 'nombre curso',
@@ -88,7 +96,8 @@ async function obtenerUsuarioPorId(id) {
   if (!Usuario) throw new Error('Modelo Usuario no encontrado.');
   const u = await Usuario.findById(id)
     .populate('centro', 'nombre codigo')
-    .populate('curso', 'nombre codigo')
+    .populate('curso', 'nombre codigo')  // Para alumnos
+    .populate('cursos', 'nombre codigo') // Para profesores (múltiples cursos)
     .populate({
       path: 'asignaturas',
       select: 'nombre curso',
@@ -126,13 +135,25 @@ async function actualizarUsuario(id, payload = {}) {
       !primerElemento.match(/^[0-9a-fA-F]{24}$/); // No es un ObjectId válido
 
     if (sonNombres && Asignatura) {
-      // Obtener el curso del usuario (puede venir en payload o hay que buscarlo)
-      let cursoId = payload.curso;
+      // Obtener los cursos del usuario (puede venir en payload o hay que buscarlo)
+      let cursosIds = [];
 
-      // Si no viene curso en payload, obtener el actual del usuario
-      if (!cursoId) {
-        const usuarioActual = await Usuario.findById(id).select('curso').lean();
-        cursoId = usuarioActual?.curso;
+      // Para profesores: usar cursos (array)
+      if (payload.cursos && Array.isArray(payload.cursos) && payload.cursos.length > 0) {
+        cursosIds = payload.cursos;
+      }
+      // Para alumnos: usar curso (singular)
+      else if (payload.curso) {
+        cursosIds = [payload.curso];
+      }
+      // Si no viene en payload, obtener del usuario actual
+      else {
+        const usuarioActual = await Usuario.findById(id).select('curso cursos rol').lean();
+        if (usuarioActual?.rol === 'profesor' && usuarioActual?.cursos?.length > 0) {
+          cursosIds = usuarioActual.cursos;
+        } else if (usuarioActual?.curso) {
+          cursosIds = [usuarioActual.curso];
+        }
       }
 
       // Construir el filtro de búsqueda
@@ -140,12 +161,12 @@ async function actualizarUsuario(id, payload = {}) {
         nombre: { $in: payload.asignaturas }
       };
 
-      // Si el usuario tiene curso, filtrar asignaturas solo de ese curso
-      if (cursoId) {
-        filtroAsignaturas.curso = cursoId;
+      // Si hay cursos, filtrar asignaturas solo de esos cursos
+      if (cursosIds.length > 0) {
+        filtroAsignaturas.curso = { $in: cursosIds };
       }
 
-      // Buscar las asignaturas por nombre (y curso si aplica)
+      // Buscar las asignaturas por nombre (y cursos si aplica)
       const asignaturasEncontradas = await Asignatura.find(filtroAsignaturas)
         .select('_id nombre curso').lean();
 
@@ -154,7 +175,7 @@ async function actualizarUsuario(id, payload = {}) {
 
       console.log('[usuarioService] Convirtiendo asignaturas:', {
         nombresRecibidos: payload.asignaturas,
-        cursoFiltro: cursoId?.toString() || 'ninguno',
+        cursosFiltro: cursosIds.map(id => id.toString()),
         idsEncontrados: asignaturasIds.map(id => id.toString())
       });
 
@@ -164,7 +185,8 @@ async function actualizarUsuario(id, payload = {}) {
 
   const u = await Usuario.findByIdAndUpdate(id, payload, { new: true, runValidators: true })
     .populate('centro', 'nombre codigo')
-    .populate('curso', 'nombre codigo')
+    .populate('curso', 'nombre codigo')  // Para alumnos
+    .populate('cursos', 'nombre codigo') // Para profesores (múltiples cursos)
     .populate({
       path: 'asignaturas',
       select: 'nombre curso',
