@@ -1,1 +1,0 @@
-Angular será el Framework principal del frontend. Permite crear una aplicación de una sola página organizada en componentes reutilizables. 
