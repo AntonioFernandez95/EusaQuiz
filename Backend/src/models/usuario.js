@@ -4,8 +4,9 @@
   "nombre": "Profesor Oak",
   "email": "oak@pokedex.com",
   "rol": "profesor",
-  "curso": ObjectId("..."),  // Referencia a Curso
-  "centro": ObjectId("...")  // Referencia a Centro
+  "cursos": [ObjectId("...")],  // Array de cursos para profesores
+  "curso": ObjectId("..."),     // Curso único para alumnos
+  "centro": ObjectId("...")     // Referencia a Centro
 }
 */
 const mongoose = require('mongoose');
@@ -39,6 +40,7 @@ const UsuarioSchema = new mongoose.Schema({
         required: true
     },
 
+    // Curso único para alumnos
     curso: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Curso',
@@ -47,6 +49,12 @@ const UsuarioSchema = new mongoose.Schema({
             return this.rol === tipos.ROLES.ALUMNO;
         }
     },
+
+    // Array de cursos para profesores
+    cursos: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Curso'
+    }],
 
     centro: {
         type: mongoose.Schema.Types.ObjectId,
