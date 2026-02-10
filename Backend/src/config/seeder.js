@@ -30,9 +30,8 @@ const seedAdmin = async () => {
             nombre: adminNombre,
             email: adminEmail,
             password: hashedPassword,
-            rol: ROLES.ADMIN,
-            centro: 'NEGOCIOS',
-            curso: null // El admin no suele tener curso asignado
+            rol: ROLES.ADMIN
+            // Admin no requiere centro ni curso
         });
 
         await newAdmin.save();

@@ -70,6 +70,21 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 //Importar FRONT 
 app.use(express.static(path.join(__dirname, '../frontend/dist/campus-quiz')));
+
+// Ruta info del API
+app.get('/api/info', (req, res) => {
+  res.json({
+    mensaje: '🎮 API de EusaQuiz funcionando',
+    version: '1.0.0',
+    docs: '/api-docs'
+  });
+});
+
+// Catch-all: servir Angular para cualquier ruta que no sea API
+app.get('/{*splat}', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/campus-quiz/index.html'));
+});
+
 // --- Arrancar Servidor ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {

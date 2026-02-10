@@ -503,8 +503,8 @@ textarea {
 
 // --- Estilos Centralizados de Cabecera ---
 .dashboard-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   margin-bottom: 2rem;
   padding: 0.5rem 0;
@@ -513,6 +513,7 @@ textarea {
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-self: start;
     
     .logo-img {
       height: 60px;
@@ -527,8 +528,7 @@ textarea {
     font-weight: 700;
     color: var(--primary-900);
     text-align: center;
-    flex: 1;
-    margin: 0 1rem;
+    justify-self: center;
   }
 
   .user-profile {
@@ -540,6 +540,7 @@ textarea {
     border-radius: 50px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--neutral-200);
+    justify-self: end;
 
     .user-name {
       font-weight: 600;
