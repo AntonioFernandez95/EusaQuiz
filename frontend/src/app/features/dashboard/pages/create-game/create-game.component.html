@@ -49,7 +49,7 @@
           <option value="" disabled selected>
             Seleccionar asignatura y curso
           </option>
-          <option *ngFor="let sub of availableSubjects" [value]="sub.name">
+          <option *ngFor="let sub of availableSubjects" [value]="sub.course + '|' + sub.name">
             {{ sub.course }} - {{ sub.name }}
           </option>
         </select>

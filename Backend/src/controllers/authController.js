@@ -46,7 +46,12 @@ const authController = {
             // Poblar curso y centro para la respuesta
             const usuarioPoblado = await Usuario.findById(nuevoUsuario._id)
                 .populate('curso', 'nombre codigo')
-                .populate('centro', 'nombre codigo');
+                .populate('centro', 'nombre codigo')
+                .populate({
+                    path: 'asignaturas',
+                    select: 'nombre curso',
+                    populate: { path: 'curso', select: 'nombre codigo' }
+                });
 
             // Generar JWT
             const token = jwt.sign(
@@ -88,8 +93,12 @@ const authController = {
             const user = await Usuario.findOne({ email })
                 .populate('curso', 'nombre codigo')
                 .populate('centro', 'nombre codigo')
-                .populate('asignaturas', 'nombre');
-                
+                .populate({
+                    path: 'asignaturas',
+                    select: 'nombre curso',
+                    populate: { path: 'curso', select: 'nombre codigo' }
+                });
+
             if (!user || !user.password) {
                 return res.status(401).json({ ok: false, mensaje: 'Credenciales inválidas' });
             }
@@ -160,7 +169,11 @@ const authController = {
             const userPoblado = await Usuario.findById(user._id)
                 .populate('curso', 'nombre codigo')
                 .populate('centro', 'nombre codigo')
-                .populate('asignaturas', 'nombre');
+                .populate({
+                    path: 'asignaturas',
+                    select: 'nombre curso',
+                    populate: { path: 'curso', select: 'nombre codigo' }
+                });
 
             // Generar nuestro propio token de sesión
             const sessionToken = jwt.sign(
@@ -268,7 +281,7 @@ const authController = {
         try {
             const Centro = require('../models/centro');
             const Curso = require('../models/curso');
-            
+
             const [centros, cursos] = await Promise.all([
                 Centro.find().sort({ nombre: 1 }),
                 Curso.find().populate('centro', 'nombre codigo').sort({ nombre: 1 })

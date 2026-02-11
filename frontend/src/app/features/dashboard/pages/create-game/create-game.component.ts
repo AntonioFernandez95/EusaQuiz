@@ -9,7 +9,7 @@ import { BrandingService } from 'src/app/core/services/branding.service';
 @Component({
   selector: 'app-create-game',
   templateUrl: './create-game.component.html',
-  styleUrls: ['./create-game.component.scss']
+  styleUrls: ['./create-game.component.scss'],
 })
 export class CreateGameComponent implements OnInit {
   userName: string = '';
@@ -47,17 +47,17 @@ export class CreateGameComponent implements OnInit {
   editId: string = '';
 
   // Data from backend
-  availableSubjects: { name: string, course: string }[] = [];
+  availableSubjects: { name: string; course: string }[] = [];
   availableQuizzes: any[] = [];
   qualificationModes: string[] = [];
 
   // RAW Data for filtering
-  private allConfigSubjects: { name: string, course: string }[] = [];
+  private allConfigSubjects: { name: string; course: string }[] = [];
   private configCursos: any[] = [];
   private alertsShown = false;
 
   // Control de asignaturas del profesor
-  userAssignedSubjects: string[] = [];
+  userAssignedSubjects: { name: string; course: string }[] = [];
   userCourse: string = '';
   hasNoSubjectsAssigned: boolean = false;
   userRole: string = '';
@@ -71,7 +71,8 @@ export class CreateGameComponent implements OnInit {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     if (this.showQuizDropdown) {
-      const quizSelector = this.elementRef.nativeElement.querySelector('.quiz-selector');
+      const quizSelector =
+        this.elementRef.nativeElement.querySelector('.quiz-selector');
       if (quizSelector && !quizSelector.contains(event.target)) {
         this.showQuizDropdown = false;
       }
@@ -84,38 +85,64 @@ export class CreateGameComponent implements OnInit {
     private route: ActivatedRoute,
     private alertService: AlertService,
     private elementRef: ElementRef,
-    public brandingService: BrandingService
-  ) { }
+    public brandingService: BrandingService,
+  ) {}
 
   ngOnInit(): void {
-    this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.subscribe((user) => {
       if (user) {
         this.userName = user.nombre;
-        this.userProfileImg = user.fotoPerfil ? `${this.serverUrl}/${user.fotoPerfil}` : 'assets/img/default-avatar.png';
-        this.userInitials = this.userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        this.userProfileImg = user.fotoPerfil
+          ? `${this.serverUrl}/${user.fotoPerfil}`
+          : 'assets/img/default-avatar.png';
+        this.userInitials = this.userName
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .toUpperCase()
+          .substring(0, 2);
         this.userId = user.idPortal;
         this.userRole = user.rol;
 
         // Guardar asignaturas asignadas del profesor
-        // Las asignaturas pueden ser objetos o strings
-        this.userAssignedSubjects = (user.asignaturas || []).map(s =>
-          typeof s === 'object' && s !== null ? s.nombre : s
-        ).filter(s => !!s) as string[];
+        // Las asignaturas pueden ser IDs (string) o objetos poblados { nombre, curso }
+        this.userAssignedSubjects = (user.asignaturas || []).map((s: any) => {
+          if (typeof s === 'object' && s !== null) {
+            const name = s.nombre || s.name || '';
+            const cursoNombre = s.curso && typeof s.curso === 'object' 
+              ? (s.curso.nombre || '') 
+              : '';
+            return { name, course: cursoNombre };
+          }
+          // Si es un string, lo guardamos como nombre (aunque podría ser un ID, 
+          // intentamos que coincida con lo que tengamos)
+          return { name: String(s), course: '' };
+        }).filter((s: any) => !!s.name);
         this.hasNoSubjectsAssigned = this.userAssignedSubjects.length === 0;
 
         // Para profesores con múltiples cursos: usar el curso activo seleccionado
         const userAny = user as any;
-        if (user.rol === 'profesor' && userAny.cursos && userAny.cursos.length > 0) {
+        if (
+          user.rol === 'profesor' &&
+          userAny.cursos &&
+          userAny.cursos.length > 0
+        ) {
           // Inicializar curso activo si no existe
           this.authService.initializeActiveCourse(user);
           const activeCourse = this.authService.getActiveCourse();
           if (activeCourse) {
-            this.userCourse = typeof activeCourse === 'object' ? activeCourse.nombre : activeCourse;
+            this.userCourse =
+              typeof activeCourse === 'object'
+                ? activeCourse.nombre
+                : activeCourse;
           }
         } else {
           // Fallback al curso singular
           const cursoObj = user.curso as any;
-          this.userCourse = (cursoObj && typeof cursoObj === 'object') ? cursoObj.nombre : (cursoObj || '');
+          this.userCourse =
+            cursoObj && typeof cursoObj === 'object'
+              ? cursoObj.nombre
+              : cursoObj || '';
         }
 
         this.refreshAvailableSubjects();
@@ -134,18 +161,45 @@ export class CreateGameComponent implements OnInit {
     });
 
     // Cargar configuraciones (asignaturas, modos, etc)
-    this.dashboardService.getConfigOptions().subscribe(config => {
+    this.dashboardService.getConfigOptions().subscribe((config) => {
       if (config && config.asignaturas) {
-        const dam1 = (config.asignaturas.DAM1 || []).map((s: string) => ({ name: s, course: '1 DAM' }));
-        const dam2 = (config.asignaturas.DAM2 || []).map((s: string) => ({ name: s, course: '2 DAM' }));
-        const daw1 = (config.asignaturas.DAW1 || []).map((s: string) => ({ name: s, course: '1 DAW' }));
-        const daw2 = (config.asignaturas.DAW2 || []).map((s: string) => ({ name: s, course: '2 DAW' }));
-        const asir1 = (config.asignaturas.ASIR1 || []).map((s: string) => ({ name: s, course: '1 ASIR' }));
-        const asir2 = (config.asignaturas.ASIR2 || []).map((s: string) => ({ name: s, course: '2 ASIR' }));
+        const dam1 = (config.asignaturas.DAM1 || []).map((s: string) => ({
+          name: s,
+          course: '1 DAM',
+        }));
+        const dam2 = (config.asignaturas.DAM2 || []).map((s: string) => ({
+          name: s,
+          course: '2 DAM',
+        }));
+        const daw1 = (config.asignaturas.DAW1 || []).map((s: string) => ({
+          name: s,
+          course: '1 DAW',
+        }));
+        const daw2 = (config.asignaturas.DAW2 || []).map((s: string) => ({
+          name: s,
+          course: '2 DAW',
+        }));
+        const asir1 = (config.asignaturas.ASIR1 || []).map((s: string) => ({
+          name: s,
+          course: '1 ASIR',
+        }));
+        const asir2 = (config.asignaturas.ASIR2 || []).map((s: string) => ({
+          name: s,
+          course: '2 ASIR',
+        }));
 
-        this.allConfigSubjects = [...dam1, ...dam2, ...daw1, ...daw2, ...asir1, ...asir2];
+        this.allConfigSubjects = [
+          ...dam1,
+          ...dam2,
+          ...daw1,
+          ...daw2,
+          ...asir1,
+          ...asir2,
+        ];
         this.configCursos = config.cursos || [];
-        this.qualificationModes = config.modosCalificacion || ['velocidad_precision'];
+        this.qualificationModes = config.modosCalificacion || [
+          'velocidad_precision',
+        ];
 
         this.refreshAvailableSubjects();
 
@@ -169,18 +223,22 @@ export class CreateGameComponent implements OnInit {
 
     // 2. Intentar resolver el nombre del curso si this.userCourse parece un ID
     if (this.userCourse && /^[0-9a-fA-F]{24}$/.test(this.userCourse)) {
-      const cursoEncontrado = this.configCursos.find(c => c._id === this.userCourse);
+      const cursoEncontrado = this.configCursos.find(
+        (c) => c._id === this.userCourse,
+      );
       if (cursoEncontrado) {
         this.userCourse = cursoEncontrado.nombre;
         console.log('[CreateGame] Curso resuelto por ID:', this.userCourse);
       }
     }
 
-    // 3. Filtrar por asignaturas asignadas al profesor Y por su curso actual
+    // 3. Filtrar por asignaturas asignadas al profesor (nombre + curso)
     if (this.userAssignedSubjects.length > 0) {
-      this.availableSubjects = this.allConfigSubjects.filter(s =>
-        this.userAssignedSubjects.includes(s.name) &&
-        (!this.userCourse || s.course === this.userCourse)
+      this.availableSubjects = this.allConfigSubjects.filter(
+        (s) =>
+          this.userAssignedSubjects.some(
+            (a) => a.name === s.name && (!a.course || a.course === s.course),
+          ),
       );
     } else {
       this.availableSubjects = [];
@@ -191,14 +249,17 @@ export class CreateGameComponent implements OnInit {
       if (this.hasNoSubjectsAssigned) {
         this.alertService.warning(
           'Sin asignaturas asignadas',
-          'Contacta con el administrador para que te asigne los módulos antes de crear una partida.'
+          'Contacta con el administrador para que te asigne los módulos antes de crear una partida.',
         );
         this.alertsShown = true;
-      } else if (this.availableSubjects.length === 0 && this.userAssignedSubjects.length > 0) {
+      } else if (
+        this.availableSubjects.length === 0 &&
+        this.userAssignedSubjects.length > 0
+      ) {
         // Tiene asignaturas pero ninguna coincide con su curso
         this.alertService.warning(
           'Sin asignaturas para el curso actual',
-          `Tienes asignaturas asignadas pero ninguna pertenece a tu curso actual: "${this.userCourse || 'Sin curso'}".`
+          `Tienes asignaturas asignadas pero ninguna pertenece a tu curso actual: "${this.userCourse || 'Sin curso'}".`,
         );
         this.alertsShown = true;
       }
@@ -206,10 +267,12 @@ export class CreateGameComponent implements OnInit {
   }
 
   loadGameData(): void {
-    this.dashboardService.getDetallePartida(this.editId).subscribe(game => {
+    this.dashboardService.getDetallePartida(this.editId).subscribe((game) => {
       if (game) {
         this.gameName = game.nombrePartida || '';
-        this.selectedSubject = game.asignatura || game.idCuestionario?.asignatura || '';
+        const curso = game.curso || '';
+        const asig = game.asignatura || game.idCuestionario?.asignatura || '';
+        this.selectedSubject = curso && asig ? curso + '|' + asig : asig;
         this.selectedQuizId = game.idCuestionario?._id || '';
         this.gameMode = game.tipoPartida;
         this.accessType = game.modoAcceso;
@@ -233,7 +296,10 @@ export class CreateGameComponent implements OnInit {
             if (cfg.programadaPara) {
               const date = new Date(cfg.programadaPara);
               this.scheduledDate = date.toISOString().split('T')[0];
-              this.scheduledTime = date.toTimeString().split(' ')[0].substring(0, 5);
+              this.scheduledTime = date
+                .toTimeString()
+                .split(' ')[0]
+                .substring(0, 5);
             }
           }
         }
@@ -242,21 +308,23 @@ export class CreateGameComponent implements OnInit {
   }
 
   loadQuizzes(): void {
-    this.dashboardService.getProfessorQuizzes(this.userId).subscribe(quizzes => {
-      this.availableQuizzes = quizzes;
-    });
+    this.dashboardService
+      .getProfessorQuizzes(this.userId)
+      .subscribe((quizzes) => {
+        this.availableQuizzes = quizzes;
+      });
   }
 
   loadStudents(curso?: string): void {
-    this.dashboardService.getStudents(curso).subscribe(students => {
+    this.dashboardService.getStudents(curso).subscribe((students) => {
       this.allStudents = students;
     });
   }
 
   onSubjectChange(): void {
-    // Buscar el curso correspondiente a la asignatura seleccionada
-    const subjectInfo = this.availableSubjects.find(s => s.name === this.selectedSubject);
-    const selectedCourse = subjectInfo ? subjectInfo.course : undefined;
+    // Extraer curso y nombre de la clave compuesta 'curso|asignatura'
+    const parts = (this.selectedSubject || '').split('|');
+    const selectedCourse = parts.length === 2 ? parts[0] : undefined;
 
     // Al cambiar la asignatura/curso, limpiamos la selección previa para evitar inconsistencias
     this.selectedStudentIds = [];
@@ -276,9 +344,10 @@ export class CreateGameComponent implements OnInit {
 
   get filteredStudents(): any[] {
     if (!this.searchTerm) return this.allStudents;
-    return this.allStudents.filter(s =>
-      s.nombre.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      s.correo.toLowerCase().includes(this.searchTerm.toLowerCase())
+    return this.allStudents.filter(
+      (s) =>
+        s.nombre.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        s.correo.toLowerCase().includes(this.searchTerm.toLowerCase()),
     );
   }
 
@@ -287,37 +356,45 @@ export class CreateGameComponent implements OnInit {
     if (this.userRole === 'profesor' && this.hasNoSubjectsAssigned) {
       this.alertService.warning(
         'Sin asignaturas asignadas',
-        'Contacta con el administrador para que te asigne los módulos antes de crear una partida.'
+        'Contacta con el administrador para que te asigne los módulos antes de crear una partida.',
       );
       return;
     }
 
     if (!this.gameName || !this.selectedQuizId || !this.selectedSubject) {
-      this.alertService.warning('Datos incompletos', 'Por favor, rellena los campos obligatorios para continuar.');
+      this.alertService.warning(
+        'Datos incompletos',
+        'Por favor, rellena los campos obligatorios para continuar.',
+      );
       return;
     }
 
     if (this.accessType === 'privada' && this.selectedStudentIds.length === 0) {
-      this.alertService.warning('Selección de alumnos', 'En modo privado debes seleccionar al menos un alumno de la lista.');
+      this.alertService.warning(
+        'Selección de alumnos',
+        'En modo privado debes seleccionar al menos un alumno de la lista.',
+      );
       return;
     }
 
-    // Buscar el curso correspondiente a la asignatura seleccionada
-    const subjectInfo = this.availableSubjects.find(s => s.name === this.selectedSubject);
-    const selectedCourse = subjectInfo ? subjectInfo.course : '';
+    // Extraer curso y nombre de la clave compuesta 'curso|asignatura'
+    const parts = (this.selectedSubject || '').split('|');
+    const selectedCourse = parts.length === 2 ? parts[0] : '';
+    const selectedName = parts.length === 2 ? parts[1] : this.selectedSubject;
 
     const gameData: any = {
       nombrePartida: this.gameName,
-      asignatura: this.selectedSubject,
+      asignatura: selectedName,
       curso: selectedCourse,
       idCuestionario: this.selectedQuizId,
       idProfesor: this.userId,
       tipoPartida: this.gameMode,
       modoAcceso: this.accessType,
-      participantesPermitidos: this.accessType === 'privada' ? this.selectedStudentIds : [],
+      participantesPermitidos:
+        this.accessType === 'privada' ? this.selectedStudentIds : [],
       fechas: {
-        creadaEn: new Date()
-      }
+        creadaEn: new Date(),
+      },
     };
 
     if (this.gameMode === 'en_vivo') {
@@ -326,18 +403,27 @@ export class CreateGameComponent implements OnInit {
         mostrarRanking: this.showRanking,
         mezclarPreguntas: this.shuffleQuestions,
         mezclarRespuestas: this.shuffleAnswers,
-        modoCalificacion: this.qualificationMode
+        modoCalificacion: this.qualificationMode,
       };
       gameData.estadoPartida = 'espera';
-    } else { // examen
+    } else {
+      // examen
       if (!this.instantAccess && (!this.scheduledDate || !this.scheduledTime)) {
-        this.alertService.warning('Fecha requerida', 'Por favor, selecciona una fecha y hora o marca la opción de acceso instantáneo.');
+        this.alertService.warning(
+          'Fecha requerida',
+          'Por favor, selecciona una fecha y hora o marca la opción de acceso instantáneo.',
+        );
         return;
       }
 
-      const scheduledDateTime = this.instantAccess ? new Date() : new Date(`${this.scheduledDate}T${this.scheduledTime}`);
+      const scheduledDateTime = this.instantAccess
+        ? new Date()
+        : new Date(`${this.scheduledDate}T${this.scheduledTime}`);
       if (scheduledDateTime < new Date()) {
-        this.alertService.warning('Fecha inválida', 'La fecha y hora programada no pueden ser en el pasado.');
+        this.alertService.warning(
+          'Fecha inválida',
+          'La fecha y hora programada no pueden ser en el pasado.',
+        );
         return;
       }
 
@@ -345,12 +431,13 @@ export class CreateGameComponent implements OnInit {
         tiempoTotalMin: this.totalExamTime,
         programadaPara: scheduledDateTime,
         mezclarPreguntas: this.shuffleQuestions,
-        mezclarRespuestas: this.shuffleAnswers
+        mezclarRespuestas: this.shuffleAnswers,
       };
 
       // Si es acceso inmediato, la marcamos como activa para que aparezca como iniciada
       gameData.estadoPartida = this.instantAccess ? 'activa' : 'espera';
-      gameData.fechas.programadaPara = gameData.configuracionExamen.programadaPara;
+      gameData.fechas.programadaPara =
+        gameData.configuracionExamen.programadaPara;
       if (this.instantAccess) {
         gameData.inicioEn = scheduledDateTime;
       }
@@ -363,20 +450,27 @@ export class CreateGameComponent implements OnInit {
     action.subscribe({
       next: (res) => {
         if (res) {
-          const msg = this.isEditing ? '¡Partida actualizada con éxito!' : '¡Partida creada con éxito!';
+          const msg = this.isEditing
+            ? '¡Partida actualizada con éxito!'
+            : '¡Partida creada con éxito!';
           this.alertService.success('Completado', msg);
 
           if (this.gameMode === 'examen') {
             this.router.navigate(['/dashboard/professor']);
           } else {
-            this.router.navigate([`/dashboard/professor/lobby/${res._id || this.editId}`]);
+            this.router.navigate([
+              `/dashboard/professor/lobby/${res._id || this.editId}`,
+            ]);
           }
         }
       },
       error: (err) => {
         console.error('Error al procesar partida:', err);
-        this.alertService.error('Error del sistema', 'Hubo un problema al procesar la partida en el servidor.');
-      }
+        this.alertService.error(
+          'Error del sistema',
+          'Hubo un problema al procesar la partida en el servidor.',
+        );
+      },
     });
   }
 
@@ -396,7 +490,9 @@ export class CreateGameComponent implements OnInit {
   }
 
   getSelectedQuizTitle(): string {
-    const quiz = this.availableQuizzes.find(q => q._id === this.selectedQuizId);
+    const quiz = this.availableQuizzes.find(
+      (q) => q._id === this.selectedQuizId,
+    );
     return quiz ? quiz.titulo : '';
   }
 
@@ -420,7 +516,7 @@ export class CreateGameComponent implements OnInit {
       instantAccess: this.instantAccess,
       selectedStudentIds: this.selectedStudentIds,
       editId: this.editId,
-      isEditing: this.isEditing
+      isEditing: this.isEditing,
     };
   }
 
@@ -434,12 +530,16 @@ export class CreateGameComponent implements OnInit {
     this.totalExamTime = state.totalExamTime || 60;
     this.accessType = state.accessType || 'publica';
     this.qualificationMode = state.qualificationMode || 'velocidad_precision';
-    this.showRanking = state.showRanking !== undefined ? state.showRanking : true;
-    this.shuffleQuestions = state.shuffleQuestions !== undefined ? state.shuffleQuestions : true;
-    this.shuffleAnswers = state.shuffleAnswers !== undefined ? state.shuffleAnswers : true;
+    this.showRanking =
+      state.showRanking !== undefined ? state.showRanking : true;
+    this.shuffleQuestions =
+      state.shuffleQuestions !== undefined ? state.shuffleQuestions : true;
+    this.shuffleAnswers =
+      state.shuffleAnswers !== undefined ? state.shuffleAnswers : true;
     this.scheduledDate = state.scheduledDate || '';
     this.scheduledTime = state.scheduledTime || '';
-    this.instantAccess = state.instantAccess !== undefined ? state.instantAccess : false;
+    this.instantAccess =
+      state.instantAccess !== undefined ? state.instantAccess : false;
     this.selectedStudentIds = state.selectedStudentIds || [];
     this.editId = state.editId || '';
     this.isEditing = state.isEditing || false;
@@ -460,7 +560,7 @@ export class CreateGameComponent implements OnInit {
 
     // Navegar a la página de edición pasando el estado en queryParams
     this.router.navigate(['/dashboard/professor/edit-quiz', quiz._id], {
-      queryParams: { returnState: state }
+      queryParams: { returnState: state },
     });
   }
 
@@ -484,7 +584,10 @@ export class CreateGameComponent implements OnInit {
     this.dashboardService.deleteCuestionario(this.quizToDelete._id).subscribe({
       next: (res) => {
         if (res) {
-          this.alertService.success('Eliminado', 'Cuestionario eliminado correctamente.');
+          this.alertService.success(
+            'Eliminado',
+            'Cuestionario eliminado correctamente.',
+          );
           // Si el cuestionario eliminado era el seleccionado, limpiar selección
           if (this.selectedQuizId === this.quizToDelete._id) {
             this.selectedQuizId = '';
@@ -495,8 +598,11 @@ export class CreateGameComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error eliminando cuestionario:', err);
-        this.alertService.error('Error', 'No se pudo eliminar el cuestionario.');
-      }
+        this.alertService.error(
+          'Error',
+          'No se pudo eliminar el cuestionario.',
+        );
+      },
     });
   }
 }
