@@ -33,15 +33,9 @@ const emailService = {
             console.log('=========================================\n');
 
             const mailOptions = {
-<<<<<<< HEAD
-                from: `"CampusQuiz Soporte" <${process.env.EMAIL_USER}>`,
-                to: recipientEmail,
-                subject: 'CampusQuiz - Recuperar tu contraseña',
-=======
                 from: `"Quizly Soporte" <${process.env.EMAIL_USER}>`,
                 to: recipientEmail,
                 subject: 'Quizly - Recuperar tu contraseña',
->>>>>>> presentacion
                 html: `
                     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
                         <div style="text-align: center; margin-bottom: 30px;">

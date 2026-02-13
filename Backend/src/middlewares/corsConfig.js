@@ -1,12 +1,6 @@
 const cors = require('cors');
 
 const corsOptions = {
-<<<<<<< HEAD
-    // Aquí definimos QUIÉN tiene permiso para hablar con el servidor.
-    // 5500: Es el puerto por defecto de "Live Server" en VS Code (para los HTML de prueba).
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-=======
     // Permitir cualquier origen para port forwarding de VS Code
     origin: function (origin, callback) {
         // Permitir requests sin origin (como mobile apps o curl)
@@ -23,7 +17,6 @@ const corsOptions = {
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
->>>>>>> presentacion
 };
 
 module.exports = cors(corsOptions);
