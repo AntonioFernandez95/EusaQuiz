@@ -1,0 +1,156 @@
+@import '../../../../../styles.scss';
+
+.join-container {
+  min-height: 100vh;
+  background-color: white;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  width: 100%;
+
+  .logo-img {
+    height: 60px;
+  }
+
+  .page-title-center {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #0077b6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .user-name {
+      font-weight: 700;
+      color: #003049;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.join-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 5rem;
+}
+
+.join-card {
+  width: 100%;
+  max-width: 800px;
+  text-align: center;
+
+  .join-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #000;
+    margin-bottom: 3rem;
+  }
+}
+
+.input-wrapper {
+  margin-bottom: 3rem;
+
+  .pin-input {
+    width: 100%;
+    padding: 2.5rem;
+    border: 2px solid #005a8d;
+    border-radius: 12px;
+    background-color: #f0f9ff;
+    font-size: 1.5rem;
+    text-align: center;
+    color: #003049;
+    font-weight: 600;
+    outline: none;
+    transition: all 0.2s;
+
+    &::placeholder {
+      color: #64748b;
+      font-weight: 400;
+    }
+
+    &:focus {
+      background-color: #e0f2fe;
+      box-shadow: 0 0 0 4px rgba(0, 119, 182, 0.1);
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+
+  .btn-join {
+    width: 300px;
+    background-color: #2d6a4f;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    border: none;
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+
+    &:hover {
+      background-color: #1b4332;
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  .btn-back {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 1rem;
+
+    &:hover {
+      color: #003049;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header .page-title-center {
+    display: none;
+  }
+
+  .pin-input {
+    padding: 1.5rem !important;
+    font-size: 1.2rem !important;
+  }
+}

@@ -28,9 +28,26 @@ connectDB().then(() => {
 // Nota: Socket.io necesita su propia config de CORS aparte de Express
 const io = new Server(server, {
   cors: {
+<<<<<<< HEAD
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
 
+=======
+    origin: function (origin, callback) {
+      // Mismo criterio que el middleware CORS
+      if (!origin || 
+          origin.includes('localhost') || 
+          origin.includes('127.0.0.1') ||
+          origin.includes('.devtunnels.ms') ||  // VS Code port forwarding
+          origin.includes('.github.dev')) {     // GitHub Codespaces
+        callback(null, true);
+      } else {
+        callback(null, true); // Permitir todos para desarrollo
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+>>>>>>> presentacion
   }
 });
 
@@ -58,7 +75,26 @@ app.use('/api/datos-academicos', require('./src/routes/datosAcademicosRoutes'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 //Importar FRONT 
+<<<<<<< HEAD
 app.use(express.static(path.join(__dirname, '../Frontend/Pruebas_Backend/')));
+=======
+app.use(express.static(path.join(__dirname, '../frontend/dist/campus-quiz')));
+
+// Ruta info del API
+app.get('/api/info', (req, res) => {
+  res.json({
+    mensaje: '🎮 API de EusaQuiz funcionando',
+    version: '1.0.0',
+    docs: '/api-docs'
+  });
+});
+
+// Catch-all: servir Angular para cualquier ruta que no sea API
+app.get('/{*splat}', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/campus-quiz/index.html'));
+});
+
+>>>>>>> presentacion
 // --- Arrancar Servidor ---
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {

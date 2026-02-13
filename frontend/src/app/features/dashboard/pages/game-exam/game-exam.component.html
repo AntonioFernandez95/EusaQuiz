@@ -1,0 +1,137 @@
+<div class="exam-container" *ngIf="!isLoading; else loading">
+  <!-- Header con info del examen -->
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo">
+      <img
+        [src]="brandingService.appLogo$ | async"
+        [alt]="brandingService.appName$ | async"
+        class="logo-img"
+      />
+    </div>
+
+    <div class="exam-meta">
+      <div class="timer" [class.timer-low]="timeLeftSeconds < 60">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span>{{ formatTime }}</span>
+      </div>
+      <div class="progress-info">
+        Pregunta {{ currentIndex + 1 }} de {{ preguntas.length }}
+      </div>
+    </div>
+
+    <div class="user-profile">
+      <div class="user-avatar-wrapper">
+        <div class="user-avatar">
+          <span>{{ userInitials }}</span>
+        </div>
+      </div>
+      <span class="user-name show-desktop">{{ userName }}</span>
+    </div>
+  </header>
+
+  <main class="exam-content" *ngIf="currentQuestion">
+    <!-- Barra de progreso visual -->
+    <div class="progress-bar-container">
+      <div
+        class="progress-bar-fill"
+        [style.width.%]="((currentIndex + 1) / preguntas.length) * 100"
+      ></div>
+    </div>
+
+    <!-- Pregunta -->
+    <div class="question-container animate-slide-up">
+      <h1 class="question-text">{{ currentQuestion.textoPregunta }}</h1>
+    </div>
+
+    <!-- Opciones -->
+    <div class="options-grid animate-slide-up">
+      <div
+        *ngFor="let option of currentQuestion.opciones; let i = index"
+        class="option-card"
+        (click)="seleccionarOpcion(option)"
+        [style.border-left-color]="getOptionColor(i)"
+        [class.selected]="isOptionSelected(option.idOpcion)"
+      >
+        <span
+          class="option-label"
+          [style.background-color]="getOptionColor(i)"
+          >{{ i + 1 }}</span
+        >
+        <span class="option-text">{{ option.textoOpcion }}</span>
+        <div class="check-icon" *ngIf="isOptionSelected(option.idOpcion)">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+          >
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navegación y Acciones -->
+    <footer class="exam-footer">
+      <div class="nav-buttons">
+        <button
+          class="btn-nav"
+          (click)="anterior()"
+          [disabled]="currentIndex === 0"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Anterior
+        </button>
+        <button
+          class="btn-nav"
+          (click)="siguiente()"
+          [disabled]="currentIndex === preguntas.length - 1"
+        >
+          Siguiente
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <button class="btn-finish" (click)="finalizarExamen()">
+        Finalizar Examen
+      </button>
+    </footer>
+  </main>
+</div>
+
+<ng-template #loading>
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando examen...</p>
+  </div>
+</ng-template>

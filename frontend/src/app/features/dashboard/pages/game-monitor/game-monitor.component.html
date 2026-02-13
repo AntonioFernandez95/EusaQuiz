@@ -1,0 +1,98 @@
+<div class="monitor-container">
+  <!-- Header -->
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo" (click)="goBack()">
+      <img
+        [src]="brandingService.appLogo$ | async"
+        [alt]="brandingService.appName$ | async"
+        class="logo-img"
+      />
+    </div>
+
+    <div class="page-title-center">Detalles Partida</div>
+
+    <div class="user-profile">
+      <div class="user-avatar-wrapper">
+        <div class="user-avatar">
+          <img
+            *ngIf="userProfileImg"
+            [src]="userProfileImg"
+            alt="Perfil"
+            class="profile-img-avatar"
+          />
+          <span *ngIf="!userProfileImg">{{ userInitials }}</span>
+        </div>
+      </div>
+      <span class="user-name">{{ userName }}</span>
+    </div>
+  </header>
+
+  <main class="monitor-content" *ngIf="preguntaActual; else loading">
+    <!-- Main Question Box -->
+    <div class="question-display animate-slide-up">
+      <h1 class="question-text">{{ preguntaActual.textoPregunta }}</h1>
+    </div>
+
+    <!-- Summary Stats Boxes -->
+    <div class="stats-grid animate-slide-up">
+      <div class="summary-box">
+        <span class="box-label">Han respondido</span>
+        <span class="box-value count-green"
+          >{{ respondidos }}/{{ totalAlumnos }}</span
+        >
+      </div>
+      <div class="summary-box">
+        <span class="box-label">Aciertos</span>
+        <span class="box-value percent-blue">{{ aciertosPorcentaje }}%</span>
+      </div>
+    </div>
+
+    <!-- Detailed Options Results -->
+    <div class="options-results animate-slide-up">
+      <div
+        *ngFor="let option of preguntaActual.opciones; let i = index"
+        class="result-row"
+        [style.border-left-color]="getOptionColor(i)"
+        [style.background-color]="getOptionBg(i)"
+        [class.is-visible]="resultadosVisible"
+      >
+        <div class="row-content">
+          <p class="option-title">
+            <span class="status-prefix" *ngIf="resultadosVisible">
+              {{
+                correctaIndex === i
+                  ? "Respuesta correcta: "
+                  : "Respuesta errónea: "
+              }}
+            </span>
+            {{ option.textoOpcion }}
+          </p>
+          <p class="option-subtitle" *ngIf="resultadosVisible">
+            <span [style.color]="correctaIndex === i ? '#10b981' : '#ef4444'">
+              {{ stats ? stats[i] : 0 }} alumnos ({{
+                getOptionPercentage(stats ? stats[i] : 0)
+              }}%)
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control Actions -->
+    <div class="controls-actions animate-slide-up">
+      <button class="btn-action btn-cyan" (click)="mostrarRespuesta()">
+        Mostrar respuesta
+      </button>
+      <button class="btn-action btn-amber" (click)="siguiente()">
+        Siguiente
+      </button>
+    </div>
+  </main>
+
+  <ng-template #loading>
+    <div class="loading-state animate-fade-in">
+      <div class="spinner"></div>
+      <p>Esperando conexión con la partida...</p>
+    </div>
+  </ng-template>
+</div>

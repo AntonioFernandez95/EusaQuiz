@@ -1,0 +1,298 @@
+<div class="edit-quiz-container">
+  <!-- Header -->
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo" (click)="goBack()">
+      <img src="assets/img/logo-camera.png" alt="Eusa Quiz" class="logo-img" />
+    </div>
+
+    <div class="page-title-center">Editar Cuestionario</div>
+
+    <div class="user-profile">
+      <div class="user-avatar-wrapper">
+        <div class="user-avatar">
+          <img
+            *ngIf="userProfileImg"
+            [src]="userProfileImg"
+            alt="Perfil"
+            class="profile-img-avatar"
+          />
+          <span *ngIf="!userProfileImg">{{ userInitials }}</span>
+        </div>
+      </div>
+      <span class="user-name">{{ userName }}</span>
+    </div>
+  </header>
+
+  <main class="edit-content animate-slide-up">
+    <!-- Loading -->
+    <div class="loading-container" *ngIf="isLoading">
+      <div class="spinner"></div>
+      <p>Cargando cuestionario...</p>
+    </div>
+
+    <div class="results-section" *ngIf="!isLoading">
+      <!-- Informacion del Cuestionario -->
+      <section class="section">
+        <h3 class="section-label">Informacion del Cuestionario</h3>
+        <div class="file-card">
+          <div class="exam-form">
+            <div class="form-group">
+              <label>Titulo del Cuestionario</label>
+              <input
+                type="text"
+                [(ngModel)]="quizTitle"
+                placeholder="Nombre del cuestionario"
+              />
+            </div>
+            <div class="form-group">
+              <label>Asignatura</label>
+              <input
+                type="text"
+                [(ngModel)]="quizSubject"
+                placeholder="Modulo / Asignatura"
+              />
+            </div>
+          </div>
+          <div class="exam-form single-col">
+            <div class="form-group">
+              <label>Descripcion (opcional)</label>
+              <textarea
+                [(ngModel)]="quizDescription"
+                placeholder="Descripcion del cuestionario"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Lista de Preguntas -->
+      <section class="section">
+        <div class="section-header-row">
+          <h3 class="section-label">
+            Listado de preguntas ({{ visibleQuestions.length }})
+          </h3>
+          <button class="btn-add-question" (click)="openAddModal()">
+            + Agregar pregunta
+          </button>
+        </div>
+
+        <div class="questions-list">
+          <div
+            class="question-preview-card"
+            *ngFor="let q of visibleQuestions; let i = index"
+            [class.editing]="isGlobalEditing"
+          >
+            <div class="question-body">
+              <div class="q-header">
+                <span class="q-number">P{{ i + 1 }}:</span>
+                <input
+                  *ngIf="isGlobalEditing"
+                  type="text"
+                  [(ngModel)]="q.pregunta"
+                  class="edit-input"
+                />
+                <span *ngIf="!isGlobalEditing" class="q-text">{{
+                  q.pregunta
+                }}</span>
+
+                <button
+                  class="btn-delete-question"
+                  (click)="confirmDeleteQuestion(q, i)"
+                  title="Eliminar pregunta"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#dc2626"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="q-answer-row">
+                <span class="label">Respuesta correcta:</span>
+                <select
+                  *ngIf="isGlobalEditing"
+                  [(ngModel)]="q.respuesta_correcta"
+                  class="edit-select"
+                >
+                  <option value="" disabled>Seleccionar</option>
+                  <option *ngFor="let opt of q.opciones" [value]="opt">
+                    {{ opt }}
+                  </option>
+                </select>
+                <span *ngIf="!isGlobalEditing" class="answer-text">{{
+                  q.respuesta_correcta
+                }}</span>
+              </div>
+
+              <div class="q-options-preview" *ngIf="!isGlobalEditing">
+                <span
+                  class="badge"
+                  *ngFor="let opt of q.opciones"
+                  [class.correct]="opt === q.respuesta_correcta"
+                >
+                  {{ opt }}
+                </span>
+              </div>
+
+              <div class="q-options-edit" *ngIf="isGlobalEditing">
+                <div
+                  class="option-edit-item"
+                  *ngFor="
+                    let opt of q.opciones;
+                    let optIdx = index;
+                    trackBy: trackByIndex
+                  "
+                >
+                  <input
+                    type="text"
+                    [(ngModel)]="q.opciones[optIdx]"
+                    class="edit-input-xs"
+                    placeholder="Opcion {{ optIdx + 1 }}"
+                  />
+                </div>
+              </div>
+
+              <!-- Metadata -->
+              <div class="q-metadata" *ngIf="isGlobalEditing">
+                <div class="meta-item">
+                  <label>Dificultad:</label>
+                  <select [(ngModel)]="q.dificultad" class="edit-select-sm">
+                    <option [value]="1">1 - Muy facil</option>
+                    <option [value]="2">2 - Facil</option>
+                    <option [value]="3">3 - Media</option>
+                    <option [value]="4">4 - Dificil</option>
+                    <option [value]="5">5 - Muy dificil</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="new-badge" *ngIf="q.isNew">NUEVA</div>
+          </div>
+
+          <div class="empty-state" *ngIf="visibleQuestions.length === 0">
+            <p>No hay preguntas en este cuestionario.</p>
+            <button class="btn-add-question" (click)="openAddModal()">
+              + Agregar primera pregunta
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Botones de Accion -->
+      <div class="action-footer">
+        <button
+          class="btn-save"
+          (click)="saveAllChanges()"
+          [disabled]="isSaving"
+        >
+          {{ isSaving ? "Guardando..." : "Guardar todo" }}
+        </button>
+        <button class="btn-edit" (click)="toggleGlobalEdit()">
+          {{ isGlobalEditing ? "Terminar edicion" : "Editar preguntas" }}
+        </button>
+        <button class="btn-cancel" (click)="cancel()">Cancelar</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Agregar Pregunta -->
+  <div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Agregar Nueva Pregunta</h3>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Texto de la pregunta</label>
+          <textarea
+            [(ngModel)]="newQuestion.pregunta"
+            placeholder="Escribe la pregunta aqui..."
+            rows="2"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Opciones de respuesta</label>
+          <div class="options-grid">
+            <input
+              *ngFor="
+                let opt of newQuestion.opciones;
+                let i = index;
+                trackBy: trackByIndex
+              "
+              type="text"
+              [(ngModel)]="newQuestion.opciones[i]"
+              placeholder="Opcion {{ i + 1 }}"
+              class="option-input"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label>Respuesta correcta</label>
+            <select [(ngModel)]="newQuestion.respuesta_correcta">
+              <option value="" disabled selected>Seleccionar</option>
+              <option
+                *ngFor="let opt of newQuestion.opciones"
+                [value]="opt"
+                [disabled]="!opt"
+              >
+                {{ opt || "(vacio)" }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group half">
+            <label>Dificultad</label>
+            <select [(ngModel)]="newQuestion.dificultad">
+              <option [value]="1">1 - Muy facil</option>
+              <option [value]="2">2 - Facil</option>
+              <option [value]="3">3 - Media</option>
+              <option [value]="4">4 - Dificil</option>
+              <option [value]="5">5 - Muy dificil</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" (click)="addQuestion()">Agregar</button>
+        <button class="btn-secondary" (click)="closeAddModal()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmar Eliminacion -->
+  <div
+    class="modal-overlay"
+    *ngIf="showDeleteModal"
+    (click)="closeDeleteModal()"
+  >
+    <div class="modal-content modal-delete" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Eliminar Pregunta</h3>
+      <div class="modal-body">
+        <p>¿Estas seguro de que deseas eliminar esta pregunta?</p>
+        <p class="question-preview">"{{ questionToDelete?.pregunta }}"</p>
+        <p class="warning-text">
+          Esta accion se aplicara al guardar los cambios.
+        </p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-danger" (click)="deleteQuestion()">Eliminar</button>
+        <button class="btn-secondary" (click)="closeDeleteModal()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

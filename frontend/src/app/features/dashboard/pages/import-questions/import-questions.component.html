@@ -1,0 +1,259 @@
+<div class="import-container">
+  <!-- Header -->
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo" (click)="goBack()">
+      <img
+        [src]="brandingService.appLogo$ | async"
+        [alt]="brandingService.appName$ | async"
+        class="logo-img"
+      />
+    </div>
+
+    <div class="page-title-center">Importar Preguntas</div>
+
+    <div class="user-profile">
+      <div class="user-avatar-wrapper">
+        <div class="user-avatar">
+          <img
+            *ngIf="userProfileImg"
+            [src]="userProfileImg"
+            alt="Perfil"
+            class="profile-img-avatar"
+          />
+          <span *ngIf="!userProfileImg">{{ userInitials }}</span>
+        </div>
+      </div>
+      <span class="user-name">{{ userName }}</span>
+    </div>
+  </header>
+
+  <main class="import-content animate-slide-up">
+    <!-- Drop Zone -->
+    <div
+      class="drop-zone"
+      (drop)="onFileDropped($event)"
+      (dragover)="onDragOver($event)"
+      [class.has-file]="fileLoaded"
+    >
+      <div class="drop-zone-content">
+        <h2 class="drop-title">Arrastra tu archivo aquí</h2>
+        <p class="drop-subtitle">Archivo JSON</p>
+
+        <label class="btn-select-file">
+          Seleccionar archivo
+          <input
+            type="file"
+            (change)="onFileSelected($event)"
+            accept=".json"
+            hidden
+          />
+        </label>
+      </div>
+    </div>
+
+    <div class="results-section" *ngIf="fileLoaded">
+      <!-- Archivo Cargado y Datos del Examen -->
+      <section class="section">
+        <h3 class="section-label">Información del Cuestionario</h3>
+        <div class="file-card">
+          <div class="exam-form">
+            <div class="form-group">
+              <label>Título del Cuestionario</label>
+              <input
+                type="text"
+                [(ngModel)]="examName"
+                placeholder="Nombre del cuestionario"
+              />
+            </div>
+            <div class="form-group">
+              <label>Asignatura</label>
+              <input
+                type="text"
+                [(ngModel)]="examSubject"
+                placeholder="Módulo / Asignatura"
+              />
+            </div>
+          </div>
+          <div class="file-info-mini">
+            <span>{{ fileMetadata?.name }} ({{ fileMetadata?.size }})</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Vista Previa / Edición -->
+      <section class="section">
+        <div class="section-header-row">
+          <h3 class="section-label">
+            Listado de preguntas ({{ questions.length }})
+          </h3>
+          <button class="btn-add-question" (click)="openAddModal()">
+            + Agregar pregunta
+          </button>
+        </div>
+
+        <div class="questions-list">
+          <div
+            class="question-preview-card"
+            *ngFor="let q of questions; let i = index"
+            [class.editing]="isGlobalEditing"
+          >
+            <div class="question-body">
+              <div class="q-header">
+                <span class="q-number">P{{ i + 1 }}:</span>
+                <input
+                  *ngIf="isGlobalEditing"
+                  type="text"
+                  [(ngModel)]="q.pregunta"
+                  class="edit-input"
+                />
+                <span *ngIf="!isGlobalEditing" class="q-text">{{
+                  q.pregunta
+                }}</span>
+
+                <button
+                  class="btn-delete-question"
+                  (click)="removeQuestion(i)"
+                  title="Eliminar pregunta"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#dc2626"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="q-answer-row">
+                <span class="label">Respuesta correcta:</span>
+                <input
+                  *ngIf="isGlobalEditing"
+                  type="text"
+                  [(ngModel)]="q.respuesta_correcta"
+                  class="edit-input-sm"
+                />
+                <span *ngIf="!isGlobalEditing" class="answer-text">{{
+                  q.respuesta_correcta
+                }}</span>
+              </div>
+
+              <div class="q-options-preview" *ngIf="!isGlobalEditing">
+                <span class="badge" *ngFor="let opt of q.opciones">{{
+                  opt
+                }}</span>
+              </div>
+
+              <div class="q-options-edit" *ngIf="isGlobalEditing">
+                <div
+                  class="option-edit-item"
+                  *ngFor="
+                    let opt of q.opciones;
+                    let optIdx = index;
+                    trackBy: trackByIndex
+                  "
+                >
+                  <input
+                    type="text"
+                    [(ngModel)]="q.opciones[optIdx]"
+                    class="edit-input-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Botones de Acción -->
+      <div class="action-footer">
+        <button
+          class="btn-import"
+          (click)="importAll()"
+          [disabled]="isSaving || isGlobalEditing"
+          [title]="
+            isGlobalEditing ? 'Finaliza la edición antes de importar' : ''
+          "
+        >
+          {{ isSaving ? "Procesando..." : "Importar todas" }}
+        </button>
+        <button class="btn-edit" (click)="toggleGlobalEdit()">
+          {{ isGlobalEditing ? "Guardar Cambios" : "Editar" }}
+        </button>
+        <button class="btn-cancel" (click)="cancel()">Cancelar</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Agregar Pregunta -->
+  <div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <h3 class="modal-title">Agregar Nueva Pregunta</h3>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Texto de la pregunta</label>
+          <textarea
+            [(ngModel)]="newQuestion.pregunta"
+            placeholder="Escribe la pregunta aquí..."
+            rows="2"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Opciones de respuesta</label>
+          <div class="options-grid">
+            <input
+              *ngFor="
+                let opt of newQuestion.opciones;
+                let i = index;
+                trackBy: trackByIndex
+              "
+              type="text"
+              [(ngModel)]="newQuestion.opciones[i]"
+              placeholder="Opción {{ i + 1 }}"
+              class="option-input"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group half">
+            <label>Respuesta correcta</label>
+            <select [(ngModel)]="newQuestion.respuesta_correcta">
+              <option value="" disabled selected>Seleccionar</option>
+              <option
+                *ngFor="let opt of newQuestion.opciones"
+                [value]="opt"
+                [disabled]="!opt"
+              >
+                {{ opt || "(vacío)" }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group half">
+            <label>Dificultad</label>
+            <select [(ngModel)]="newQuestion.dificultad">
+              <option [value]="1">1 - Muy fácil</option>
+              <option [value]="2">2 - Fácil</option>
+              <option [value]="3">3 - Media</option>
+              <option [value]="4">4 - Difícil</option>
+              <option [value]="5">5 - Muy difícil</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" (click)="addQuestion()">Agregar</button>
+        <button class="btn-secondary" (click)="closeAddModal()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,51 @@
+<div class="lobby-container">
+  <header class="dashboard-header animate-fade-in">
+    <div class="logo" (click)="exit()">
+      <img
+        [src]="brandingService.appLogo$ | async"
+        [alt]="brandingService.appName$ | async"
+        class="logo-img"
+      />
+    </div>
+
+    <div class="page-title-center">Sala de Espera</div>
+
+    <div class="user-profile">
+      <div class="user-avatar-wrapper">
+        <div class="user-avatar">
+          <img
+            *ngIf="userProfileImg"
+            [src]="userProfileImg"
+            alt="Perfil"
+            class="profile-img-avatar"
+          />
+          <span *ngIf="!userProfileImg">{{ userInitials }}</span>
+        </div>
+      </div>
+      <span class="user-name">{{ userName }}</span>
+    </div>
+  </header>
+
+  <main class="lobby-content" *ngIf="partida; else loading">
+    <div class="waiting-card animate-slide-up">
+      <div class="game-info">
+        <h2 class="game-title">{{ partida.idCuestionario.titulo }}</h2>
+        <p class="instructor">Instructor: {{ partida.idProfesor }}</p>
+      </div>
+
+      <div class="status-box">
+        <div class="pulse-ring"></div>
+        <p class="status-text">¡Estás dentro!</p>
+        <p class="sub-status">
+          Esperando a que el profesor inicie la partida...
+        </p>
+      </div>
+
+      <button class="btn-exit" (click)="exit()">Salir de la sala</button>
+    </div>
+  </main>
+
+  <ng-template #loading>
+    <div class="loading-state">Conectando con la sala...</div>
+  </ng-template>
+</div>

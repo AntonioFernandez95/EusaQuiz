@@ -33,16 +33,26 @@ const emailService = {
             console.log('=========================================\n');
 
             const mailOptions = {
+<<<<<<< HEAD
                 from: `"CampusQuiz Soporte" <${process.env.EMAIL_USER}>`,
                 to: recipientEmail,
                 subject: 'CampusQuiz - Recuperar tu contraseña',
+=======
+                from: `"Quizly Soporte" <${process.env.EMAIL_USER}>`,
+                to: recipientEmail,
+                subject: 'Quizly - Recuperar tu contraseña',
+>>>>>>> presentacion
                 html: `
                     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
                         <div style="text-align: center; margin-bottom: 30px;">
                             <h2 style="color: #4361ee; margin: 0; font-size: 24px;">Restablecer Contraseña</h2>
                         </div>
                         <p style="color: #1e293b; font-size: 16px; line-height: 1.5;">Hola <strong>${nombre}</strong>,</p>
+<<<<<<< HEAD
                         <p style="color: #475569; font-size: 15px; line-height: 1.5;">Hemos recibido una solicitud para cambiar tu contraseña en CampusQuiz.</p>
+=======
+                        <p style="color: #475569; font-size: 15px; line-height: 1.5;">Hemos recibido una solicitud para cambiar tu contraseña en Quizly.</p>
+>>>>>>> presentacion
                         <div style="text-align: center; margin: 40px 0;">
                             <a href="${resetUrl}" style="background-color: #4361ee; color: #ffffff; padding: 14px 30px; text-decoration: none; border-radius: 10px; font-weight: 600; display: inline-block;">
                                 Cambiar mi contraseña

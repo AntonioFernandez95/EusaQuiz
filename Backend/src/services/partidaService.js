@@ -896,6 +896,7 @@ async function obtenerDetallePartida(id) {
     const participaciones = await Participacion.find({ idPartida: partida._id }).lean();
     console.log('[obtenerDetallePartida] Participaciones:', participaciones.length);
 
+<<<<<<< HEAD
     // Enriquecer los jugadores con las respuestas de las participaciones
     const jugadoresEnriquecidos = (partida.jugadores || []).map(jugador => {
       const participacion = participaciones.find(p => p.idAlumno === jugador.idAlumno);
@@ -904,6 +905,32 @@ async function obtenerDetallePartida(id) {
         respuestas: participacion?.respuestas || [],
         aciertos: participacion?.aciertos || 0,
         puntuacionTotal: participacion?.puntuacionTotal || jugador.puntuacionTotal || 0
+=======
+    // Obtener total de preguntas para calcular nota en base 10
+    const totalPreguntas = preguntas.length;
+
+    // Enriquecer los jugadores con las respuestas de las participaciones
+    const jugadoresEnriquecidos = (partida.jugadores || []).map(jugador => {
+      const participacion = participaciones.find(p => p.idAlumno === jugador.idAlumno);
+      const aciertos = participacion?.aciertos || 0;
+      
+      // Para exámenes/modo programado, calcular nota en base 10
+      // Para en_vivo, mantener los puntos originales
+      let puntuacionMostrar;
+      if (partida.tipoPartida !== tipos.MODOS_JUEGO.EN_VIVO && totalPreguntas > 0) {
+        // Nota en base 10: (aciertos / totalPreguntas) * 10
+        puntuacionMostrar = Math.round((aciertos / totalPreguntas) * 10 * 10) / 10; // 1 decimal
+      } else {
+        puntuacionMostrar = participacion?.puntuacionTotal || jugador.puntuacionTotal || 0;
+      }
+      
+      return {
+        ...jugador,
+        respuestas: participacion?.respuestas || [],
+        aciertos: aciertos,
+        fallos: participacion?.fallos || 0,
+        puntuacionTotal: puntuacionMostrar
+>>>>>>> presentacion
       };
     });
     console.log('[obtenerDetallePartida] Jugadores enriquecidos:', jugadoresEnriquecidos.length);
